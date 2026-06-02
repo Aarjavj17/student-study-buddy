@@ -10,10 +10,10 @@ app = Flask(__name__, template_folder='.')
 app.secret_key = 'super-secret-student-buddy-key-2026-enjoy-studying'
 app.permanent_session_lifetime = timedelta(days=7)
 
-# Ensure database exists
-if not os.path.exists(DB_PATH):
-    from database import init_db
-    init_db()
+# Ensure database structure and content are synchronized on startup
+from database import init_db
+init_db()
+
 
 # --- DATABASE LIFECYCLE ---
 def get_db():
