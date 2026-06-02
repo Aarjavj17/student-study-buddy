@@ -1,0 +1,18 @@
+# Python compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Databases (each developer will generate their own database file locally)
+database.db
+*.db
+*.sqlite
+
+# macOS system files
+.DS_Store
+.DS_Store?
+._*
+
+# VS Code settings (optional, usually kept local)
+.vscode/
