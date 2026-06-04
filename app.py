@@ -549,5 +549,42 @@ def log_focus_session():
         'new_badges': new_badges
     })
 
+# --- API: CLASS RESOURCES ---
+@app.route('/api/resources/<class_name>/<subject_name>', methods=['GET'])
+def get_resources(class_name, subject_name):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('''
+    SELECT * FROM class_resources 
+    WHERE class_name = ? AND subject_name = ? 
+    ORDER BY chapter_no ASC
+    ''', (class_name, subject_name))
+    resources = [dict(row) for row in cursor.fetchall()]
+    return jsonify(resources)
+
+@app.route('/api/resources/<int:resource_id>', methods=['POST'])
+def update_resource(resource_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorised.'}), 401
+        
+    data = request.json or {}
+    ncert_url = data.get('ncert_url', '').strip()
+    notes_url = data.get('notes_url', '').strip()
+    exemplar_url = data.get('exemplar_url', '').strip()
+    book_pdf_url = data.get('book_pdf_url', '').strip()
+    formula_sheet_url = data.get('formula_sheet_url', '').strip()
+    
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('''
+    UPDATE class_resources 
+    SET ncert_url = ?, notes_url = ?, exemplar_url = ?, book_pdf_url = ?, formula_sheet_url = ? 
+    WHERE id = ?
+    ''', (ncert_url, notes_url, exemplar_url, book_pdf_url, formula_sheet_url, resource_id))
+    db.commit()
+    
+    return jsonify({'message': 'Resource links updated successfully.'})
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

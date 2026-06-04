@@ -100,6 +100,31 @@ def init_db():
     )
     ''')
     
+    # Check if schema upgrade is needed for class_resources
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='class_resources'")
+    if cursor.fetchone():
+        cursor.execute("PRAGMA table_info(class_resources)")
+        columns = [row[1] for row in cursor.fetchall()]
+        if 'book_pdf_url' not in columns or 'formula_sheet_url' not in columns:
+            cursor.execute("DROP TABLE class_resources")
+            conn.commit()
+
+    # 8. Class Resources Table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS class_resources (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        class_name TEXT NOT NULL,
+        subject_name TEXT NOT NULL,
+        chapter_no INTEGER NOT NULL,
+        chapter_name TEXT NOT NULL,
+        ncert_url TEXT DEFAULT '',
+        notes_url TEXT DEFAULT '',
+        exemplar_url TEXT DEFAULT '',
+        book_pdf_url TEXT DEFAULT '',
+        formula_sheet_url TEXT DEFAULT ''
+    )
+    ''')
+    
     conn.commit()
     
     # --- SEED DEFAULT DATA ---
@@ -148,6 +173,99 @@ def init_db():
         INSERT INTO quiz_questions (topic_id, question, options, correct_index)
         VALUES (?, ?, ?, ?)
         ''', (q_topic, q_text, json.dumps(q_opts), q_correct))
+        
+    # Seed Class Resources (Class 9 and Class 10)
+    class_resources_data = [
+        # Class 9 - Mathematics
+        ('Class 9', 'Mathematics', 1, 'Number Systems', '', '', '', '', ''),
+        ('Class 9', 'Mathematics', 2, 'Polynomials', '', '', '', '', ''),
+        ('Class 9', 'Mathematics', 3, 'Coordinate Geometry', '', '', '', '', ''),
+        ('Class 9', 'Mathematics', 4, 'Linear Equations in Two Variables', '', '', '', '', ''),
+        ('Class 9', 'Mathematics', 5, "Introduction to Euclid's Geometry", '', '', '', '', ''),
+        ('Class 9', 'Mathematics', 6, 'Lines and Angles', '', '', '', '', ''),
+        ('Class 9', 'Mathematics', 7, 'Triangles', '', '', '', '', ''),
+        ('Class 9', 'Mathematics', 8, 'Quadrilaterals', '', '', '', '', ''),
+        ('Class 9', 'Mathematics', 9, 'Circles', '', '', '', '', ''),
+        ('Class 9', 'Mathematics', 10, "Heron's Formula", '', '', '', '', ''),
+        ('Class 9', 'Mathematics', 11, 'Surface Areas and Volumes', '', '', '', '', ''),
+        ('Class 9', 'Mathematics', 12, 'Statistics', '', '', '', '', ''),
+        
+        # Class 9 - Science
+        ('Class 9', 'Science', 1, 'Matter in Our Surroundings', '', '', '', '', ''),
+        ('Class 9', 'Science', 2, 'Is Matter Around Us Pure', '', '', '', '', ''),
+        ('Class 9', 'Science', 3, 'Atoms and Molecules', '', '', '', '', ''),
+        ('Class 9', 'Science', 4, 'Structure of the Atom', '', '', '', '', ''),
+        ('Class 9', 'Science', 5, 'The Fundamental Unit of Life', '', '', '', '', ''),
+        ('Class 9', 'Science', 6, 'Tissues', '', '', '', '', ''),
+        ('Class 9', 'Science', 7, 'Motion', '', '', '', '', ''),
+        ('Class 9', 'Science', 8, 'Force and Laws of Motion', '', '', '', '', ''),
+        ('Class 9', 'Science', 9, 'Gravitation', '', '', '', '', ''),
+        ('Class 9', 'Science', 10, 'Work and Energy', '', '', '', '', ''),
+        ('Class 9', 'Science', 11, 'Sound', '', '', '', '', ''),
+        
+        # Class 9 - Social Science
+        ('Class 9', 'Social Science', 1, 'The French Revolution', '', '', '', '', ''),
+        ('Class 9', 'Social Science', 2, 'Socialism in Europe and the Russian Revolution', '', '', '', '', ''),
+        ('Class 9', 'Social Science', 3, 'Nazism and the Rise of Hitler', '', '', '', '', ''),
+        ('Class 9', 'Social Science', 4, 'India - Size and Location', '', '', '', '', ''),
+        ('Class 9', 'Social Science', 5, 'Physical Features of India', '', '', '', '', ''),
+        
+        # Class 9 - English
+        ('Class 9', 'English', 1, 'The Fun They Had', '', '', '', '', ''),
+        ('Class 9', 'English', 2, 'The Sound of Music', '', '', '', '', ''),
+        ('Class 9', 'English', 3, 'The Little Girl', '', '', '', '', ''),
+        
+        # Class 9 - Hindi
+        ('Class 9', 'Hindi', 1, 'Do Bailon Ki Katha', '', '', '', '', ''),
+        ('Class 9', 'Hindi', 2, 'Lhasa Ki Aur', '', '', '', '', ''),
+        
+        # Class 10 - Mathematics
+        ('Class 10', 'Mathematics', 1, 'Real Numbers', '', '', '', '', ''),
+        ('Class 10', 'Mathematics', 2, 'Polynomials', '', '', '', '', ''),
+        ('Class 10', 'Mathematics', 3, 'Pair of Linear Equations in Two Variables', '', '', '', '', ''),
+        ('Class 10', 'Mathematics', 4, 'Quadratic Equations', '', '', '', '', ''),
+        ('Class 10', 'Mathematics', 5, 'Arithmetic Progressions', '', '', '', '', ''),
+        ('Class 10', 'Mathematics', 6, 'Triangles', '', '', '', '', ''),
+        ('Class 10', 'Mathematics', 7, 'Coordinate Geometry', '', '', '', '', ''),
+        ('Class 10', 'Mathematics', 8, 'Introduction to Trigonometry', '', '', '', '', ''),
+        ('Class 10', 'Mathematics', 9, 'Some Applications of Trigonometry', '', '', '', '', ''),
+        ('Class 10', 'Mathematics', 10, 'Circles', '', '', '', '', ''),
+        ('Class 10', 'Mathematics', 11, 'Surface Areas and Volumes', '', '', '', '', ''),
+        ('Class 10', 'Mathematics', 12, 'Statistics', '', '', '', '', ''),
+        ('Class 10', 'Mathematics', 13, 'Probability', '', '', '', '', ''),
+        
+        # Class 10 - Science
+        ('Class 10', 'Science', 1, 'Chemical Reactions and Equations', '', '', '', '', ''),
+        ('Class 10', 'Science', 2, 'Acids, Bases and Salts', '', '', '', '', ''),
+        ('Class 10', 'Science', 3, 'Metals and Non-metals', '', '', '', '', ''),
+        ('Class 10', 'Science', 4, 'Carbon and its Compounds', '', '', '', '', ''),
+        ('Class 10', 'Science', 5, 'Life Processes', '', '', '', '', ''),
+        ('Class 10', 'Science', 6, 'Control and Coordination', '', '', '', '', ''),
+        ('Class 10', 'Science', 7, 'Light - Reflection and Refraction', '', '', '', '', ''),
+        ('Class 10', 'Science', 8, 'Electricity', '', '', '', '', ''),
+        
+        # Class 10 - Social Science
+        ('Class 10', 'Social Science', 1, 'The Rise of Nationalism in Europe', '', '', '', '', ''),
+        ('Class 10', 'Social Science', 2, 'Nationalism in India', '', '', '', '', ''),
+        ('Class 10', 'Social Science', 3, 'Resources and Development', '', '', '', '', ''),
+        ('Class 10', 'Social Science', 4, 'Power Sharing', '', '', '', '', ''),
+        
+        # Class 10 - English
+        ('Class 10', 'English', 1, 'A Letter to God', '', '', '', '', ''),
+        ('Class 10', 'English', 2, 'Nelson Mandela: Long Walk to Freedom', '', '', '', '', ''),
+        
+        # Class 10 - Hindi
+        ('Class 10', 'Hindi', 1, 'Netaji Ka Chashma', '', '', '', '', ''),
+        ('Class 10', 'Hindi', 2, 'Balgobin Bhagat', '', '', '', '', '')
+    ]
+    
+    for class_name, sub_name, ch_no, ch_name, ncert, notes, exemplar, book_pdf, formula_sheet in class_resources_data:
+        cursor.execute('SELECT id FROM class_resources WHERE class_name = ? AND subject_name = ? AND chapter_no = ?', (class_name, sub_name, ch_no))
+        if not cursor.fetchone():
+            cursor.execute('''
+            INSERT INTO class_resources (class_name, subject_name, chapter_no, chapter_name, ncert_url, notes_url, exemplar_url, book_pdf_url, formula_sheet_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (class_name, sub_name, ch_no, ch_name, ncert, notes, exemplar, book_pdf, formula_sheet))
         
     conn.commit()
     conn.close()

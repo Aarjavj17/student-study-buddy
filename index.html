@@ -1805,6 +1805,156 @@
                 gap: 16px;
             }
         }
+
+        /* --- CLASS 9TH SECTION STYLING --- */
+        .class9-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .class9-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .class9-header h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            font-family: var(--font-playful);
+            background: linear-gradient(135deg, var(--text-primary), var(--color-primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .class9-header p {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .chapters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .chapter-card {
+            border-radius: var(--border-radius-lg);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chapter-card:hover {
+            border-color: var(--glass-border-hover);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .chapter-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 12px;
+        }
+
+        .chapter-number-badge {
+            background: var(--color-purple-bg);
+            color: var(--color-purple);
+            padding: 4px 10px;
+            border-radius: var(--border-radius-sm);
+            font-size: 0.85rem;
+            font-weight: 700;
+            font-family: var(--font-playful);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+        }
+
+        .chapter-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .resource-links-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .resource-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 8px 12px;
+            border-radius: var(--border-radius-md);
+            border: 1px solid var(--glass-border);
+        }
+
+        .resource-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .resource-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .no-link-badge {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-style: italic;
+        }
+
+        .chapter-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 4px;
+        }
+
+        .wide-modal-card {
+            width: 480px;
+            max-width: 90%;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+        }
+
+        /* --- PDF VIEWER MODAL CUSTOM STYLING --- */
+        .pdf-viewer-card {
+            display: flex;
+            flex-direction: column;
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8) !important;
+        }
+
+        .modal-overlay:not(.hidden) .pdf-viewer-card {
+            transform: scale(1);
+        }
+
+        .pdf-viewer-header h3 {
+            font-family: var(--font-sans);
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
@@ -2061,41 +2211,96 @@
 
                 <!-- --- SHEET: LEARN HUB --- -->
                 <div id="tab-learn" class="tab-content">
-                    <div class="learn-layout">
-                        <!-- PLAYLIST COLUMN -->
-                        <div class="playlist-panel glass">
-                            <h3>Study Resources 🎥</h3>
-                            <p class="panel-desc">Choose a topic, watch the explanation, and take structured notes.</p>
-                            <div class="video-list" id="video-playlist-container">
-                                <!-- Dynamic videos seeded from DB -->
+                    <div class="learn-hub-header glass" style="margin-bottom: 20px; padding: 12px 20px; border-radius: var(--border-radius-lg); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                        <div class="learn-hub-title-section">
+                            <h2 style="font-size: 1.5rem; font-weight: 700; font-family: var(--font-playful); background: linear-gradient(135deg, var(--text-primary), var(--color-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Learn Hub 🚀</h2>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Dynamic syllabus resources and interactive video lectures.</p>
+                        </div>
+                        <div class="learn-hub-tabs" style="display: flex; gap: 10px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); padding: 4px; border-radius: var(--border-radius-md);">
+                            <button id="subtab-syllabus-btn" class="btn btn-sm btn-primary" onclick="switchLearnSubTab('syllabus')">
+                                <i data-lucide="book-open"></i> <span>Syllabus Resources</span>
+                            </button>
+                            <button id="subtab-videos-btn" class="btn btn-sm btn-ghost" onclick="switchLearnSubTab('videos')">
+                                <i data-lucide="video"></i> <span>Video Lectures</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SYLLABUS WORKSPACE -->
+                    <div id="learn-syllabus-workspace" class="learn-sub-content">
+                        <!-- Filters and Search panel -->
+                        <div class="filters-panel glass" style="padding: 20px; border-radius: var(--border-radius-lg); display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px;">
+                            <!-- Class Filter & Search Bar Row -->
+                            <div style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">Select Class:</span>
+                                    <div class="class-filter-buttons" style="display: flex; gap: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); padding: 4px; border-radius: var(--border-radius-md);">
+                                        <button id="class-filter-9-btn" class="btn btn-sm btn-primary" onclick="filterClass('Class 9')">Class 9</button>
+                                        <button id="class-filter-10-btn" class="btn btn-sm btn-ghost" onclick="filterClass('Class 10')">Class 10</button>
+                                    </div>
+                                </div>
+                                <div class="search-wrapper" style="position: relative; flex: 1; max-width: 350px; min-width: 250px;">
+                                    <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted);"></i>
+                                    <input type="text" id="chapters-search-bar" placeholder="Search chapters..." style="width: 100%; padding: 10px 16px 10px 36px; border-radius: var(--border-radius-md); background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); color: white; outline: none; transition: border-color 0.2s;" onkeyup="handleChaptersSearch(this.value)">
+                                </div>
+                            </div>
+                            <!-- Subject Filter Row -->
+                            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">Subjects:</span>
+                                <div class="subject-filter-list" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button class="btn btn-sm btn-primary subject-btn" data-subject="Mathematics" onclick="filterSubject('Mathematics')">📐 Mathematics</button>
+                                    <button class="btn btn-sm btn-ghost subject-btn" data-subject="Science" onclick="filterSubject('Science')">🧪 Science</button>
+                                    <button class="btn btn-sm btn-ghost subject-btn" data-subject="Social Science" onclick="filterSubject('Social Science')">🌍 Social Science</button>
+                                    <button class="btn btn-sm btn-ghost subject-btn" data-subject="English" onclick="filterSubject('English')">📖 English</button>
+                                    <button class="btn btn-sm btn-ghost subject-btn" data-subject="Hindi" onclick="filterSubject('Hindi')">✍️ Hindi</button>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- VIEWER COLUMN -->
-                        <div class="viewer-panel">
-                            <!-- VIDEO SCREEN -->
-                            <div class="video-card glass">
-                                <div class="iframe-container">
-                                    <iframe id="video-player" src="" title="Study Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-                                </div>
-                                <div class="video-details">
-                                    <h3 id="player-title">Select a Video</h3>
-                                    <p id="player-desc">Choose a study material from the sidebar playlist to begin learning.</p>
+                        <!-- Chapters grid -->
+                        <div class="chapters-grid" id="syllabus-chapters-container">
+                            <!-- Dynamic chapter cards will be injected here -->
+                        </div>
+                    </div>
+
+                    <!-- VIDEOS & NOTES WORKSPACE -->
+                    <div id="learn-videos-workspace" class="learn-sub-content hidden">
+                        <div class="learn-layout">
+                            <!-- PLAYLIST COLUMN -->
+                            <div class="playlist-panel glass">
+                                <h3>Study Resources 🎥</h3>
+                                <p class="panel-desc">Choose a topic, watch the explanation, and take structured notes.</p>
+                                <div class="video-list" id="video-playlist-container">
+                                    <!-- Dynamic videos seeded from DB -->
                                 </div>
                             </div>
 
-                            <!-- NOTE EDITOR -->
-                            <div class="notes-card glass">
-                                <div class="notes-header">
-                                    <h3><i data-lucide="file-edit" class="text-blue"></i> Interactive Study Notes</h3>
-                                    <div class="notes-actions">
-                                        <span id="notes-status" class="notes-status-text">Draft</span>
-                                        <button id="save-notes-btn" class="btn btn-secondary btn-sm">
-                                            <i data-lucide="save"></i> Save Notes (+5 XP)
-                                        </button>
+                            <!-- VIEWER COLUMN -->
+                            <div class="viewer-panel">
+                                <!-- VIDEO SCREEN -->
+                                <div class="video-card glass">
+                                    <div class="iframe-container">
+                                        <iframe id="video-player" src="" title="Study Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                                    </div>
+                                    <div class="video-details">
+                                        <h3 id="player-title">Select a Video</h3>
+                                        <p id="player-desc">Choose a study material from the sidebar playlist to begin learning.</p>
                                     </div>
                                 </div>
-                                <textarea id="notes-editor" placeholder="Write down your key formulas, explanations, and concepts here... They will autosave when you switch videos!"></textarea>
+
+                                <!-- NOTE EDITOR -->
+                                <div class="notes-card glass">
+                                    <div class="notes-header">
+                                        <h3><i data-lucide="file-edit" class="text-blue"></i> Interactive Study Notes</h3>
+                                        <div class="notes-actions">
+                                            <span id="notes-status" class="notes-status-text">Draft</span>
+                                            <button id="save-notes-btn" class="btn btn-secondary btn-sm">
+                                                <i data-lucide="save"></i> Save Notes (+5 XP)
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <textarea id="notes-editor" placeholder="Write down your key formulas, explanations, and concepts here... They will autosave when you switch videos!"></textarea>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2255,6 +2460,8 @@
                     </div>
                 </div>
 
+
+
             </section>
         </main>
     </div>
@@ -2284,6 +2491,77 @@
                 <span class="level-number" id="unlocked-level-num">2</span>
             </div>
             <button id="levelup-modal-close" class="btn btn-primary">Keep Growing!</button>
+        </div>
+    </div>
+
+    <!-- --- OVERLAY: EDIT RESOURCE LINKS --- -->
+    <div id="edit-links-modal" class="modal-overlay hidden">
+        <div class="modal-card glass wide-modal-card">
+            <div class="modal-emoji">📝</div>
+            <h2 id="edit-modal-title">Edit Resources</h2>
+            <p id="edit-modal-subtitle" class="card-subtitle">Update solutions and notes links</p>
+            
+            <form id="edit-links-form" style="width: 100%; text-align: left; display: flex; flex-direction: column; gap: 14px; max-height: 70vh; overflow-y: auto; padding-right: 8px;">
+                <input type="hidden" id="edit-chapter-id">
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="edit-notes-url"><i data-lucide="file-text"></i> Handwritten Notes URL 📖</label>
+                    <input type="text" id="edit-notes-url" placeholder="Paste Handwritten Notes PDF link">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="edit-ncert-url"><i data-lucide="book"></i> NCERT Solutions URL 📚</label>
+                    <input type="text" id="edit-ncert-url" placeholder="Paste NCERT Solutions PDF link">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="edit-exemplar-url"><i data-lucide="target"></i> NCERT Exemplar Solutions URL 🎯</label>
+                    <input type="text" id="edit-exemplar-url" placeholder="Paste Exemplar Solutions PDF link">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="edit-book-pdf-url"><i data-lucide="file"></i> NCERT Book PDF URL 📕</label>
+                    <input type="text" id="edit-book-pdf-url" placeholder="Paste NCERT Book PDF link">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="edit-formula-sheet-url"><i data-lucide="ruler"></i> Formula Sheet URL 📐</label>
+                    <input type="text" id="edit-formula-sheet-url" placeholder="Paste Formula Sheet PDF link">
+                </div>
+                
+                <div class="modal-buttons" style="display: flex; gap: 12px; margin-top: 8px; width: 100%;">
+                    <button type="button" id="edit-links-cancel" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- --- OVERLAY: INLINE PDF VIEWER --- -->
+    <div id="pdf-viewer-modal" class="modal-overlay hidden" style="z-index: 1200;">
+        <div class="modal-card glass pdf-viewer-card" style="width: 90vw; height: 90vh; max-width: 1200px; padding: 20px; align-items: stretch; gap: 12px;">
+            <div class="pdf-viewer-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span class="modal-emoji" style="font-size: 1.8rem; margin: 0;">📖</span>
+                    <div>
+                        <h3 id="pdf-viewer-title" style="font-size: 1.2rem; color: white;">Study Resource</h3>
+                        <p class="card-subtitle" style="margin-bottom: 0; font-size: 0.8rem;">Read and study with active Pomodoro focus session</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Mini Pomodoro display -->
+                    <div id="pdf-viewer-mini-timer" style="background: var(--color-primary-glow); border: 1px solid rgba(99, 102, 241, 0.3); padding: 6px 12px; border-radius: var(--border-radius-md); font-family: var(--font-playful); font-weight: 800; color: var(--color-primary-hover); display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="timer" style="width: 16px; height: 16px;"></i>
+                        <span id="pdf-mini-time">25:00</span>
+                    </div>
+                    <button id="pdf-viewer-close" class="btn btn-secondary btn-sm" style="padding: 8px 12px;">
+                        <i data-lucide="x"></i> Close
+                    </button>
+                </div>
+            </div>
+            <div style="flex: 1; border-radius: var(--border-radius-md); overflow: hidden; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border);">
+                <iframe id="pdf-frame" src="" width="100%" height="100%" style="border: none;" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+            </div>
         </div>
     </div>
 
@@ -2329,7 +2607,57 @@
             ]
         };
 
+        let localResources = [
+            // Class 9 Mathematics
+            { id: 1, class_name: 'Class 9', subject_name: 'Mathematics', chapter_no: 1, chapter_name: 'Number Systems', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            { id: 2, class_name: 'Class 9', subject_name: 'Mathematics', chapter_no: 2, chapter_name: 'Polynomials', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            { id: 3, class_name: 'Class 9', subject_name: 'Mathematics', chapter_no: 3, chapter_name: 'Coordinate Geometry', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            { id: 4, class_name: 'Class 9', subject_name: 'Mathematics', chapter_no: 4, chapter_name: 'Linear Equations in Two Variables', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            { id: 5, class_name: 'Class 9', subject_name: 'Mathematics', chapter_no: 5, chapter_name: "Introduction to Euclid's Geometry", notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            { id: 6, class_name: 'Class 9', subject_name: 'Mathematics', chapter_no: 6, chapter_name: 'Lines and Angles', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            { id: 7, class_name: 'Class 9', subject_name: 'Mathematics', chapter_no: 7, chapter_name: 'Triangles', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            { id: 8, class_name: 'Class 9', subject_name: 'Mathematics', chapter_no: 8, chapter_name: 'Quadrilaterals', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            { id: 9, class_name: 'Class 9', subject_name: 'Mathematics', chapter_no: 9, chapter_name: 'Circles', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            { id: 10, class_name: 'Class 9', subject_name: 'Mathematics', chapter_no: 10, chapter_name: "Heron's Formula", notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            { id: 11, class_name: 'Class 9', subject_name: 'Mathematics', chapter_no: 11, chapter_name: 'Surface Areas and Volumes', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            { id: 12, class_name: 'Class 9', subject_name: 'Mathematics', chapter_no: 12, chapter_name: 'Statistics', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            
+            // Class 9 Science
+            { id: 20, class_name: 'Class 9', subject_name: 'Science', chapter_no: 1, chapter_name: 'Matter in Our Surroundings', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            { id: 21, class_name: 'Class 9', subject_name: 'Science', chapter_no: 2, chapter_name: 'Is Matter Around Us Pure', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            { id: 22, class_name: 'Class 9', subject_name: 'Science', chapter_no: 3, chapter_name: 'Atoms and Molecules', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            
+            // Class 9 Social Science
+            { id: 40, class_name: 'Class 9', subject_name: 'Social Science', chapter_no: 1, chapter_name: 'The French Revolution', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            { id: 41, class_name: 'Class 9', subject_name: 'Social Science', chapter_no: 2, chapter_name: 'Socialism in Europe', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            
+            // Class 9 English
+            { id: 60, class_name: 'Class 9', subject_name: 'English', chapter_no: 1, chapter_name: 'The Fun They Had', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            
+            // Class 9 Hindi
+            { id: 80, class_name: 'Class 9', subject_name: 'Hindi', chapter_no: 1, chapter_name: 'Do Bailon Ki Katha', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+
+            // Class 10 Mathematics
+            { id: 101, class_name: 'Class 10', subject_name: 'Mathematics', chapter_no: 1, chapter_name: 'Real Numbers', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            { id: 102, class_name: 'Class 10', subject_name: 'Mathematics', chapter_no: 2, chapter_name: 'Polynomials', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            { id: 103, class_name: 'Class 10', subject_name: 'Mathematics', chapter_no: 3, chapter_name: 'Pair of Linear Equations in Two Variables', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            
+            // Class 10 Science
+            { id: 120, class_name: 'Class 10', subject_name: 'Science', chapter_no: 1, chapter_name: 'Chemical Reactions and Equations', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            { id: 121, class_name: 'Class 10', subject_name: 'Science', chapter_no: 2, chapter_name: 'Acids, Bases and Salts', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            
+            // Class 10 Social Science
+            { id: 140, class_name: 'Class 10', subject_name: 'Social Science', chapter_no: 1, chapter_name: 'The Rise of Nationalism in Europe', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            
+            // Class 10 English
+            { id: 160, class_name: 'Class 10', subject_name: 'English', chapter_no: 1, chapter_name: 'A Letter to God', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' },
+            
+            // Class 10 Hindi
+            { id: 180, class_name: 'Class 10', subject_name: 'Hindi', chapter_no: 1, chapter_name: 'Netaji Ka Chashma', notes_url: '', ncert_url: '', exemplar_url: '', book_pdf_url: '', formula_sheet_url: '' }
+        ];
+
         // Cache Arrays
+        let classResources = [];
         let videos = [];
         let quizzes = {};
         let tasks = [];
@@ -2405,6 +2733,32 @@
                 const attempts = this.getAttempts(username);
                 attempts.push(attempt);
                 localStorage.setItem(`sb_attempts_${username}`, JSON.stringify(attempts));
+            },
+            getResources(className, subjectName) {
+                // Normalize names to match local store keys
+                const normClass = className.replace('Class ', '').trim();
+                let normSub = subjectName.trim();
+                if (normSub === 'Mathematics') normSub = 'Maths';
+                
+                const key = `sb_resources_${normClass}_${normSub}`;
+                const data = localStorage.getItem(key);
+                if (!data) {
+                    // Filter matching entries from default localResources
+                    const filtered = localResources.filter(r => {
+                        const rClass = r.class_name.replace('Class ', '').replace('th', '').trim();
+                        const rSub = r.subject_name.replace('Mathematics', 'Maths').trim();
+                        return rClass === normClass && rSub === normSub;
+                    });
+                    localStorage.setItem(key, JSON.stringify(filtered));
+                    return filtered;
+                }
+                return JSON.parse(data);
+            },
+            saveResources(className, subjectName, resourcesList) {
+                const normClass = className.replace('Class ', '').trim();
+                let normSub = subjectName.trim();
+                if (normSub === 'Mathematics') normSub = 'Maths';
+                localStorage.setItem(`sb_resources_${normClass}_${normSub}`, JSON.stringify(resourcesList));
             }
         };
 
@@ -2625,6 +2979,18 @@
             document.getElementById('levelup-modal-close').addEventListener('click', () => {
                 document.getElementById('levelup-modal').classList.add('hidden');
             });
+
+            // Class 9th Edit Resources Modal
+            document.getElementById('edit-links-cancel').addEventListener('click', () => {
+                document.getElementById('edit-links-modal').classList.add('hidden');
+            });
+            document.getElementById('edit-links-form').addEventListener('submit', handleEditLinksSubmit);
+
+            // PDF Viewer Close
+            document.getElementById('pdf-viewer-close').addEventListener('click', () => {
+                document.getElementById('pdf-viewer-modal').classList.add('hidden');
+                document.getElementById('pdf-frame').src = '';
+            });
         }
 
         function switchTab(tabId) {
@@ -2674,7 +3040,11 @@
             } else if (tabId === 'planner') {
                 loadTasks();
             } else if (tabId === 'learn') {
-                loadVideos();
+                if (activeLearnSubTab === 'syllabus') {
+                    loadClassResources();
+                } else {
+                    loadVideos();
+                }
             } else if (tabId === 'quiz') {
                 loadQuizzes();
             } else if (tabId === 'progress') {
@@ -3910,6 +4280,258 @@
                 newQuote = motivationalQuotes[idx];
             }
             document.getElementById('dashboard-motivational').innerText = newQuote;
+        }
+
+        // --- CLASS 9TH & 10TH LEARN HUB LOGIC ---
+        let selectedClass = 'Class 9';
+        let selectedSubject = 'Mathematics';
+        let chaptersSearchQuery = '';
+        let activeLearnSubTab = 'syllabus';
+
+        function switchLearnSubTab(subTabId) {
+            soundEffects.playPop();
+            activeLearnSubTab = subTabId;
+            
+            const syllabusTabBtn = document.getElementById('subtab-syllabus-btn');
+            const videosTabBtn = document.getElementById('subtab-videos-btn');
+            const syllabusWorkspace = document.getElementById('learn-syllabus-workspace');
+            const videosWorkspace = document.getElementById('learn-videos-workspace');
+            
+            if (subTabId === 'syllabus') {
+                syllabusTabBtn.className = 'btn btn-sm btn-primary';
+                videosTabBtn.className = 'btn btn-sm btn-ghost';
+                syllabusWorkspace.classList.remove('hidden');
+                videosWorkspace.classList.add('hidden');
+                loadClassResources();
+            } else {
+                syllabusTabBtn.className = 'btn btn-sm btn-ghost';
+                videosTabBtn.className = 'btn btn-sm btn-primary';
+                syllabusWorkspace.classList.add('hidden');
+                videosWorkspace.classList.remove('hidden');
+                loadVideos();
+            }
+        }
+
+        function filterClass(className) {
+            soundEffects.playPop();
+            selectedClass = className;
+            
+            const btn9 = document.getElementById('class-filter-9-btn');
+            const btn10 = document.getElementById('class-filter-10-btn');
+            
+            if (className === 'Class 9') {
+                btn9.className = 'btn btn-sm btn-primary';
+                btn10.className = 'btn btn-sm btn-ghost';
+            } else {
+                btn9.className = 'btn btn-sm btn-ghost';
+                btn10.className = 'btn btn-sm btn-primary';
+            }
+            loadClassResources();
+        }
+
+        function filterSubject(subjectName) {
+            soundEffects.playPop();
+            selectedSubject = subjectName;
+            
+            const buttons = document.querySelectorAll('.subject-btn');
+            buttons.forEach(btn => {
+                if (btn.getAttribute('data-subject') === subjectName) {
+                    btn.className = 'btn btn-sm btn-primary subject-btn';
+                } else {
+                    btn.className = 'btn btn-sm btn-ghost subject-btn';
+                }
+            });
+            loadClassResources();
+        }
+
+        function handleChaptersSearch(value) {
+            chaptersSearchQuery = value;
+            renderClassResources();
+        }
+
+        async function loadClassResources() {
+            if (useBackend) {
+                try {
+                    const res = await fetch(`/api/resources/${encodeURIComponent(selectedClass)}/${encodeURIComponent(selectedSubject)}`);
+                    if (res.ok) {
+                        classResources = await res.json();
+                        renderClassResources();
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch class resources:", err);
+                }
+            } else {
+                classResources = localStore.getResources(selectedClass, selectedSubject);
+                renderClassResources();
+            }
+        }
+
+        function renderClassResources() {
+            const container = document.getElementById('syllabus-chapters-container');
+            container.innerHTML = '';
+
+            const query = chaptersSearchQuery.toLowerCase().trim();
+            const filteredResources = classResources.filter(res => {
+                return res.chapter_name.toLowerCase().includes(query) || 
+                       `ch ${res.chapter_no}`.includes(query) || 
+                       `chapter ${res.chapter_no}`.includes(query);
+            });
+
+            if (filteredResources.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--glass-border); border-radius: var(--border-radius-lg);">
+                        <i data-lucide="book-x" style="width: 48px; height: 48px; color: var(--text-muted); margin-bottom: 12px;"></i>
+                        <h4 style="font-family: var(--font-playful); font-weight: 700; color: white;">No chapters found</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Try searching for another chapter name or number.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            filteredResources.forEach(res => {
+                const card = document.createElement('div');
+                card.className = 'chapter-card glass';
+
+                const renderResourceAction = (url, resourceName, iconName) => {
+                    if (url) {
+                        return `
+                            <button onclick="openInlinePDF('${escapeHTML(url)}', '${escapeHTML(res.chapter_name)} - ${escapeHTML(resourceName)}')" class="btn btn-sm btn-primary" style="display: flex; align-items: center; gap: 4px;">
+                                <i data-lucide="eye"></i> View
+                            </button>
+                        `;
+                    } else {
+                        return `<span class="no-link-badge">Not Added</span>`;
+                    }
+                };
+
+                card.innerHTML = `
+                    <div class="chapter-info">
+                        <span class="chapter-number-badge">Ch ${res.chapter_no}</span>
+                        <h3 class="chapter-title">${escapeHTML(res.chapter_name)}</h3>
+                    </div>
+                    
+                    <div class="resource-links-grid">
+                        <div class="resource-item">
+                            <span class="resource-label">📖 Notes</span>
+                            <div class="resource-actions">
+                                ${renderResourceAction(res.notes_url, "Handwritten Notes", "file-text")}
+                            </div>
+                        </div>
+                        <div class="resource-item">
+                            <span class="resource-label">📚 NCERT Solutions</span>
+                            <div class="resource-actions">
+                                ${renderResourceAction(res.ncert_url, "NCERT Solutions", "book")}
+                            </div>
+                        </div>
+                        <div class="resource-item">
+                            <span class="resource-label">🎯 Exemplar Solutions</span>
+                            <div class="resource-actions">
+                                ${renderResourceAction(res.exemplar_url, "NCERT Exemplar Solutions", "target")}
+                            </div>
+                        </div>
+                        <div class="resource-item">
+                            <span class="resource-label">📕 NCERT Book PDF</span>
+                            <div class="resource-actions">
+                                ${renderResourceAction(res.book_pdf_url, "NCERT Book PDF", "file")}
+                            </div>
+                        </div>
+                        <div class="resource-item">
+                            <span class="resource-label">📐 Formula Sheet</span>
+                            <div class="resource-actions">
+                                ${renderResourceAction(res.formula_sheet_url, "Formula Sheet", "ruler")}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chapter-actions">
+                        <button class="btn btn-sm btn-outline btn-edit-links" onclick="openEditResourcesModal(${res.id})">
+                            <i data-lucide="edit-3"></i> Edit Links
+                        </button>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+
+            lucide.createIcons();
+        }
+
+        function openInlinePDF(url, title) {
+            soundEffects.playPop();
+            document.getElementById('pdf-viewer-title').innerText = title;
+            document.getElementById('pdf-frame').src = url;
+            document.getElementById('pdf-viewer-modal').classList.remove('hidden');
+        }
+
+        function openEditResourcesModal(resourceId) {
+            soundEffects.playPop();
+            const resource = classResources.find(r => r.id === resourceId);
+            if (!resource) return;
+
+            document.getElementById('edit-chapter-id').value = resource.id;
+            document.getElementById('edit-modal-title').innerText = `Edit Chapter ${resource.chapter_no}`;
+            document.getElementById('edit-modal-subtitle').innerText = `Update resources for ${resource.chapter_name}`;
+
+            document.getElementById('edit-notes-url').value = resource.notes_url || '';
+            document.getElementById('edit-ncert-url').value = resource.ncert_url || '';
+            document.getElementById('edit-exemplar-url').value = resource.exemplar_url || '';
+            document.getElementById('edit-book-pdf-url').value = resource.book_pdf_url || '';
+            document.getElementById('edit-formula-sheet-url').value = resource.formula_sheet_url || '';
+
+            document.getElementById('edit-links-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        async function handleEditLinksSubmit(e) {
+            e.preventDefault();
+            soundEffects.playPop();
+
+            const resourceId = parseInt(document.getElementById('edit-chapter-id').value);
+            const notes_url = document.getElementById('edit-notes-url').value.trim();
+            const ncert_url = document.getElementById('edit-ncert-url').value.trim();
+            const exemplar_url = document.getElementById('edit-exemplar-url').value.trim();
+            const book_pdf_url = document.getElementById('edit-book-pdf-url').value.trim();
+            const formula_sheet_url = document.getElementById('edit-formula-sheet-url').value.trim();
+
+            if (useBackend) {
+                try {
+                    const res = await fetch(`/api/resources/${resourceId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ notes_url, ncert_url, exemplar_url, book_pdf_url, formula_sheet_url })
+                    });
+
+                    if (res.ok) {
+                        soundEffects.playSuccess();
+                        triggerConfetti(0.2);
+                        document.getElementById('edit-links-modal').classList.add('hidden');
+                        loadClassResources();
+                    } else {
+                        alert("Failed to update resource links.");
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert("Network error updating resource links.");
+                }
+            } else {
+                // Update local storage
+                const resources = localStore.getResources(selectedClass, selectedSubject);
+                const idx = resources.findIndex(r => r.id === resourceId);
+                if (idx !== -1) {
+                    resources[idx].notes_url = notes_url;
+                    resources[idx].ncert_url = ncert_url;
+                    resources[idx].exemplar_url = exemplar_url;
+                    resources[idx].book_pdf_url = book_pdf_url;
+                    resources[idx].formula_sheet_url = formula_sheet_url;
+                    localStore.saveResources(selectedClass, selectedSubject, resources);
+                    
+                    soundEffects.playSuccess();
+                    triggerConfetti(0.2);
+                    document.getElementById('edit-links-modal').classList.add('hidden');
+                    loadClassResources();
+                }
+            }
         }
 
         // --- UTILITY ---
