@@ -399,26 +399,137 @@ def get_videos():
     return jsonify(videos)
 
 # --- API: QUIZZES ---
+# --- API: QUIZZES ---
+def generate_fallback_questions(chapter_id, chapter_name, subject_name, difficulty):
+    q1_text = f"Which of the following is a primary concept covered in {chapter_name}?"
+    q1_options = [f"Core principles of {chapter_name}", "Concepts of an unrelated subject", "Hypothetical theory without application", "None of the above"]
+    
+    q2_text = f"True or False: Mastering the topics in {chapter_name} is essential for a complete understanding of {subject_name}."
+    q2_options = ["True", "False"]
+    
+    q3_text = f"Assertion (A): {chapter_name} is considered a foundational chapter in {subject_name}.\nReason (R): It introduces terminology and base concepts that are building blocks for future chapters."
+    q3_options = [
+        "Both A and R are true and R is the correct explanation of A.",
+        "Both A and R are true but R is not the correct explanation of A.",
+        "A is true but R is false.",
+        "A is false but R is true."
+    ]
+    
+    q4_options = {
+        "left": [f"{chapter_name} Concepts", "Chapter Exercises", "Regular Revision"],
+        "right": ["Applying knowledge to solve problems", "Strengthening long-term recall", "Understanding core fundamentals"]
+    }
+    q4_matches = {
+        f"{chapter_name} Concepts": "Understanding core fundamentals",
+        "Chapter Exercises": "Applying knowledge to solve problems",
+        "Regular Revision": "Strengthening long-term recall"
+    }
+    
+    q5_case = f"A student preparing for their final exams starts revising {chapter_name} in {subject_name}. They make short summary notes, practice textbook questions, and use flashcards for quick revision. This systematic approach helps them grasp even the hardest sections of {chapter_name}."
+    q5_text = f"Based on the case description, what is the best strategy for the student to master {chapter_name}?"
+    q5_options = ["Comprehensive study, regular practice, and active revision", "Cramming the night before the exam only", "Skipping the chapter completely", "Ignoring textbook exercises"]
+    
+    return [
+        {
+            'id': f"fallback_{chapter_id}_1",
+            'chapter_id': chapter_id,
+            'difficulty': difficulty,
+            'question_type': 'MCQ',
+            'question': q1_text,
+            'options': q1_options,
+            'correct_index': 0,
+            'match_answers': None,
+            'case_text': None
+        },
+        {
+            'id': f"fallback_{chapter_id}_2",
+            'chapter_id': chapter_id,
+            'difficulty': difficulty,
+            'question_type': 'True/False',
+            'question': q2_text,
+            'options': q2_options,
+            'correct_index': 0,
+            'match_answers': None,
+            'case_text': None
+        },
+        {
+            'id': f"fallback_{chapter_id}_3",
+            'chapter_id': chapter_id,
+            'difficulty': difficulty,
+            'question_type': 'Assertion & Reason',
+            'question': q3_text,
+            'options': q3_options,
+            'correct_index': 0,
+            'match_answers': None,
+            'case_text': None
+        },
+        {
+            'id': f"fallback_{chapter_id}_4",
+            'chapter_id': chapter_id,
+            'difficulty': difficulty,
+            'question_type': 'Match the Following',
+            'question': f"Match the term from {chapter_name} with its primary academic purpose.",
+            'options': q4_options,
+            'correct_index': 0,
+            'match_answers': q4_matches,
+            'case_text': None
+        },
+        {
+            'id': f"fallback_{chapter_id}_5",
+            'chapter_id': chapter_id,
+            'difficulty': difficulty,
+            'question_type': 'Case-Based',
+            'question': q5_text,
+            'options': q5_options,
+            'correct_index': 0,
+            'match_answers': None,
+            'case_text': q5_case
+        }
+    ]
+
 @app.route('/api/quizzes', methods=['GET'])
 def get_quizzes():
+    return jsonify({})
+
+@app.route('/api/chapters/<int:chapter_id>/quizzes/<difficulty>', methods=['GET'])
+def get_chapter_quiz(chapter_id, difficulty):
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('SELECT * FROM quiz_questions')
+    
+    cursor.execute('SELECT id, chapter_name, subject_name FROM class_chapters WHERE id = ?', (chapter_id,))
+    chapter = cursor.fetchone()
+    if not chapter:
+        return jsonify({'error': 'Chapter not found.'}), 404
+        
+    cursor.execute('''
+        SELECT * FROM quiz_questions 
+        WHERE chapter_id = ? AND difficulty = ?
+    ''', (chapter_id, difficulty))
     rows = cursor.fetchall()
     
-    # Group by topic_id
-    quizzes = {}
-    for row in rows:
-        t_id = row['topic_id']
-        if t_id not in quizzes:
-            quizzes[t_id] = []
-        quizzes[t_id].append({
-            'id': row['id'],
-            'question': row['question'],
-            'options': json.loads(row['options']),
-            'correct_index': row['correct_index']
-        })
-    return jsonify(quizzes)
+    if len(rows) > 0:
+        questions = []
+        for r in rows:
+            questions.append({
+                'id': r['id'],
+                'chapter_id': r['chapter_id'],
+                'difficulty': r['difficulty'],
+                'question_type': r['question_type'],
+                'question': r['question'],
+                'options': json.loads(r['options']),
+                'correct_index': r['correct_index'],
+                'match_answers': json.loads(r['match_answers']) if r['match_answers'] else None,
+                'case_text': r['case_text']
+            })
+        return jsonify(questions)
+    else:
+        fallback = generate_fallback_questions(
+            chapter_id, 
+            chapter['chapter_name'], 
+            chapter['subject_name'], 
+            difficulty
+        )
+        return jsonify(fallback)
 
 @app.route('/api/quizzes/submit', methods=['POST'])
 def submit_quiz():
@@ -427,70 +538,63 @@ def submit_quiz():
         return jsonify({'error': 'Unauthorised.'}), 401
         
     data = request.json or {}
-    topic_id = data.get('topic_id')
-    user_answers = data.get('answers', []) # list of indices e.g. [1, 0, 2...]
+    chapter_id = data.get('chapter_id')
+    difficulty = data.get('difficulty')
+    score = data.get('score')
+    total = data.get('total')
+    time_taken = data.get('time_taken', 0)
     
-    if not topic_id or not isinstance(user_answers, list):
-        return jsonify({'error': 'Topic ID and answers are required.'}), 400
+    if chapter_id is None or not difficulty or score is None or total is None:
+        return jsonify({'error': 'Missing required fields.'}), 400
         
     db = get_db()
     cursor = db.cursor()
     
-    # Get correct questions
-    cursor.execute('SELECT id, correct_index FROM quiz_questions WHERE topic_id = ? ORDER BY id ASC', (topic_id,))
-    questions = cursor.fetchall()
-    
-    if not questions:
-        return jsonify({'error': 'No questions found for this topic.'}), 404
+    cursor.execute('SELECT id FROM class_chapters WHERE id = ?', (chapter_id,))
+    if not cursor.fetchone():
+        return jsonify({'error': 'Chapter not found.'}), 404
         
-    score = 0
-    total = len(questions)
-    
-    for i, q in enumerate(questions):
-        if i < len(user_answers) and user_answers[i] == q['correct_index']:
-            score += 1
-            
     pct = (score / total) * 100 if total > 0 else 0
+    passed = pct >= 80
     
-    # Record quiz attempt
     cursor.execute('''
-    INSERT INTO quiz_attempts (user_id, topic_id, score, total)
-    VALUES (?, ?, ?, ?)
-    ''', (user['id'], topic_id, score, total))
+    INSERT INTO quiz_attempts (user_id, chapter_id, difficulty, score, total, time_taken)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ''', (user['id'], chapter_id, difficulty, score, total, time_taken))
     db.commit()
     
-    # Gamification rewards
-    # 1. Base XP: +10 XP per correct answer
-    xp_gain = score * 10
-    
-    # 2. Performance bonus: +50 XP bonus for score >= 80%
-    passed = pct >= 80
+    # XP rewards:
+    # 1. Base completion: +20 XP
+    xp_gain = 20
+    # 2. Mastery: +15 XP (accuracy >= 80%)
     if passed:
-        xp_gain += 50
+        xp_gain += 15
+    # 3. Perfect score: +30 XP (100% accuracy)
+    if pct == 100:
+        xp_gain += 30
+        
+    # Streak bonus
+    new_streak, streak_updated = update_streak(user['id'])
+    if streak_updated:
+        xp_gain += 10
         
     stats, leveled_up = update_user_stats(user['id'], xp_gain=xp_gain)
-    
-    # Check badges
+    if stats:
+        stats['streak'] = new_streak
+        
     new_badges = []
-    
-    # Badge: Perfect Score
     if pct == 100:
         if award_badge(user['id'], 'Perfect Score 🎯'):
             new_badges.append('Perfect Score 🎯')
             
-    # Badge: Quiz Whiz (complete 3 quizzes)
     cursor.execute('SELECT COUNT(*) as count FROM quiz_attempts WHERE user_id = ?', (user['id'],))
     attempts_count = cursor.fetchone()['count']
     if attempts_count >= 3:
         if award_badge(user['id'], 'Quiz Whiz 🧠'):
             new_badges.append('Quiz Whiz 🧠')
             
-    # Custom feedback message
-    if pct < 80:
-        feedback = "Nice try 😄 ek baar revise kar lo! Watch the video or review your notes, and try again to unlock the next topic."
-    else:
-        feedback = "Great job 🎉 next topic is unlocked! You've mastered this concept."
-        
+    feedback = "Great job 🎉 next topic is unlocked!" if passed else "Nice try 😄 ek baar revise kar lo! Watch the video or review your notes, and try again."
+    
     return jsonify({
         'score': score,
         'total': total,
@@ -502,6 +606,171 @@ def submit_quiz():
         'leveled_up': leveled_up,
         'new_badges': new_badges
     })
+
+@app.route('/api/analytics/quizzes', methods=['GET'])
+def get_quiz_analytics():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorised.'}), 401
+        
+    db = get_db()
+    cursor = db.cursor()
+    
+    cursor.execute('''
+        SELECT 
+            qa.chapter_id,
+            cc.class_name,
+            cc.subject_name,
+            cc.sub_section,
+            cc.chapter_name,
+            SUM(qa.score) as total_score,
+            SUM(qa.total) as total_questions,
+            AVG(qa.time_taken) as avg_time,
+            COUNT(qa.id) as attempts
+        FROM quiz_attempts qa
+        JOIN class_chapters cc ON qa.chapter_id = cc.id
+        WHERE qa.user_id = ?
+        GROUP BY qa.chapter_id
+    ''', (user['id'],))
+    rows = cursor.fetchall()
+    
+    breakdown = []
+    strong = []
+    weak = []
+    
+    for r in rows:
+        accuracy = (r['total_score'] / r['total_questions']) * 100 if r['total_questions'] > 0 else 0
+        accuracy = round(accuracy, 1)
+        item = {
+            'chapter_id': r['chapter_id'],
+            'class_name': r['class_name'],
+            'subject_name': r['subject_name'],
+            'sub_section': r['sub_section'],
+            'chapter_name': r['chapter_name'],
+            'accuracy': accuracy,
+            'avg_time': round(r['avg_time'], 1),
+            'attempts': r['attempts']
+        }
+        breakdown.append(item)
+        
+        if accuracy >= 80:
+            strong.append(item)
+        else:
+            weak.append(item)
+            
+    strong.sort(key=lambda x: x['accuracy'], reverse=True)
+    weak.sort(key=lambda x: x['accuracy'])
+    
+    return jsonify({
+        'breakdown': breakdown,
+        'strong': strong[:5],
+        'weak': weak[:5]
+    })
+
+# --- API: COLLABORATION QUESTIONS MANAGEMENT ---
+@app.route('/api/chapters/<int:chapter_id>/questions', methods=['GET'])
+def get_chapter_questions(chapter_id):
+    db = get_db()
+    cursor = db.cursor()
+    
+    cursor.execute('SELECT * FROM quiz_questions WHERE chapter_id = ? ORDER BY id DESC', (chapter_id,))
+    rows = cursor.fetchall()
+    
+    questions = []
+    for r in rows:
+        questions.append({
+            'id': r['id'],
+            'chapter_id': r['chapter_id'],
+            'difficulty': r['difficulty'],
+            'question_type': r['question_type'],
+            'question': r['question'],
+            'options': json.loads(r['options']),
+            'correct_index': r['correct_index'],
+            'match_answers': json.loads(r['match_answers']) if r['match_answers'] else None,
+            'case_text': r['case_text']
+        })
+    return jsonify(questions)
+
+@app.route('/api/chapters/<int:chapter_id>/questions', methods=['POST'])
+def add_chapter_question(chapter_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorised.'}), 401
+        
+    data = request.json or {}
+    difficulty = data.get('difficulty')
+    question_type = data.get('question_type')
+    question = data.get('question')
+    options = data.get('options')
+    correct_index = data.get('correct_index', 0)
+    match_answers = data.get('match_answers')
+    case_text = data.get('case_text')
+    
+    if not difficulty or not question_type or not question or options is None:
+        return jsonify({'error': 'Missing required question fields.'}), 400
+        
+    db = get_db()
+    cursor = db.cursor()
+    
+    cursor.execute('''
+        INSERT INTO quiz_questions (chapter_id, difficulty, question_type, question, options, correct_index, match_answers, case_text)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (chapter_id, difficulty, question_type, question, json.dumps(options), correct_index, json.dumps(match_answers) if match_answers else None, case_text))
+    db.commit()
+    
+    return jsonify({'message': 'Question added successfully!'})
+
+@app.route('/api/questions/<int:question_id>', methods=['PUT'])
+def edit_question(question_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorised.'}), 401
+        
+    data = request.json or {}
+    difficulty = data.get('difficulty')
+    question_type = data.get('question_type')
+    question = data.get('question')
+    options = data.get('options')
+    correct_index = data.get('correct_index', 0)
+    match_answers = data.get('match_answers')
+    case_text = data.get('case_text')
+    
+    if not difficulty or not question_type or not question or options is None:
+        return jsonify({'error': 'Missing required question fields.'}), 400
+        
+    db = get_db()
+    cursor = db.cursor()
+    
+    cursor.execute('SELECT id FROM quiz_questions WHERE id = ?', (question_id,))
+    if not cursor.fetchone():
+        return jsonify({'error': 'Question not found.'}), 404
+        
+    cursor.execute('''
+        UPDATE quiz_questions 
+        SET difficulty = ?, question_type = ?, question = ?, options = ?, correct_index = ?, match_answers = ?, case_text = ?
+        WHERE id = ?
+    ''', (difficulty, question_type, question, json.dumps(options), correct_index, json.dumps(match_answers) if match_answers else None, case_text, question_id))
+    db.commit()
+    
+    return jsonify({'message': 'Question updated successfully!'})
+
+@app.route('/api/questions/<int:question_id>', methods=['DELETE'])
+def delete_question(question_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorised.'}), 401
+        
+    db = get_db()
+    cursor = db.cursor()
+    
+    cursor.execute('SELECT id FROM quiz_questions WHERE id = ?', (question_id,))
+    if not cursor.fetchone():
+        return jsonify({'error': 'Question not found.'}), 404
+        
+    cursor.execute('DELETE FROM quiz_questions WHERE id = ?', (question_id,))
+    db.commit()
+    
+    return jsonify({'message': 'Question deleted successfully.'})
 
 # --- API: STUDY TRACKER (POMODORO) ---
 @app.route('/api/tracker/session', methods=['POST'])

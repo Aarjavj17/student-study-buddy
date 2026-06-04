@@ -2401,6 +2401,35 @@
                             <h2>Quiz Arena 🧠</h2>
                             <p>Test your concepts! Score <strong>80% or higher</strong> to unlock the next topics and earn a huge bonus of <strong>+50 XP</strong>!</p>
                             
+                            <!-- Filters panel -->
+                            <div class="filters-panel glass" style="padding: 20px; border-radius: var(--border-radius-lg); display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px;">
+                                <!-- Class Filter & Search Row -->
+                                <div style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">Select Class:</span>
+                                        <div class="class-filter-buttons" style="display: flex; gap: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); padding: 4px; border-radius: var(--border-radius-md);">
+                                            <button id="quiz-class-filter-9-btn" class="btn btn-sm btn-primary" onclick="filterQuizClass('Class 9')">Class 9</button>
+                                            <button id="quiz-class-filter-10-btn" class="btn btn-sm btn-ghost" onclick="filterQuizClass('Class 10')">Class 10</button>
+                                        </div>
+                                    </div>
+                                    <div class="search-wrapper" style="position: relative; flex: 1; max-width: 350px; min-width: 250px;">
+                                        <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted); z-index: 5;"></i>
+                                        <input type="text" id="quiz-search-bar" placeholder="Search chapters..." style="width: 100%; padding: 10px 16px 10px 36px; border-radius: var(--border-radius-md); background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); color: white; outline: none; transition: border-color 0.2s;" onkeyup="handleQuizSearch(this.value)">
+                                    </div>
+                                </div>
+                                <!-- Subject Filter Row -->
+                                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                    <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">Subjects:</span>
+                                    <div class="subject-filter-list" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                        <button class="btn btn-sm btn-primary quiz-subject-btn" data-subject="Mathematics" onclick="filterQuizSubject('Mathematics')">📐 Mathematics</button>
+                                        <button class="btn btn-sm btn-ghost quiz-subject-btn" data-subject="Science" onclick="filterQuizSubject('Science')">🧪 Science</button>
+                                        <button class="btn btn-sm btn-ghost quiz-subject-btn" data-subject="Social Science" onclick="filterQuizSubject('Social Science')">🌍 Social Science</button>
+                                        <button class="btn btn-sm btn-ghost quiz-subject-btn" data-subject="English" onclick="filterQuizSubject('English')">📖 English</button>
+                                        <button class="btn btn-sm btn-ghost quiz-subject-btn" data-subject="Hindi" onclick="filterQuizSubject('Hindi')">✍️ Hindi</button>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="quiz-topics-grid" id="quiz-topics-container">
                                 <!-- Dynamic Quiz topics here -->
                             </div>
@@ -2414,21 +2443,26 @@
                             
                             <div class="quiz-header">
                                 <span class="quiz-badge" id="quiz-active-topic-name">Maths Quiz</span>
+                                <span id="quiz-timer" style="font-family: monospace; font-weight: bold; color: var(--color-primary); font-size: 0.95rem; display: flex; align-items: center; gap: 4px;">
+                                    <i data-lucide="timer" style="width: 16px; height: 16px;"></i>00:00
+                                </span>
                                 <span class="quiz-question-counter" id="quiz-question-counter">Question 1 of 5</span>
                             </div>
 
                             <div class="quiz-body">
-                                <h3 class="quiz-question-text" id="quiz-question-text">Question text goes here?</h3>
+                                <div id="quiz-question-text">
+                                    <h3 class="quiz-question-text">Question text goes here?</h3>
+                                </div>
                                 <div class="quiz-options-list" id="quiz-options-container">
                                     <!-- Dynamic Options here -->
                                 </div>
                             </div>
 
                             <div class="quiz-footer">
-                                <button id="quiz-back-btn" class="btn btn-outline">
+                                <button id="quiz-back-btn" class="btn btn-outline" onclick="exitQuiz()">
                                     <i data-lucide="arrow-left"></i> Exit Quiz
                                 </button>
-                                <button id="quiz-next-btn" class="btn btn-primary" disabled>
+                                <button id="quiz-next-btn" class="btn btn-primary" disabled onclick="handleQuizNextQuestion()">
                                     <span>Next Question</span> <i data-lucide="chevron-right"></i>
                                 </button>
                             </div>
@@ -2448,9 +2482,9 @@
                             <div class="results-xp-gain" id="results-xp-gain-text">+90 XP Earned</div>
                             
                             <div class="results-actions">
-                                <button id="results-retry-btn" class="btn btn-outline">Try Again</button>
-                                <button id="results-finish-btn" class="btn btn-primary">Return to Arena</button>
-                                <button id="results-revise-btn" class="btn btn-secondary hidden">Go Revise Topic</button>
+                                <button id="results-retry-btn" class="btn btn-outline" onclick="launchQuiz()">Try Again</button>
+                                <button id="results-finish-btn" class="btn btn-primary" onclick="exitQuiz()">Return to Arena</button>
+                                <button id="results-revise-btn" class="btn btn-secondary hidden" onclick="switchTab('learn')">Go Revise Topic</button>
                             </div>
                         </div>
                     </div>
@@ -2520,6 +2554,45 @@
                                     <div class="comp-stat">
                                         <span class="comp-title">Quizzes Done</span>
                                         <span class="comp-value text-blue" id="stats-quizzes-taken">0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- QUIZ PERFORMANCE ANALYTICS -->
+                            <div class="analytics-card glass col-span-2" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                                <div style="display: flex; flex-direction: column; gap: 16px;">
+                                    <h3>Quiz Performance Overview 📈</h3>
+                                    <div class="compact-numeric-stats" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;">
+                                        <div class="comp-stat" style="background: rgba(255,255,255,0.02); padding: 12px; border: 1px solid var(--glass-border); border-radius: var(--border-radius-md);">
+                                            <span class="comp-title" style="font-size: 0.75rem; color: var(--text-muted); font-weight:600; text-transform: uppercase;">Avg Accuracy</span>
+                                            <span class="comp-value text-blue" id="analytics-quiz-accuracy" style="font-size: 1.5rem; font-weight:800; display:block; margin-top:4px;">0%</span>
+                                        </div>
+                                        <div class="comp-stat" style="background: rgba(255,255,255,0.02); padding: 12px; border: 1px solid var(--glass-border); border-radius: var(--border-radius-md);">
+                                            <span class="comp-title" style="font-size: 0.75rem; color: var(--text-muted); font-weight:600; text-transform: uppercase;">Avg Time Taken</span>
+                                            <span class="comp-value text-purple" id="analytics-quiz-avg-time" style="font-size: 1.5rem; font-weight:800; display:block; margin-top:4px;">0s</span>
+                                        </div>
+                                    </div>
+                                    <div style="flex: 1; display:flex; flex-direction:column; justify-content:center; align-items:center; background: rgba(255,255,255,0.01); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); padding: 16px; min-height: 100px;">
+                                        <span id="quiz-streak-emoji" style="font-size: 2rem; margin-bottom: 6px;">🔥</span>
+                                        <span style="font-size:0.85rem; color: var(--text-secondary);">Active Quiz Streak: <strong id="analytics-quiz-streak" class="text-pink">0 days</strong></span>
+                                    </div>
+                                </div>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
+                                    <h3>Strengths & Weaknesses 🎯</h3>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; height: 100%;">
+                                        <div class="glass" style="padding: 12px; border-radius: var(--border-radius-md); background: rgba(16, 185, 129, 0.03); border-color: rgba(16, 185, 129, 0.15); border-style: solid; border-width: 1px;">
+                                            <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--color-success); margin-bottom: 8px;"><i data-lucide="trending-up" style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-right:4px;"></i> Strong Chapters</h4>
+                                            <ul id="analytics-strong-chapters" style="font-size: 0.8rem; color: var(--text-secondary); display:flex; flex-direction:column; gap:6px; list-style:none; padding:0;">
+                                                <li style="font-style:italic; color: var(--text-muted);">None yet</li>
+                                            </ul>
+                                        </div>
+                                        <div class="glass" style="padding: 12px; border-radius: var(--border-radius-md); background: rgba(239, 68, 68, 0.03); border-color: rgba(239, 68, 68, 0.15); border-style: solid; border-width: 1px;">
+                                            <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--color-danger); margin-bottom: 8px;"><i data-lucide="trending-down" style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-right:4px;"></i> Weak Chapters</h4>
+                                            <ul id="analytics-weak-chapters" style="font-size: 0.8rem; color: var(--text-secondary); display:flex; flex-direction:column; gap:6px; list-style:none; padding:0;">
+                                                <li style="font-style:italic; color: var(--text-muted);">None yet</li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -2658,6 +2731,179 @@
             <div style="flex: 1; border-radius: var(--border-radius-md); overflow: hidden; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border);">
                 <iframe id="pdf-frame" src="" width="100%" height="100%" style="border: none;" referrerpolicy="strict-origin-when-cross-origin"></iframe>
             </div>
+        </div>
+    </div>
+
+    <!-- --- OVERLAY: QUIZ DIFFICULTY SETUP --- -->
+    <div id="quiz-setup-modal" class="modal-overlay hidden" style="z-index: 1250;">
+        <div class="modal-card glass" style="max-width: 500px; padding: 30px; display: flex; flex-direction: column; gap: 20px;">
+            <div class="modal-emoji">🎯</div>
+            <h2>Configure Quiz</h2>
+            <p id="quiz-setup-subtitle" class="card-subtitle">Choose your difficulty level and view attempt history.</p>
+            
+            <input type="hidden" id="quiz-setup-chapter-id">
+            
+            <div class="form-group" style="text-align: left;">
+                <label style="font-weight: 600; margin-bottom: 8px; display: block; color: var(--text-secondary);">Select Difficulty</label>
+                <div style="display: flex; gap: 10px; width: 100%;">
+                    <button type="button" class="btn btn-outline quiz-diff-opt" data-diff="Easy" onclick="selectQuizSetupDifficulty('Easy')" style="flex: 1;">🟢 Easy</button>
+                    <button type="button" class="btn btn-outline quiz-diff-opt active" data-diff="Medium" onclick="selectQuizSetupDifficulty('Medium')" style="flex: 1; border-color: var(--color-primary); background: var(--color-primary-glow);">🟡 Medium</button>
+                    <button type="button" class="btn btn-outline quiz-diff-opt" data-diff="Hard" onclick="selectQuizSetupDifficulty('Hard')" style="flex: 1;">🔴 Hard</button>
+                </div>
+            </div>
+
+            <!-- Historical Stats for the selected chapter -->
+            <div class="glass" style="padding: 16px; border-radius: var(--border-radius-md); text-align: left; background: rgba(255,255,255,0.02);">
+                <h4 style="font-size: 0.9rem; font-weight: 600; color: white; margin-bottom: 8px;"><i data-lucide="line-chart"></i> Your History</h4>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-secondary);">
+                    <span>Attempts: <strong id="quiz-setup-attempts">0</strong></span>
+                    <span>Best Score: <strong id="quiz-setup-best-score">N/A</strong></span>
+                </div>
+            </div>
+            
+            <div class="modal-buttons" style="display: flex; gap: 12px; width: 100%;">
+                <button type="button" onclick="closeQuizSetupModal()" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+                <button type="button" onclick="launchQuiz()" class="btn btn-primary" style="flex: 1;">Start Quiz</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- --- OVERLAY: QUIZ QUESTIONS MANAGEMENT --- -->
+    <div id="quiz-questions-mgmt-modal" class="modal-overlay hidden" style="z-index: 1250;">
+        <div class="modal-card glass wide-modal-card" style="width: 90vw; max-width: 800px; max-height: 85vh; display: flex; flex-direction: column; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span class="modal-emoji" style="font-size: 1.8rem; margin: 0;">🛠️</span>
+                    <div>
+                        <h3 id="quiz-mgmt-title" style="font-size: 1.25rem; color: white;">Manage Questions</h3>
+                        <p class="card-subtitle" style="margin-bottom: 0;">Add, edit, or delete custom questions for this chapter</p>
+                    </div>
+                </div>
+                <button onclick="closeQuizQuestionsMgmtModal()" class="btn btn-secondary btn-sm" style="padding: 8px 12px;"><i data-lucide="x"></i></button>
+            </div>
+
+            <input type="hidden" id="quiz-mgmt-chapter-id">
+
+            <div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 6px;" id="quiz-mgmt-questions-list">
+                <!-- Dynamically loaded list of questions -->
+            </div>
+
+            <div class="modal-buttons" style="display: flex; gap: 12px; margin-top: 8px; justify-content: flex-end;">
+                <button onclick="openQuizQuestionFormModal()" class="btn btn-primary"><i data-lucide="plus"></i> Add New Question</button>
+                <button onclick="closeQuizQuestionsMgmtModal()" class="btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- --- OVERLAY: ADD / EDIT QUIZ QUESTION --- -->
+    <div id="quiz-question-form-modal" class="modal-overlay hidden" style="z-index: 1300;">
+        <div class="modal-card glass wide-modal-card" style="width: 90vw; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span class="modal-emoji" style="font-size: 1.6rem; margin: 0;">❓</span>
+                    <div>
+                        <h3 id="quiz-question-form-title" style="font-size: 1.2rem; color: white;">Add Question</h3>
+                        <p id="quiz-question-form-subtitle" class="card-subtitle" style="margin-bottom: 0;">Create a new question for students</p>
+                    </div>
+                </div>
+                <button onclick="closeQuizQuestionFormModal()" class="btn btn-secondary btn-sm" style="padding: 8px 12px;"><i data-lucide="x"></i></button>
+            </div>
+
+            <form id="quiz-question-form" onsubmit="handleQuizQuestionSubmit(event)" style="flex: 1; overflow-y: auto; text-align: left; display: flex; flex-direction: column; gap: 14px; padding-right: 6px;">
+                <input type="hidden" id="quiz-form-question-id">
+                
+                <div class="form-group">
+                    <label for="quiz-form-diff"><i data-lucide="bar-chart"></i> Difficulty</label>
+                    <select id="quiz-form-diff" required style="width:100%; padding: 10px; background: rgba(0,0,0,0.4); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); color:white; outline:none;">
+                        <option value="Easy">🟢 Easy</option>
+                        <option value="Medium" selected>🟡 Medium</option>
+                        <option value="Hard">🔴 Hard</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="quiz-form-type"><i data-lucide="help-circle"></i> Question Type</label>
+                    <select id="quiz-form-type" onchange="toggleQuizFormTypeFields()" required style="width:100%; padding: 10px; background: rgba(0,0,0,0.4); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); color:white; outline:none;">
+                        <option value="MCQ" selected>Multiple Choice (MCQ)</option>
+                        <option value="True/False">True / False</option>
+                        <option value="Assertion & Reason">Assertion & Reason</option>
+                        <option value="Match the Following">Match the Following</option>
+                        <option value="Case-Based">Case-Based Question</option>
+                    </select>
+                </div>
+
+                <!-- Case-Based text passage -->
+                <div class="form-group hidden" id="quiz-form-case-text-group">
+                    <label for="quiz-form-case-text"><i data-lucide="text"></i> Case/Passage Text</label>
+                    <textarea id="quiz-form-case-text" placeholder="Enter the case study passage or paragraph here..." style="width: 100%; height: 100px; padding: 10px; background: rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); color:white; resize: vertical;"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="quiz-form-text"><i data-lucide="type"></i> Question Text</label>
+                    <textarea id="quiz-form-text" required placeholder="e.g. What is the value of g on Earth?" style="width: 100%; height: 80px; padding: 10px; background: rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); color:white; resize: vertical;"></textarea>
+                </div>
+
+                <!-- Options / Answers Section based on type -->
+                
+                <!-- 1. MCQ and Case-Based options -->
+                <div id="quiz-form-options-mcq-group" class="form-group">
+                    <label><i data-lucide="list"></i> Options & Correct Answer</label>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="radio" name="quiz-form-correct-mcq" value="0" checked>
+                            <input type="text" class="quiz-form-mcq-option" placeholder="Option A" required style="flex: 1; padding: 8px; background: rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); color:white;">
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="radio" name="quiz-form-correct-mcq" value="1">
+                            <input type="text" class="quiz-form-mcq-option" placeholder="Option B" required style="flex: 1; padding: 8px; background: rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); color:white;">
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="radio" name="quiz-form-correct-mcq" value="2">
+                            <input type="text" class="quiz-form-mcq-option" placeholder="Option C" required style="flex: 1; padding: 8px; background: rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); color:white;">
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="radio" name="quiz-form-correct-mcq" value="3">
+                            <input type="text" class="quiz-form-mcq-option" placeholder="Option D" required style="flex: 1; padding: 8px; background: rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); color:white;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. True/False options -->
+                <div id="quiz-form-options-tf-group" class="form-group hidden">
+                    <label for="quiz-form-correct-tf"><i data-lucide="check-circle-2"></i> Correct Answer</label>
+                    <select id="quiz-form-correct-tf" style="width:100%; padding: 10px; background: rgba(0,0,0,0.4); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); color:white; outline:none;">
+                        <option value="0">True</option>
+                        <option value="1">False</option>
+                    </select>
+                </div>
+
+                <!-- 3. Assertion & Reason options -->
+                <div id="quiz-form-options-ar-group" class="form-group hidden">
+                    <label for="quiz-form-correct-ar"><i data-lucide="check-square"></i> Select Correct Statement option</label>
+                    <select id="quiz-form-correct-ar" style="width:100%; padding: 10px; background: rgba(0,0,0,0.4); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); color:white; outline:none; font-size: 0.85rem;">
+                        <option value="0">A: Both Assertion & Reason are true and Reason is correct explanation</option>
+                        <option value="1">B: Both Assertion & Reason are true but Reason is NOT correct explanation</option>
+                        <option value="2">C: Assertion is true but Reason is false</option>
+                        <option value="3">D: Assertion is false but Reason is true</option>
+                    </select>
+                </div>
+
+                <!-- 4. Match the Following pairs -->
+                <div id="quiz-form-options-match-group" class="form-group hidden">
+                    <label style="display: flex; justify-content: space-between; align-items: center;">
+                        <span><i data-lucide="split"></i> Matching Pairs (e.g. A -> X)</span>
+                        <button type="button" class="btn btn-sm btn-outline" onclick="addQuizFormMatchPair()" style="padding: 2px 8px; font-size: 0.75rem;"><i data-lucide="plus" style="width: 12px; height:12px;"></i> Add Pair</button>
+                    </label>
+                    <div id="quiz-form-match-pairs-list" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                        <!-- Match pair inputs -->
+                    </div>
+                </div>
+
+                <div class="modal-buttons" style="display: flex; gap: 12px; margin-top: 8px; width: 100%;">
+                    <button type="button" onclick="closeQuizQuestionFormModal()" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+                    <button type="submit" id="quiz-question-submit-btn" class="btn btn-primary" style="flex: 1;">Save Question</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -4027,43 +4273,120 @@
         }
 
         // --- QUIZ GAME ENGINE ---
+        let selectedQuizClass = 'Class 9';
+        let selectedQuizSubject = 'Mathematics';
+        let quizSearchQuery = '';
+        let quizChapters = [];
+        let activeQuizDifficulty = 'Medium';
+        let quizTimeSeconds = 0;
+        let quizTimerInterval = null;
+
         async function loadQuizzes() {
             if (useBackend) {
                 try {
-                    const res = await fetch('/api/quizzes');
+                    const res = await fetch(`/api/resources/${encodeURIComponent(selectedQuizClass)}/${encodeURIComponent(selectedQuizSubject)}`);
                     if (res.ok) {
-                        quizzes = await res.json();
+                        quizChapters = await res.json();
                         renderQuizTopics();
                     }
                 } catch (err) {
-                    console.error(err);
+                    console.error("Failed to load quiz chapters:", err);
                 }
             } else {
-                quizzes = localQuizzes;
+                quizChapters = localResources.filter(r => {
+                    const rClass = r.class_name.replace('Class ', '').replace('th', '').trim();
+                    const rSub = r.subject_name.replace('Mathematics', 'Maths').trim();
+                    const targetClass = selectedQuizClass.replace('Class ', '').trim();
+                    const targetSub = selectedQuizSubject.replace('Mathematics', 'Maths').trim();
+                    return rClass === targetClass && rSub === targetSub;
+                });
                 renderQuizTopics();
             }
+        }
+
+        function filterQuizClass(className) {
+            soundEffects.playPop();
+            selectedQuizClass = className;
+            const btn9 = document.getElementById('quiz-class-filter-9-btn');
+            const btn10 = document.getElementById('quiz-class-filter-10-btn');
+            if (className === 'Class 9') {
+                btn9.className = 'btn btn-sm btn-primary';
+                btn10.className = 'btn btn-sm btn-ghost';
+            } else {
+                btn9.className = 'btn btn-sm btn-ghost';
+                btn10.className = 'btn btn-sm btn-primary';
+            }
+            loadQuizzes();
+        }
+
+        function filterQuizSubject(subjectName) {
+            soundEffects.playPop();
+            selectedQuizSubject = subjectName;
+            const buttons = document.querySelectorAll('.quiz-subject-btn');
+            buttons.forEach(btn => {
+                if (btn.getAttribute('data-subject') === subjectName) {
+                    btn.className = 'btn btn-sm btn-primary quiz-subject-btn';
+                } else {
+                    btn.className = 'btn btn-sm btn-ghost quiz-subject-btn';
+                }
+            });
+            loadQuizzes();
+        }
+
+        function handleQuizSearch(val) {
+            quizSearchQuery = val;
+            renderQuizTopics();
+        }
+
+        function escapeJSString(str) {
+            return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
         }
 
         function renderQuizTopics() {
             const container = document.getElementById('quiz-topics-container');
             container.innerHTML = '';
             
-            videos.forEach(v => {
-                const topicQuiz = quizzes[v.id];
-                if (!topicQuiz) return;
-                
+            const query = quizSearchQuery.toLowerCase().trim();
+            const filteredChapters = quizChapters.filter(ch => {
+                return ch.chapter_name.toLowerCase().includes(query) || 
+                       `ch ${ch.chapter_no}`.includes(query) || 
+                       `chapter ${ch.chapter_no}`.includes(query);
+            });
+
+            if (filteredChapters.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--glass-border); border-radius: var(--border-radius-lg);">
+                        <i data-lucide="book-x" style="width: 48px; height: 48px; color: var(--text-muted); margin-bottom: 12px;"></i>
+                        <h4 style="font-family: var(--font-playful); font-weight: 700; color: white;">No chapters found</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Try searching for another chapter name or number.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+            
+            filteredChapters.forEach(ch => {
                 const card = document.createElement('div');
                 card.className = 'quiz-topic-card glass';
                 
-                const subClass = `tag-${v.subject.toLowerCase()}`;
+                const subClass = `tag-${selectedQuizSubject.toLowerCase()}`;
+                const subSecDisplay = ch.sub_section ? `<span class="quiz-topic-subject ${subClass}">${escapeHTML(ch.sub_section)}</span>` : '';
                 
                 card.innerHTML = `
-                    <span class="quiz-topic-subject ${subClass}">${v.subject}</span>
-                    <h3>${escapeHTML(v.title.replace('Introduction to ', ''))} Quiz</h3>
-                    <p>5 conceptual multiple choice questions. Requires 80% to master.</p>
-                    <button class="btn btn-outline btn-block" onclick="startQuiz('${v.id}')">
-                        <i data-lucide="play-circle"></i> Start Test
-                    </button>
+                    <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                        <span style="font-size: 0.75rem; font-weight: 600; color: var(--color-primary);">CH ${ch.chapter_no}</span>
+                        ${subSecDisplay}
+                    </div>
+                    <h3 style="margin-top: 4px; margin-bottom: 8px;">${escapeHTML(ch.chapter_name)}</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">Test your knowledge with Easy, Medium, and Hard questions.</p>
+                    <div style="display: flex; gap: 8px; width: 100%; margin-top: auto;">
+                        <button class="btn btn-primary" style="flex: 1; padding: 8px 12px;" onclick="openQuizSetupModal(${ch.id}, '${escapeJSString(ch.chapter_name)}')">
+                            <i data-lucide="play"></i> Start Quiz
+                        </button>
+                        <button class="btn btn-outline" style="padding: 8px 12px;" title="Manage Questions" onclick="openQuizQuestionsMgmtModal(${ch.id}, '${escapeJSString(ch.chapter_name)}')">
+                            <i data-lucide="settings"></i>
+                        </button>
+                    </div>
                 `;
                 container.appendChild(card);
             });
@@ -4071,53 +4394,296 @@
             lucide.createIcons();
         }
 
-        function startQuiz(topicId) {
-            activeQuizTopic = topicId;
-            activeQuizQuestions = quizzes[topicId];
+        async function openQuizSetupModal(chapterId, chapterName) {
+            document.getElementById('quiz-setup-chapter-id').value = chapterId;
+            document.getElementById('quiz-setup-subtitle').innerText = `Choose your difficulty level for: ${chapterName}`;
+            
+            selectQuizSetupDifficulty('Medium');
+            
+            let attempts = 0;
+            let bestScore = 'N/A';
+            if (useBackend) {
+                try {
+                    const res = await fetch('/api/analytics/quizzes');
+                    if (res.ok) {
+                        const data = await res.json();
+                        const chStat = data.breakdown.find(b => b.chapter_id === chapterId);
+                        if (chStat) {
+                            attempts = chStat.attempts;
+                            bestScore = `${chStat.accuracy}% Accuracy`;
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error fetching quiz stats:", e);
+                }
+            } else {
+                const user = localStore.getActiveUser();
+                const localAttempts = localStore.getAttempts(user.username).filter(a => a.topic_id == chapterId);
+                if (localAttempts.length > 0) {
+                    attempts = localAttempts.length;
+                    const maxPct = Math.max(...localAttempts.map(a => (a.score / a.total) * 100));
+                    bestScore = `${maxPct.toFixed(0)}% Accuracy`;
+                }
+            }
+            
+            document.getElementById('quiz-setup-attempts').innerText = attempts;
+            document.getElementById('quiz-setup-best-score').innerText = bestScore;
+            
+            document.getElementById('quiz-setup-modal').classList.remove('hidden');
+        }
+
+        function closeQuizSetupModal() {
+            document.getElementById('quiz-setup-modal').classList.add('hidden');
+        }
+
+        function selectQuizSetupDifficulty(diff) {
+            activeQuizDifficulty = diff;
+            const buttons = document.querySelectorAll('.quiz-diff-opt');
+            buttons.forEach(btn => {
+                if (btn.getAttribute('data-diff') === diff) {
+                    btn.classList.add('active');
+                    if (diff === 'Easy') {
+                        btn.style.borderColor = 'var(--color-success)';
+                        btn.style.background = 'rgba(16, 185, 129, 0.1)';
+                    } else if (diff === 'Medium') {
+                        btn.style.borderColor = 'var(--color-warning)';
+                        btn.style.background = 'rgba(245, 158, 11, 0.1)';
+                    } else if (diff === 'Hard') {
+                        btn.style.borderColor = 'var(--color-danger)';
+                        btn.style.background = 'rgba(239, 68, 68, 0.1)';
+                    }
+                } else {
+                    btn.classList.remove('active');
+                    btn.style.borderColor = 'var(--glass-border)';
+                    btn.style.background = 'transparent';
+                }
+            });
+        }
+
+        async function launchQuiz() {
+            const chapterId = parseInt(document.getElementById('quiz-setup-chapter-id').value);
+            closeQuizSetupModal();
+            
+            soundEffects.playPop();
+            activeQuizTopic = chapterId;
+            
+            if (useBackend) {
+                try {
+                    const res = await fetch(`/api/chapters/${chapterId}/quizzes/${activeQuizDifficulty}`);
+                    if (res.ok) {
+                        activeQuizQuestions = await res.json();
+                    } else {
+                        alert("Failed to load quiz questions.");
+                        return;
+                    }
+                } catch (err) {
+                    console.error("Error loading quiz:", err);
+                    alert("Error connection failed.");
+                    return;
+                }
+            } else {
+                activeQuizQuestions = [
+                    { id: 1, question: 'What is the value of x in 2x + 5 = 15?', options: ['2', '5', '10', '15'], correct_index: 1, question_type: 'MCQ' }
+                ];
+            }
             
             if (!activeQuizQuestions || activeQuizQuestions.length === 0) {
-                alert("Quiz not available for this topic.");
+                alert("No questions found for this topic and difficulty.");
                 return;
             }
             
             currentQuestionIndex = 0;
             quizAnswersSelected = [];
             
-            soundEffects.playPop();
-            
-            const video = videos.find(v => v.id === topicId);
-            document.getElementById('quiz-active-topic-name').innerText = video ? video.subject : "Quiz";
+            let chName = "Quiz";
+            const ch = quizChapters.find(c => c.id === chapterId);
+            if (ch) {
+                chName = `${ch.chapter_name} (${activeQuizDifficulty})`;
+            }
+            document.getElementById('quiz-active-topic-name').innerText = chName;
             
             showQuestion();
+            startQuizTimer();
             
             document.getElementById('quiz-intro-screen').classList.add('hidden');
             document.getElementById('quiz-active-window').classList.remove('hidden');
             document.getElementById('quiz-results-screen').classList.add('hidden');
         }
 
+        function startQuizTimer() {
+            clearInterval(quizTimerInterval);
+            quizTimeSeconds = 0;
+            updateQuizTimerDisplay();
+            quizTimerInterval = setInterval(() => {
+                quizTimeSeconds++;
+                updateQuizTimerDisplay();
+            }, 1000);
+        }
+
+        function stopQuizTimer() {
+            clearInterval(quizTimerInterval);
+        }
+
+        function updateQuizTimerDisplay() {
+            const min = Math.floor(quizTimeSeconds / 60);
+            const sec = quizTimeSeconds % 60;
+            const display = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+            const timerEl = document.getElementById('quiz-timer');
+            if (timerEl) {
+                timerEl.innerHTML = `<i data-lucide="timer" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i>${display}`;
+                lucide.createIcons();
+            }
+        }
+
         function showQuestion() {
             const q = activeQuizQuestions[currentQuestionIndex];
             
-            const progressPct = ((currentQuestionIndex) / activeQuizQuestions.length) * 100;
+            const progressPct = (currentQuestionIndex / activeQuizQuestions.length) * 100;
             document.getElementById('quiz-progress-fill').style.width = `${progressPct}%`;
             
             document.getElementById('quiz-question-counter').innerText = `Question ${currentQuestionIndex + 1} of ${activeQuizQuestions.length}`;
-            document.getElementById('quiz-question-text').innerText = q.question;
+            
+            const textEl = document.getElementById('quiz-question-text');
+            textEl.innerHTML = '';
+            
+            if (q.question_type === 'Case-Based' && q.case_text) {
+                const caseBox = document.createElement('div');
+                caseBox.className = 'glass';
+                caseBox.style.padding = '16px';
+                caseBox.style.borderRadius = 'var(--border-radius-md)';
+                caseBox.style.marginBottom = '20px';
+                caseBox.style.background = 'rgba(255, 255, 255, 0.02)';
+                caseBox.style.fontSize = '0.9rem';
+                caseBox.style.lineHeight = '1.5';
+                caseBox.style.borderLeft = '4px solid var(--color-primary)';
+                caseBox.innerHTML = `<strong>Case Study:</strong><p style="margin-top: 6px; color: var(--text-secondary);">${escapeHTML(q.case_text)}</p>`;
+                textEl.appendChild(caseBox);
+            }
+            
+            const qText = document.createElement('h3');
+            qText.className = 'quiz-question-text';
+            qText.innerText = q.question;
+            textEl.appendChild(qText);
             
             const optionsEl = document.getElementById('quiz-options-container');
             optionsEl.innerHTML = '';
             
-            q.options.forEach((opt, idx) => {
-                const btn = document.createElement('button');
-                btn.className = 'quiz-option';
-                btn.innerText = opt;
-                btn.addEventListener('click', () => selectQuizOption(btn, idx));
-                optionsEl.appendChild(btn);
-            });
-            
             const nextBtn = document.getElementById('quiz-next-btn');
             nextBtn.disabled = true;
+            
+            if (q.question_type === 'Match the Following') {
+                const leftItems = q.options.left || [];
+                const rightItems = q.options.right || [];
+                
+                const matchContainer = document.createElement('div');
+                matchContainer.style.display = 'flex';
+                matchContainer.style.flexDirection = 'column';
+                matchContainer.style.gap = '12px';
+                matchContainer.style.width = '100%';
+                
+                leftItems.forEach(left => {
+                    const row = document.createElement('div');
+                    row.style.display = 'flex';
+                    row.style.alignItems = 'center';
+                    row.style.justifyContent = 'space-between';
+                    row.style.gap = '16px';
+                    row.style.padding = '12px 16px';
+                    row.style.background = 'rgba(255,255,255,0.01)';
+                    row.style.border = '1px solid var(--glass-border)';
+                    row.style.borderRadius = 'var(--border-radius-md)';
+                    
+                    const leftLabel = document.createElement('span');
+                    leftLabel.style.fontWeight = '600';
+                    leftLabel.style.fontSize = '0.95rem';
+                    leftLabel.innerText = left;
+                    
+                    const select = document.createElement('select');
+                    select.style.padding = '8px 12px';
+                    select.style.background = 'rgba(0,0,0,0.4)';
+                    select.style.border = '1px solid var(--glass-border)';
+                    select.style.borderRadius = 'var(--border-radius-md)';
+                    select.style.color = 'white';
+                    select.style.outline = 'none';
+                    select.style.fontSize = '0.9rem';
+                    select.style.maxWidth = '60%';
+                    
+                    const defaultOpt = document.createElement('option');
+                    defaultOpt.value = '';
+                    defaultOpt.innerText = 'Select Match...';
+                    select.appendChild(defaultOpt);
+                    
+                    rightItems.forEach(right => {
+                        const opt = document.createElement('option');
+                        opt.value = right;
+                        opt.innerText = right;
+                        select.appendChild(opt);
+                    });
+                    
+                    if (quizAnswersSelected[currentQuestionIndex] && quizAnswersSelected[currentQuestionIndex][left]) {
+                        select.value = quizAnswersSelected[currentQuestionIndex][left];
+                    }
+                    
+                    select.addEventListener('change', (e) => {
+                        selectMatchOption(left, e.target.value);
+                    });
+                    
+                    row.appendChild(leftLabel);
+                    row.appendChild(select);
+                    matchContainer.appendChild(row);
+                });
+                
+                optionsEl.appendChild(matchContainer);
+                
+                if (quizAnswersSelected[currentQuestionIndex]) {
+                    const allSelected = leftItems.every(item => {
+                        const val = quizAnswersSelected[currentQuestionIndex][item];
+                        return val && val !== '';
+                    });
+                    nextBtn.disabled = !allSelected;
+                }
+            } else {
+                const opts = Array.isArray(q.options) ? q.options : [];
+                opts.forEach((opt, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'quiz-option';
+                    
+                    if (q.question_type === 'Assertion & Reason') {
+                        btn.innerText = opt;
+                    } else if (q.question_type === 'MCQ' || q.question_type === 'Case-Based') {
+                        const letter = String.fromCharCode(65 + idx);
+                        btn.innerHTML = `<strong style="color: var(--color-primary); margin-right: 8px;">${letter}.</strong> ${escapeHTML(opt)}`;
+                    } else {
+                        btn.innerText = opt;
+                    }
+                    
+                    if (quizAnswersSelected[currentQuestionIndex] === idx) {
+                        btn.classList.add('selected');
+                        nextBtn.disabled = false;
+                    }
+                    
+                    btn.addEventListener('click', () => {
+                        selectQuizOption(btn, idx);
+                    });
+                    optionsEl.appendChild(btn);
+                });
+            }
+            
             nextBtn.querySelector('span').innerText = (currentQuestionIndex === activeQuizQuestions.length - 1) ? "Submit Quiz" : "Next Question";
+        }
+
+        function selectMatchOption(leftItem, rightValue) {
+            if (!quizAnswersSelected[currentQuestionIndex]) {
+                quizAnswersSelected[currentQuestionIndex] = {};
+            }
+            quizAnswersSelected[currentQuestionIndex][leftItem] = rightValue;
+            
+            const q = activeQuizQuestions[currentQuestionIndex];
+            const allSelected = q.options.left.every(item => {
+                const val = quizAnswersSelected[currentQuestionIndex][item];
+                return val && val !== '';
+            });
+            
+            document.getElementById('quiz-next-btn').disabled = !allSelected;
         }
 
         function selectQuizOption(btnElement, optionIdx) {
@@ -4139,56 +4705,77 @@
             }
         }
 
+        function calculateQuizScore() {
+            let score = 0;
+            activeQuizQuestions.forEach((q, idx) => {
+                const userAns = quizAnswersSelected[idx];
+                if (q.question_type === 'Match the Following') {
+                    const correctMap = q.match_answers || {};
+                    const userMap = userAns || {};
+                    let allCorrect = true;
+                    const leftItems = Object.keys(correctMap);
+                    if (leftItems.length === 0) allCorrect = false;
+                    leftItems.forEach(left => {
+                        if (correctMap[left] !== userMap[left]) {
+                            allCorrect = false;
+                        }
+                    });
+                    if (allCorrect) score++;
+                } else {
+                    if (userAns === q.correct_index) {
+                        score++;
+                    }
+                }
+            });
+            return score;
+        }
+
         async function submitQuizResults() {
+            stopQuizTimer();
+            const score = calculateQuizScore();
+            const total = activeQuizQuestions.length;
+            const timeTaken = quizTimeSeconds;
+            
             if (useBackend) {
                 try {
                     const res = await fetch('/api/quizzes/submit', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ topic_id: activeQuizTopic, answers: quizAnswersSelected })
+                        body: JSON.stringify({ 
+                            chapter_id: activeQuizTopic, 
+                            difficulty: activeQuizDifficulty, 
+                            score: score, 
+                            total: total,
+                            time_taken: timeTaken
+                        })
                     });
                     
                     const data = await res.json();
-                    
                     if (res.ok) {
                         renderQuizResults(data);
+                    } else {
+                        alert(data.error || "Failed to submit quiz results.");
                     }
                 } catch (err) {
-                    console.error(err);
+                    console.error("Error submitting quiz results:", err);
                 }
             } else {
-                // Standalone Mode (localStorage)
-                let score = 0;
-                const total = activeQuizQuestions.length;
-                
-                activeQuizQuestions.forEach((q, idx) => {
-                    if (quizAnswersSelected[idx] === q.correct_index) {
-                        score++;
-                    }
-                });
-                
                 const pct = (score / total) * 100;
                 const passed = pct >= 80;
-                
-                // XP calculations
                 let xpGain = score * 10;
-                if (passed) xpGain += 50; // Bonus
+                if (passed) xpGain += 50;
                 
                 const user = localStore.getActiveUser();
-                
-                // Record attempt offline
                 const attempt = {
                     topic_id: activeQuizTopic,
                     score,
                     total,
+                    time_taken: timeTaken,
                     created_at: new Date().toISOString()
                 };
                 localStore.addAttempt(user.username, attempt);
-                
-                // Award XP
                 const levelResult = awardXPOffline(xpGain);
                 
-                // Check badges offline
                 let newBadges = [];
                 if (pct === 100) {
                     if (awardBadgeOffline('Perfect Score 🎯')) {
@@ -4203,12 +4790,7 @@
                     }
                 }
                 
-                let feedback = "";
-                if (pct < 80) {
-                    feedback = "Nice try 😄 ek baar revise kar lo! Watch the video or review your notes, and try again to unlock the next topic.";
-                } else {
-                    feedback = "Great job 🎉 next topic is unlocked! You've mastered this concept.";
-                }
+                let feedback = passed ? "Great job 🎉 next topic is unlocked!" : "Nice try 😄 ek baar revise kar lo! Watch the video or review your notes, and try again.";
                 
                 const results = {
                     score,
@@ -4221,7 +4803,6 @@
                     new_badges: newBadges,
                     stats: { level: levelResult.level }
                 };
-                
                 renderQuizResults(results);
             }
         }
@@ -4243,7 +4824,6 @@
             if (results.passed) {
                 soundEffects.playLevelUp();
                 triggerConfetti(0.6);
-                
                 emojiEl.innerText = '🎉';
                 titleEl.innerText = 'Great Job, Master!';
                 titleEl.style.color = 'var(--color-success)';
@@ -4259,15 +4839,14 @@
             if (results.leveled_up) {
                 triggerLevelUp(results.stats.level);
             }
-            
             if (results.new_badges && results.new_badges.length > 0) {
                 results.new_badges.forEach(bName => triggerBadgeUnlock(bName));
             }
-            
             loadStats();
         }
 
         function exitQuiz() {
+            stopQuizTimer();
             document.getElementById('quiz-intro-screen').classList.remove('hidden');
             document.getElementById('quiz-active-window').classList.add('hidden');
             document.getElementById('quiz-results-screen').classList.add('hidden');
@@ -4276,6 +4855,319 @@
             currentQuestionIndex = 0;
             quizAnswersSelected = [];
             loadQuizzes();
+        }
+
+        // --- COLLABORATIVE QUESTIONS MANAGEMENT ---
+        let chapterQuestionsCache = [];
+
+        async function openQuizQuestionsMgmtModal(chapterId, chapterName) {
+            document.getElementById('quiz-mgmt-chapter-id').value = chapterId;
+            document.getElementById('quiz-mgmt-title').innerText = `Manage Questions: ${chapterName}`;
+            
+            await loadQuizQuestionsMgmtList();
+            document.getElementById('quiz-questions-mgmt-modal').classList.remove('hidden');
+        }
+
+        function closeQuizQuestionsMgmtModal() {
+            document.getElementById('quiz-questions-mgmt-modal').classList.add('hidden');
+        }
+
+        async function loadQuizQuestionsMgmtList() {
+            const chapterId = document.getElementById('quiz-mgmt-chapter-id').value;
+            const container = document.getElementById('quiz-mgmt-questions-list');
+            container.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-secondary);"><i data-lucide="loader" class="spin" style="width: 24px; height: 24px; margin-bottom: 8px;"></i><p>Loading questions...</p></div>`;
+            lucide.createIcons();
+            
+            if (useBackend) {
+                try {
+                    const res = await fetch(`/api/chapters/${chapterId}/questions`);
+                    if (res.ok) {
+                        chapterQuestionsCache = await res.json();
+                    } else {
+                        chapterQuestionsCache = [];
+                    }
+                } catch (e) {
+                    console.error("Error loading chapter questions:", e);
+                    chapterQuestionsCache = [];
+                }
+            } else {
+                chapterQuestionsCache = [];
+            }
+            renderQuizQuestionsMgmtList();
+        }
+
+        function renderQuizQuestionsMgmtList() {
+            const container = document.getElementById('quiz-mgmt-questions-list');
+            container.innerHTML = '';
+            
+            if (chapterQuestionsCache.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; background: rgba(255,255,255,0.01); border: 1px dashed var(--glass-border); border-radius: var(--border-radius-md); color: var(--text-secondary);">
+                        <i data-lucide="help-circle" style="width: 36px; height: 36px; color: var(--text-muted); margin-bottom: 8px;"></i>
+                        <p>No custom questions added yet. Fallback questions will be generated during quizzes.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+            
+            chapterQuestionsCache.forEach(q => {
+                const item = document.createElement('div');
+                item.className = 'glass';
+                item.style.padding = '16px';
+                item.style.borderRadius = 'var(--border-radius-md)';
+                item.style.display = 'flex';
+                item.style.justifyContent = 'space-between';
+                item.style.alignItems = 'center';
+                item.style.gap = '16px';
+                item.style.background = 'rgba(255,255,255,0.02)';
+                
+                let diffColor = 'var(--text-secondary)';
+                if (q.difficulty === 'Easy') diffColor = 'var(--color-success)';
+                if (q.difficulty === 'Medium') diffColor = 'var(--color-warning)';
+                if (q.difficulty === 'Hard') diffColor = 'var(--color-danger)';
+                
+                item.innerHTML = `
+                    <div style="flex: 1; min-width: 0; text-align: left;">
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; font-size: 0.75rem;">
+                            <span style="color: ${diffColor}; font-weight: 700;">● ${q.difficulty}</span>
+                            <span style="color: var(--color-primary); font-weight: 600;">${q.question_type}</span>
+                        </div>
+                        <p style="font-weight: 600; font-size: 0.95rem; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHTML(q.question)}</p>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-outline btn-sm" style="padding: 6px 10px;" onclick="openQuizQuestionFormModal(${q.id})">
+                            <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                        </button>
+                        <button class="btn btn-outline btn-sm" style="padding: 6px 10px; color: var(--color-danger); border-color: rgba(239, 68, 68, 0.2);" onclick="deleteQuizQuestion(${q.id})">
+                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+            lucide.createIcons();
+        }
+
+        async function deleteQuizQuestion(questionId) {
+            if (!confirm("Are you sure you want to delete this question?")) return;
+            
+            if (useBackend) {
+                try {
+                    const res = await fetch(`/api/questions/${questionId}`, {
+                        method: 'DELETE'
+                    });
+                    if (res.ok) {
+                        alert("Question deleted successfully!");
+                        await loadQuizQuestionsMgmtList();
+                    } else {
+                        const data = await res.json();
+                        alert(data.error || "Failed to delete question.");
+                    }
+                } catch (e) {
+                    console.error("Error deleting question:", e);
+                    alert("Connection failed.");
+                }
+            } else {
+                alert("Offline mode does not support editing/deleting questions.");
+            }
+        }
+
+        function openQuizQuestionFormModal(questionId = null) {
+            const form = document.getElementById('quiz-question-form');
+            form.reset();
+            
+            document.getElementById('quiz-form-match-pairs-list').innerHTML = '';
+            
+            if (questionId) {
+                document.getElementById('quiz-question-form-title').innerText = "Edit Question";
+                document.getElementById('quiz-form-question-id').value = questionId;
+                
+                const q = chapterQuestionsCache.find(x => x.id === questionId);
+                if (q) {
+                    document.getElementById('quiz-form-diff').value = q.difficulty;
+                    document.getElementById('quiz-form-type').value = q.question_type;
+                    document.getElementById('quiz-form-text').value = q.question;
+                    document.getElementById('quiz-form-case-text').value = q.case_text || '';
+                    
+                    toggleQuizFormTypeFields();
+                    
+                    if (q.question_type === 'MCQ' || q.question_type === 'Case-Based') {
+                        const inputs = document.querySelectorAll('.quiz-form-mcq-option');
+                        q.options.forEach((opt, idx) => {
+                            if (inputs[idx]) inputs[idx].value = opt;
+                        });
+                        const radios = document.querySelectorAll('input[name="quiz-form-correct-mcq"]');
+                        if (radios[q.correct_index]) radios[q.correct_index].checked = true;
+                    } else if (q.question_type === 'True/False') {
+                        document.getElementById('quiz-form-correct-tf').value = q.correct_index;
+                    } else if (q.question_type === 'Assertion & Reason') {
+                        document.getElementById('quiz-form-correct-ar').value = q.correct_index;
+                    } else if (q.question_type === 'Match the Following') {
+                        const pairs = q.match_answers || {};
+                        Object.keys(pairs).forEach(left => {
+                            addQuizFormMatchPair(left, pairs[left]);
+                        });
+                    }
+                }
+            } else {
+                document.getElementById('quiz-question-form-title').innerText = "Add Question";
+                document.getElementById('quiz-form-question-id').value = '';
+                document.getElementById('quiz-form-diff').value = 'Medium';
+                document.getElementById('quiz-form-type').value = 'MCQ';
+                
+                toggleQuizFormTypeFields();
+                addQuizFormMatchPair();
+            }
+            
+            document.getElementById('quiz-question-form-modal').classList.remove('hidden');
+        }
+
+        function closeQuizQuestionFormModal() {
+            document.getElementById('quiz-question-form-modal').classList.add('hidden');
+        }
+
+        function toggleQuizFormTypeFields() {
+            const type = document.getElementById('quiz-form-type').value;
+            
+            document.getElementById('quiz-form-case-text-group').classList.add('hidden');
+            document.getElementById('quiz-form-options-mcq-group').classList.add('hidden');
+            document.getElementById('quiz-form-options-tf-group').classList.add('hidden');
+            document.getElementById('quiz-form-options-ar-group').classList.add('hidden');
+            document.getElementById('quiz-form-options-match-group').classList.add('hidden');
+            
+            const mcqInputs = document.querySelectorAll('.quiz-form-mcq-option');
+            mcqInputs.forEach(i => i.required = false);
+            document.getElementById('quiz-form-case-text').required = false;
+            
+            if (type === 'MCQ') {
+                document.getElementById('quiz-form-options-mcq-group').classList.remove('hidden');
+                mcqInputs.forEach(i => i.required = true);
+            } else if (type === 'Case-Based') {
+                document.getElementById('quiz-form-case-text-group').classList.remove('hidden');
+                document.getElementById('quiz-form-options-mcq-group').classList.remove('hidden');
+                document.getElementById('quiz-form-case-text').required = true;
+                mcqInputs.forEach(i => i.required = true);
+            } else if (type === 'True/False') {
+                document.getElementById('quiz-form-options-tf-group').classList.remove('hidden');
+            } else if (type === 'Assertion & Reason') {
+                document.getElementById('quiz-form-options-ar-group').classList.remove('hidden');
+            } else if (type === 'Match the Following') {
+                document.getElementById('quiz-form-options-match-group').classList.remove('hidden');
+            }
+            lucide.createIcons();
+        }
+
+        function addQuizFormMatchPair(leftVal = '', rightVal = '') {
+            const container = document.getElementById('quiz-form-match-pairs-list');
+            const div = document.createElement('div');
+            div.className = 'quiz-form-match-pair-row';
+            div.style.display = 'flex';
+            div.style.gap = '8px';
+            div.style.alignItems = 'center';
+            div.style.marginTop = '6px';
+            
+            div.innerHTML = `
+                <input type="text" class="match-left-input" placeholder="Left Item" value="${escapeHTML(leftVal)}" required style="flex: 1; padding: 8px; background: rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); color:white;">
+                <span style="color: var(--text-muted);">-></span>
+                <input type="text" class="match-right-input" placeholder="Right Item" value="${escapeHTML(rightVal)}" required style="flex: 1; padding: 8px; background: rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); color:white;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="this.parentElement.remove()" style="padding: 6px 10px; color: var(--color-danger); border-color: rgba(239, 68, 68, 0.2);">
+                    <i data-lucide="minus" style="width: 14px; height: 14px;"></i>
+                </button>
+            `;
+            container.appendChild(div);
+            lucide.createIcons();
+        }
+
+        async function handleQuizQuestionSubmit(event) {
+            event.preventDefault();
+            
+            const questionId = document.getElementById('quiz-form-question-id').value;
+            const chapterId = document.getElementById('quiz-mgmt-chapter-id').value;
+            const difficulty = document.getElementById('quiz-form-diff').value;
+            const questionType = document.getElementById('quiz-form-type').value;
+            const question = document.getElementById('quiz-form-text').value;
+            const caseText = questionType === 'Case-Based' ? document.getElementById('quiz-form-case-text').value : null;
+            
+            let options = null;
+            let correctIndex = 0;
+            let matchAnswers = null;
+            
+            if (questionType === 'MCQ' || questionType === 'Case-Based') {
+                const inputs = document.querySelectorAll('.quiz-form-mcq-option');
+                options = Array.from(inputs).map(i => i.value);
+                const radio = document.querySelector('input[name="quiz-form-correct-mcq"]:checked');
+                correctIndex = radio ? parseInt(radio.value) : 0;
+            } else if (questionType === 'True/False') {
+                options = ['True', 'False'];
+                correctIndex = parseInt(document.getElementById('quiz-form-correct-tf').value);
+            } else if (questionType === 'Assertion & Reason') {
+                options = [
+                    'Both A and R are true and R is the correct explanation of A.',
+                    'Both A and R are true but R is not the correct explanation of A.',
+                    'A is true but R is false.',
+                    'A is false but R is true.'
+                ];
+                correctIndex = parseInt(document.getElementById('quiz-form-correct-ar').value);
+            } else if (questionType === 'Match the Following') {
+                const leftInputs = document.querySelectorAll('.match-left-input');
+                const rightInputs = document.querySelectorAll('.match-right-input');
+                
+                const left = [];
+                const right = [];
+                matchAnswers = {};
+                
+                leftInputs.forEach((inp, idx) => {
+                    const lVal = inp.value.trim();
+                    const rVal = rightInputs[idx].value.trim();
+                    if (lVal && rVal) {
+                        left.push(lVal);
+                        right.push(rVal);
+                        matchAnswers[lVal] = rVal;
+                    }
+                });
+                
+                const shuffledRight = [...right].sort(() => Math.random() - 0.5);
+                options = { left, right: shuffledRight };
+                correctIndex = 0;
+            }
+            
+            const payload = {
+                difficulty,
+                question_type: questionType,
+                question,
+                options,
+                correct_index: correctIndex,
+                match_answers: matchAnswers,
+                case_text: caseText
+            };
+            
+            const url = questionId ? `/api/questions/${questionId}` : `/api/chapters/${chapterId}/questions`;
+            const method = questionId ? 'PUT' : 'POST';
+            
+            if (useBackend) {
+                try {
+                    const res = await fetch(url, {
+                        method: method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    const data = await res.json();
+                    if (res.ok) {
+                        alert(questionId ? "Question updated successfully!" : "Question added successfully!");
+                        closeQuizQuestionFormModal();
+                        await loadQuizQuestionsMgmtList();
+                    } else {
+                        alert(data.error || "Failed to save question.");
+                    }
+                } catch (e) {
+                    console.error("Error saving question:", e);
+                    alert("Connection failed.");
+                }
+            } else {
+                alert("Offline mode does not support creating/editing questions.");
+            }
         }
 
         // --- ANALYTICS CHARTS & LOGS ---
@@ -4320,6 +5212,60 @@
             document.getElementById('sub-bar-general').style.width = `${(otherHrs / maxHrs) * 100}%`;
             document.getElementById('sub-val-general').innerText = `${otherHrs.toFixed(1)}h`;
             
+            // Fetch Quiz Performance Analytics & Strengths/Weaknesses
+            if (useBackend) {
+                try {
+                    const res = await fetch('/api/analytics/quizzes');
+                    if (res.ok) {
+                        const data = await res.json();
+                        
+                        let totalAccuracy = 0;
+                        let totalTime = 0;
+                        let count = data.breakdown.length;
+                        data.breakdown.forEach(b => {
+                            totalAccuracy += b.accuracy;
+                            totalTime += b.avg_time;
+                        });
+                        const avgAcc = count > 0 ? (totalAccuracy / count) : 0;
+                        const avgT = count > 0 ? (totalTime / count) : 0;
+                        
+                        document.getElementById('analytics-quiz-accuracy').innerText = `${avgAcc.toFixed(1)}%`;
+                        document.getElementById('analytics-quiz-avg-time').innerText = `${avgT.toFixed(1)}s`;
+                        document.getElementById('analytics-quiz-streak').innerText = `${userStats.streak} day${userStats.streak !== 1 ? 's' : ''}`;
+                        
+                        const strongList = document.getElementById('analytics-strong-chapters');
+                        strongList.innerHTML = '';
+                        if (data.strong.length === 0) {
+                            strongList.innerHTML = `<li style="font-style:italic; color: var(--text-muted);">None yet</li>`;
+                        } else {
+                            data.strong.forEach(ch => {
+                                const li = document.createElement('li');
+                                li.innerHTML = `<strong>${escapeHTML(ch.chapter_name)}</strong> (${ch.accuracy}%)`;
+                                strongList.appendChild(li);
+                            });
+                        }
+                        
+                        const weakList = document.getElementById('analytics-weak-chapters');
+                        weakList.innerHTML = '';
+                        if (data.weak.length === 0) {
+                            weakList.innerHTML = `<li style="font-style:italic; color: var(--text-muted);">None yet</li>`;
+                        } else {
+                            data.weak.forEach(ch => {
+                                const li = document.createElement('li');
+                                li.innerHTML = `<strong>${escapeHTML(ch.chapter_name)}</strong> (${ch.accuracy}%)`;
+                                weakList.appendChild(li);
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error loading quiz analytics:", e);
+                }
+            } else {
+                document.getElementById('analytics-quiz-accuracy').innerText = 'N/A';
+                document.getElementById('analytics-quiz-avg-time').innerText = 'N/A';
+                document.getElementById('analytics-quiz-streak').innerText = `${userStats.streak} days`;
+            }
+
             await loadActivityHistoryTable();
         }
 

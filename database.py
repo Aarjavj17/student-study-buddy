@@ -53,16 +53,24 @@ def init_db():
     )
     ''')
     
+    # Drop outdated tables to upgrade schemas
+    cursor.execute('DROP TABLE IF EXISTS quiz_attempts')
+    cursor.execute('DROP TABLE IF EXISTS quiz_questions')
+    conn.commit()
+    
     # 4. Quiz Attempts Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS quiz_attempts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
-        topic_id TEXT NOT NULL,
+        chapter_id INTEGER NOT NULL,
+        difficulty TEXT NOT NULL,
         score INTEGER NOT NULL,
         total INTEGER NOT NULL,
+        time_taken INTEGER NOT NULL, -- duration in seconds
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(user_id) REFERENCES users(id)
+        FOREIGN KEY(user_id) REFERENCES users(id),
+        FOREIGN KEY(chapter_id) REFERENCES class_chapters(id) ON DELETE CASCADE
     )
     ''')
     
@@ -93,10 +101,15 @@ def init_db():
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS quiz_questions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        topic_id TEXT NOT NULL,
+        chapter_id INTEGER NOT NULL,
+        difficulty TEXT NOT NULL,
+        question_type TEXT NOT NULL,
         question TEXT NOT NULL,
-        options TEXT NOT NULL, -- JSON string list
-        correct_index INTEGER NOT NULL
+        options TEXT NOT NULL,          -- JSON string (list of options or match object)
+        correct_index INTEGER DEFAULT 0,
+        match_answers TEXT,             -- JSON string mapping (for Match the Following)
+        case_text TEXT,                 -- For Case-Based questions
+        FOREIGN KEY(chapter_id) REFERENCES class_chapters(id) ON DELETE CASCADE
     )
     ''')
     
@@ -142,37 +155,7 @@ def init_db():
         VALUES (?, ?, ?, ?, ?)
         ''', (v_id, title, sub, yt_id, desc))
         
-    # Seed Quiz Questions
-    quiz_questions_data = [
-        # Maths - Algebra
-        ('maths_algebra', 'What is the value of x in 2x + 5 = 15?', ['2', '5', '10', '15'], 1),
-        ('maths_algebra', 'What is the coefficient of x in the expression 5x^2 - 3x + 7?', ['5', '-3', '3', '7'], 1),
-        ('maths_algebra', 'Simplify: 3(x + 2) - 4', ['3x + 2', '3x - 2', '3x + 6', '3x + 10'], 0),
-        ('maths_algebra', 'If y = 3x - 4 and x = 2, what is y?', ['2', '4', '-4', '10'], 0),
-        ('maths_algebra', 'Which of the following is a linear equation?', ['x^2 + 2 = 0', 'y = 3x - 1', 'xy = 4', 'y = 1/x'], 1),
-        
-        # Science - Gravity
-        ('science_gravity', 'What is the value of acceleration due to gravity on Earth\'s surface?', ['9.8 m/s²', '1.6 m/s²', '10.8 m/s²', '9.8 cm/s²'], 0),
-        ('science_gravity', 'Who formulated the Universal Law of Gravitation?', ['Albert Einstein', 'Isaac Newton', 'Galileo Galilei', 'Nikola Tesla'], 1),
-        ('science_gravity', 'If the mass of an object is doubled, what happens to its gravitational pull (keeping distance same)?', ['Halved', 'Doubled', 'Remains same', 'Quadrupled'], 1),
-        ('science_gravity', 'What is the approximate gravity on the Moon compared to Earth?', ['Same', '6 times more', '1/6th of Earth', '1/10th of Earth'], 2),
-        ('science_gravity', 'Gravity is a repulsive force.', ['True', 'False'], 1),
-        
-        # Science - Chemical Reactions
-        ('science_reactions', 'What is the reaction called when two or more substances combine to form a single substance?', ['Decomposition', 'Combination/Synthesis', 'Displacement', 'Combustion'], 1),
-        ('science_reactions', 'In a chemical equation, what do we call the starting substances on the left side?', ['Products', 'Reactants', 'Catalysts', 'Solutes'], 1),
-        ('science_reactions', 'What is the gas produced when a active metal reacts with dilute acid?', ['Oxygen', 'Carbon Dioxide', 'Hydrogen', 'Nitrogen'], 2),
-        ('science_reactions', 'A reaction that releases heat energy into the surroundings is:', ['Endothermic', 'Exothermic', 'Reversible', 'Decomposition'], 1),
-        ('science_reactions', 'Rusting of iron is which type of reaction?', ['Fast physical change', 'Slow chemical reaction/oxidation', 'Displacement', 'Reversible change'], 1)
-    ]
-    
-    # Clear existing questions to avoid duplicates and re-seed clean values
-    cursor.execute('DELETE FROM quiz_questions')
-    for q_topic, q_text, q_opts, q_correct in quiz_questions_data:
-        cursor.execute('''
-        INSERT INTO quiz_questions (topic_id, question, options, correct_index)
-        VALUES (?, ?, ?, ?)
-        ''', (q_topic, q_text, json.dumps(q_opts), q_correct))
+
         
     # Check if obsolete table class_resources exists, drop it
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='class_resources'")
@@ -230,37 +213,7 @@ def init_db():
         VALUES (?, ?, ?, ?, ?)
         ''', (v_id, title, sub, yt_id, desc))
         
-    # Seed Quiz Questions
-    quiz_questions_data = [
-        # Maths - Algebra
-        ('maths_algebra', 'What is the value of x in 2x + 5 = 15?', ['2', '5', '10', '15'], 1),
-        ('maths_algebra', 'What is the coefficient of x in the expression 5x^2 - 3x + 7?', ['5', '-3', '3', '7'], 1),
-        ('maths_algebra', 'Simplify: 3(x + 2) - 4', ['3x + 2', '3x - 2', '3x + 6', '3x + 10'], 0),
-        ('maths_algebra', 'If y = 3x - 4 and x = 2, what is y?', ['2', '4', '-4', '10'], 0),
-        ('maths_algebra', 'Which of the following is a linear equation?', ['x^2 + 2 = 0', 'y = 3x - 1', 'xy = 4', 'y = 1/x'], 1),
-        
-        # Science - Gravity
-        ('science_gravity', 'What is the value of acceleration due to gravity on Earth\'s surface?', ['9.8 m/s²', '1.6 m/s²', '10.8 m/s²', '9.8 cm/s²'], 0),
-        ('science_gravity', 'Who formulated the Universal Law of Gravitation?', ['Albert Einstein', 'Isaac Newton', 'Galileo Galilei', 'Nikola Tesla'], 1),
-        ('science_gravity', 'If the mass of an object is doubled, what happens to its gravitational pull (keeping distance same)?', ['Halved', 'Doubled', 'Remains same', 'Quadrupled'], 1),
-        ('science_gravity', 'What is the approximate gravity on the Moon compared to Earth?', ['Same', '6 times more', '1/6th of Earth', '1/10th of Earth'], 2),
-        ('science_gravity', 'Gravity is a repulsive force.', ['True', 'False'], 1),
-        
-        # Science - Chemical Reactions
-        ('science_reactions', 'What is the reaction called when two or more substances combine to form a single substance?', ['Decomposition', 'Combination/Synthesis', 'Displacement', 'Combustion'], 1),
-        ('science_reactions', 'In a chemical equation, what do we call the starting substances on the left side?', ['Products', 'Reactants', 'Catalysts', 'Solutes'], 1),
-        ('science_reactions', 'What is the gas produced when a active metal reacts with dilute acid?', ['Oxygen', 'Carbon Dioxide', 'Hydrogen', 'Nitrogen'], 2),
-        ('science_reactions', 'A reaction that releases heat energy into the surroundings is:', ['Endothermic', 'Exothermic', 'Reversible', 'Decomposition'], 1),
-        ('science_reactions', 'Rusting of iron is which type of reaction?', ['Fast physical change', 'Slow chemical reaction/oxidation', 'Displacement', 'Reversible change'], 1)
-    ]
-    
-    # Clear existing questions to avoid duplicates and re-seed clean values
-    cursor.execute('DELETE FROM quiz_questions')
-    for q_topic, q_text, q_opts, q_correct in quiz_questions_data:
-        cursor.execute('''
-        INSERT INTO quiz_questions (topic_id, question, options, correct_index)
-        VALUES (?, ?, ?, ?)
-        ''', (q_topic, q_text, json.dumps(q_opts), q_correct))
+
         
     # Seed Complete Class 9 and Class 10 Syllabus Chapters
     class_chapters_data = [
@@ -514,6 +467,98 @@ def init_db():
                     INSERT INTO chapter_videos (chapter_id, video_title, video_url, video_type)
                     VALUES (?, ?, ?, ?)
                 ''', (ch_id, v_title, v_url, v_type))
+
+    # Seed new default quiz questions for a couple of key chapters to demo all types & difficulties
+    # 1. Class 9 Mathematics - Number Systems
+    cursor.execute("SELECT id FROM class_chapters WHERE class_name='Class 9' AND subject_name='Mathematics' AND chapter_name='Number Systems'")
+    ch_num_sys = cursor.fetchone()
+    if ch_num_sys:
+        ch_id = ch_num_sys['id']
+        cursor.execute("DELETE FROM quiz_questions WHERE chapter_id=?", (ch_id,))
+        
+        questions = [
+            # Easy - MCQ
+            (ch_id, 'Easy', 'MCQ', 'Which of the following is an irrational number?', 
+             json.dumps(['3.14', '22/7', '√2', '0.333...']), 2, None, None),
+            # Easy - True/False
+            (ch_id, 'Easy', 'True/False', 'Every rational number is a whole number.', 
+             json.dumps(['True', 'False']), 1, None, None),
+            # Medium - Assertion & Reason
+            (ch_id, 'Medium', 'Assertion & Reason', 
+             'Assertion (A): √2 is an irrational number.\nReason (R): The decimal expansion of √2 is non-terminating and non-recurring.', 
+             json.dumps([
+                 'Both A and R are true and R is the correct explanation of A.',
+                 'Both A and R are true but R is not the correct explanation of A.',
+                 'A is true but R is false.',
+                 'A is false but R is true.'
+             ]), 0, None, None),
+            # Medium - Match the Following
+            (ch_id, 'Medium', 'Match the Following', 'Match the number types with their respective examples.', 
+             json.dumps({
+                 'left': ['Natural Number', 'Integer', 'Irrational Number'],
+                 'right': ['-5', '√3', '7']
+             }), 0, json.dumps({'Natural Number': '7', 'Integer': '-5', 'Irrational Number': '√3'}), None),
+            # Hard - Case-Based
+            (ch_id, 'Hard', 'Case-Based', 'What is the rational number represented by the first mark after 1?', 
+             json.dumps(['7/6', '5/6', '8/6', '11/6']), 0, None, 
+             'A student represents rational numbers on a number line. They want to find five rational numbers between 1 and 2. They divide the segment between 1 and 2 into 6 equal parts.')
+        ]
+        
+        for ch, diff, q_type, q_text, opts, corr, matches, case in questions:
+            cursor.execute('''
+                INSERT INTO quiz_questions (chapter_id, difficulty, question_type, question, options, correct_index, match_answers, case_text)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (ch, diff, q_type, q_text, opts, corr, matches, case))
+
+    # 2. Class 10 Science - Chemical Reactions and Equations
+    cursor.execute("SELECT id FROM class_chapters WHERE class_name='Class 10' AND subject_name='Science' AND sub_section='Chemistry' AND chapter_name='Chemical Reactions and Equations'")
+    ch_chem_rx = cursor.fetchone()
+    if ch_chem_rx:
+        ch_id = ch_chem_rx['id']
+        cursor.execute("DELETE FROM quiz_questions WHERE chapter_id=?", (ch_id,))
+        
+        questions = [
+            # Easy - MCQ
+            (ch_id, 'Easy', 'MCQ', 'What is the starting substance on the left side of a chemical equation called?', 
+             json.dumps(['Product', 'Reactant', 'Catalyst', 'Solute']), 1, None, None),
+            # Easy - True/False
+            (ch_id, 'Easy', 'True/False', 'Rusting of iron is an endothermic reaction.', 
+             json.dumps(['True', 'False']), 1, None, None),
+            # Medium - Assertion & Reason
+            (ch_id, 'Medium', 'Assertion & Reason', 
+             'Assertion (A): Respiration is an exothermic reaction.\nReason (R): Energy is released in the form of heat during respiration.', 
+             json.dumps([
+                 'Both A and R are true and R is the correct explanation of A.',
+                 'Both A and R are true but R is not the correct explanation of A.',
+                 'A is true but R is false.',
+                 'A is false but R is true.'
+             ]), 0, None, None),
+            # Medium - Match the Following
+            (ch_id, 'Medium', 'Match the Following', 'Match the chemical reaction type with its equation.', 
+             json.dumps({
+                 'left': ['Combination', 'Decomposition', 'Displacement'],
+                 'right': ['Fe + CuSO4 -> FeSO4 + Cu', 'C + O2 -> CO2', '2H2O -> 2H2 + O2']
+             }), 0, json.dumps({
+                 'Combination': 'C + O2 -> CO2',
+                 'Decomposition': '2H2O -> 2H2 + O2',
+                 'Displacement': 'Fe + CuSO4 -> FeSO4 + Cu'
+             }), None),
+            # Hard - Case-Based
+            (ch_id, 'Hard', 'Case-Based', 'Which gas is evolved and how can it be tested?', 
+             json.dumps([
+                 'Hydrogen gas, burns with a pop sound',
+                 'Oxygen gas, extinguishes a burning splinter',
+                 'Carbon dioxide, turns lime water milky with popping sound',
+                 'Nitrogen gas, has a rotten egg smell'
+             ]), 0, None, 
+             'A student takes 2g of lead nitrate powder in a boiling tube and heats it over a flame. In another test tube, they react granulated zinc with dilute hydrochloric acid.')
+        ]
+        
+        for ch, diff, q_type, q_text, opts, corr, matches, case in questions:
+            cursor.execute('''
+                INSERT INTO quiz_questions (chapter_id, difficulty, question_type, question, options, correct_index, match_answers, case_text)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (ch, diff, q_type, q_text, opts, corr, matches, case))
 
     conn.commit()
     conn.close()
