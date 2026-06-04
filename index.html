@@ -2291,14 +2291,14 @@
                     <div class="learn-hub-header glass" style="margin-bottom: 20px; padding: 12px 20px; border-radius: var(--border-radius-lg); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                         <div class="learn-hub-title-section">
                             <h2 style="font-size: 1.5rem; font-weight: 700; font-family: var(--font-playful); background: linear-gradient(135deg, var(--text-primary), var(--color-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Learn Hub 🚀</h2>
-                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Dynamic syllabus resources and interactive video lectures.</p>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Syllabus resources, mind maps, and video references.</p>
                         </div>
                         <div class="learn-hub-tabs" style="display: flex; gap: 10px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); padding: 4px; border-radius: var(--border-radius-md);">
                             <button id="subtab-syllabus-btn" class="btn btn-sm btn-primary" onclick="switchLearnSubTab('syllabus')">
                                 <i data-lucide="book-open"></i> <span>Syllabus Resources</span>
                             </button>
                             <button id="subtab-videos-btn" class="btn btn-sm btn-ghost" onclick="switchLearnSubTab('videos')">
-                                <i data-lucide="video"></i> <span>Video Lectures</span>
+                                <i data-lucide="video"></i> <span>Video References</span>
                             </button>
                         </div>
                     </div>
@@ -2347,47 +2347,7 @@
                         </div>
                     </div>
 
-                    <!-- VIDEOS & NOTES WORKSPACE -->
-                    <div id="learn-videos-workspace" class="learn-sub-content hidden">
-                        <div class="learn-layout">
-                            <!-- PLAYLIST COLUMN -->
-                            <div class="playlist-panel glass">
-                                <h3>Study Resources 🎥</h3>
-                                <p class="panel-desc">Choose a topic, watch the explanation, and take structured notes.</p>
-                                <div class="video-list" id="video-playlist-container">
-                                    <!-- Dynamic videos seeded from DB -->
-                                </div>
-                            </div>
 
-                            <!-- VIEWER COLUMN -->
-                            <div class="viewer-panel">
-                                <!-- VIDEO SCREEN -->
-                                <div class="video-card glass">
-                                    <div class="iframe-container">
-                                        <iframe id="video-player" src="" title="Study Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-                                    </div>
-                                    <div class="video-details">
-                                        <h3 id="player-title">Select a Video</h3>
-                                        <p id="player-desc">Choose a study material from the sidebar playlist to begin learning.</p>
-                                    </div>
-                                </div>
-
-                                <!-- NOTE EDITOR -->
-                                <div class="notes-card glass">
-                                    <div class="notes-header">
-                                        <h3><i data-lucide="file-edit" class="text-blue"></i> Interactive Study Notes</h3>
-                                        <div class="notes-actions">
-                                            <span id="notes-status" class="notes-status-text">Draft</span>
-                                            <button id="save-notes-btn" class="btn btn-secondary btn-sm">
-                                                <i data-lucide="save"></i> Save Notes (+5 XP)
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <textarea id="notes-editor" placeholder="Write down your key formulas, explanations, and concepts here... They will autosave when you switch videos!"></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- --- SHEET: QUIZ ARENA --- -->
@@ -2701,14 +2661,14 @@
 
         let localResources = [
             // Class 9 Mathematics
-            { id: 1, class_name: 'Class 9', subject_name: 'Mathematics', sub_section: '', chapter_no: 1, chapter_name: 'Number Systems', resources: {} },
+            { id: 1, class_name: 'Class 9', subject_name: 'Mathematics', sub_section: '', chapter_no: 1, chapter_name: 'Number Systems', resources: {}, videos: [{ id: 9001, video_title: 'Introduction to Number Systems', video_url: 'https://www.youtube.com/watch?v=NybHckSEQBI', video_type: 'YouTube' }] },
             { id: 2, class_name: 'Class 9', subject_name: 'Mathematics', sub_section: '', chapter_no: 2, chapter_name: 'Polynomials', resources: {} },
             { id: 3, class_name: 'Class 9', subject_name: 'Mathematics', sub_section: '', chapter_no: 3, chapter_name: 'Coordinate Geometry', resources: {} },
             { id: 4, class_name: 'Class 9', subject_name: 'Mathematics', sub_section: '', chapter_no: 4, chapter_name: 'Linear Equations in Two Variables', resources: {} },
             { id: 5, class_name: 'Class 9', subject_name: 'Mathematics', sub_section: '', chapter_no: 5, chapter_name: "Introduction to Euclid's Geometry", resources: {} },
             
             // Class 9 Science
-            { id: 20, class_name: 'Class 9', subject_name: 'Science', sub_section: 'Biology', chapter_no: 1, chapter_name: 'Cell', resources: {} },
+            { id: 20, class_name: 'Class 9', subject_name: 'Science', sub_section: 'Biology', chapter_no: 1, chapter_name: 'Cell', resources: {}, videos: [{ id: 9002, video_title: 'The Fundamental Unit of Life - Cell', video_url: 'https://www.youtube.com/watch?v=yjSNU6YC1s0', video_type: 'YouTube' }] },
             { id: 21, class_name: 'Class 9', subject_name: 'Science', sub_section: 'Biology', chapter_no: 2, chapter_name: 'Tissues', resources: {} },
             { id: 22, class_name: 'Class 9', subject_name: 'Science', sub_section: 'Chemistry', chapter_no: 5, chapter_name: 'Exploring Mixtures and Their Separation', resources: {} },
             { id: 23, class_name: 'Class 9', subject_name: 'Science', sub_section: 'Physics', chapter_no: 8, chapter_name: 'Motion', resources: {} },
@@ -2734,7 +2694,7 @@
             { id: 102, class_name: 'Class 10', subject_name: 'Mathematics', sub_section: '', chapter_no: 2, chapter_name: 'Polynomials', resources: {} },
             
             // Class 10 Science
-            { id: 120, class_name: 'Class 10', subject_name: 'Science', sub_section: 'Chemistry', chapter_no: 1, chapter_name: 'Chemical Reactions and Equations', resources: {} },
+            { id: 120, class_name: 'Class 10', subject_name: 'Science', sub_section: 'Chemistry', chapter_no: 1, chapter_name: 'Chemical Reactions and Equations', resources: {}, videos: [{ id: 9003, video_title: 'Chemical Reactions One Shot', video_url: 'https://www.youtube.com/watch?v=T4K86v_yQNg', video_type: 'YouTube' }] },
             { id: 121, class_name: 'Class 10', subject_name: 'Science', sub_section: 'Physics', chapter_no: 9, chapter_name: 'Light – Reflection and Refraction', resources: {} },
             
             // Class 10 Social Science
@@ -2846,7 +2806,8 @@
                             sub_section: r.sub_section || '',
                             chapter_no: r.chapter_no,
                             chapter_name: r.chapter_name,
-                            resources: r.resources || {}
+                            resources: r.resources || {},
+                            videos: r.videos || []
                         };
                     });
                     localStorage.setItem(key, JSON.stringify(filtered));
@@ -2862,6 +2823,9 @@
                         if (r.exemplar_url) r.resources.exemplar_solutions = r.exemplar_url;
                         if (r.book_pdf_url) r.resources.chapter_pdf = r.book_pdf_url;
                         if (r.formula_sheet_url) r.resources.formula_sheet = r.formula_sheet_url;
+                    }
+                    if (!r.videos) {
+                        r.videos = [];
                     }
                     return r;
                 });
@@ -3044,20 +3008,25 @@
             });
 
             // Learn Hub: Save Notes
-            document.getElementById('save-notes-btn').addEventListener('click', saveCurrentNotes);
+            const saveNotesBtn = document.getElementById('save-notes-btn');
+            if (saveNotesBtn) {
+                saveNotesBtn.addEventListener('click', saveCurrentNotes);
+            }
             
             // Learn Hub: Note Editor changes tracker
             const notesEditor = document.getElementById('notes-editor');
-            notesEditor.addEventListener('input', () => {
-                noteHasChanges = true;
-                document.getElementById('notes-status').innerText = 'Unsaved changes...';
-                
-                // Setup simple debounced autosave (3 seconds)
-                clearTimeout(autoSaveTimeout);
-                autoSaveTimeout = setTimeout(() => {
-                    saveCurrentNotes(true);
-                }, 3000);
-            });
+            if (notesEditor) {
+                notesEditor.addEventListener('input', () => {
+                    noteHasChanges = true;
+                    document.getElementById('notes-status').innerText = 'Unsaved changes...';
+                    
+                    // Setup simple debounced autosave (3 seconds)
+                    clearTimeout(autoSaveTimeout);
+                    autoSaveTimeout = setTimeout(() => {
+                        saveCurrentNotes(true);
+                    }, 3000);
+                });
+            }
 
             // Pomodoro Timer controls
             document.getElementById('timer-toggle-btn').addEventListener('click', toggleTimer);
@@ -3152,11 +3121,7 @@
             } else if (tabId === 'planner') {
                 loadTasks();
             } else if (tabId === 'learn') {
-                if (activeLearnSubTab === 'syllabus') {
-                    loadClassResources();
-                } else {
-                    loadVideos();
-                }
+                loadClassResources();
             } else if (tabId === 'quiz') {
                 loadQuizzes();
             } else if (tabId === 'progress') {
@@ -3205,6 +3170,7 @@
             // Initial data pull
             loadStats();
             populatePlannerDropdown();
+            loadVideos();
             lucide.createIcons();
         }
 
@@ -3646,6 +3612,7 @@
 
         function renderPlaylist() {
             const listEl = document.getElementById('video-playlist-container');
+            if (!listEl) return;
             listEl.innerHTML = '';
             
             videos.forEach(v => {
@@ -3662,102 +3629,68 @@
                 item.addEventListener('click', () => selectVideo(v.id));
                 listEl.appendChild(item);
             });
-            
-            if (!currentActiveVideoId && videos.length > 0) {
-                selectVideo(videos[0].id);
-            }
         }
 
-        async function selectVideo(videoId) {
-            if (currentActiveVideoId === videoId) return;
+        async function selectVideo(topicId) {
+            soundEffects.playPop();
+            activeLearnSubTab = 'videos';
             
-            if (currentActiveVideoId && noteHasChanges) {
-                await saveCurrentNotes(true);
+            const syllabusTabBtn = document.getElementById('subtab-syllabus-btn');
+            const videosTabBtn = document.getElementById('subtab-videos-btn');
+            if (syllabusTabBtn && videosTabBtn) {
+                syllabusTabBtn.className = 'btn btn-sm btn-ghost';
+                videosTabBtn.className = 'btn btn-sm btn-primary';
             }
             
-            currentActiveVideoId = videoId;
+            if (topicId === 'maths_algebra') {
+                selectedClass = 'Class 9';
+                selectedSubject = 'Mathematics';
+                chaptersSearchQuery = 'Polynomials';
+            } else if (topicId === 'science_gravity') {
+                selectedClass = 'Class 9';
+                selectedSubject = 'Science';
+                chaptersSearchQuery = 'Motion';
+            } else if (topicId === 'science_reactions') {
+                selectedClass = 'Class 10';
+                selectedSubject = 'Science';
+                chaptersSearchQuery = 'Chemical Reactions';
+            }
             
-            const items = document.querySelectorAll('.video-item');
-            items.forEach((item, index) => {
-                if (videos[index] && videos[index].id === videoId) {
-                    item.classList.add('active');
+            // Update UI filters to match
+            const btn9 = document.getElementById('class-filter-9-btn');
+            const btn10 = document.getElementById('class-filter-10-btn');
+            if (btn9 && btn10) {
+                if (selectedClass === 'Class 9') {
+                    btn9.className = 'btn btn-sm btn-primary';
+                    btn10.className = 'btn btn-sm btn-ghost';
                 } else {
-                    item.classList.remove('active');
+                    btn9.className = 'btn btn-sm btn-ghost';
+                    btn10.className = 'btn btn-sm btn-primary';
+                }
+            }
+            
+            // Update Subject button active states
+            const subjectButtons = document.querySelectorAll('.subject-btn');
+            subjectButtons.forEach(btn => {
+                const sub = btn.getAttribute('data-subject');
+                if (sub === selectedSubject) {
+                    btn.className = 'btn btn-sm btn-primary subject-btn';
+                } else {
+                    btn.className = 'btn btn-sm btn-ghost subject-btn';
                 }
             });
             
-            const video = videos.find(v => v.id === videoId);
-            if (!video) return;
-            
-            document.getElementById('video-player').src = `https://www.youtube.com/embed/${video.youtube_id}?enablejsapi=1`;
-            document.getElementById('player-title').innerText = video.title;
-            document.getElementById('player-desc').innerText = video.description;
-            
-            const notesEditor = document.getElementById('notes-editor');
-            notesEditor.value = '';
-            document.getElementById('notes-status').innerText = 'Loading notes...';
-            
-            if (useBackend) {
-                try {
-                    const res = await fetch(`/api/notes/${videoId}`);
-                    const data = await res.json();
-                    notesEditor.value = data.content || '';
-                    document.getElementById('notes-status').innerText = 'Draft loaded';
-                    noteHasChanges = false;
-                } catch (err) {
-                    document.getElementById('notes-status').innerText = 'Failed to load notes';
-                }
-            } else {
-                const notes = localStore.getNotes(currentUser.username);
-                notesEditor.value = notes[videoId] || '';
-                document.getElementById('notes-status').innerText = 'Draft loaded';
-                noteHasChanges = false;
+            // Set search input value
+            const searchBar = document.getElementById('chapters-search-bar');
+            if (searchBar) {
+                searchBar.value = chaptersSearchQuery;
             }
+            
+            loadClassResources();
         }
 
         async function saveCurrentNotes(isSilent = false) {
-            if (!currentActiveVideoId) return;
-            
-            const content = document.getElementById('notes-editor').value;
-            document.getElementById('notes-status').innerText = 'Saving...';
-            
-            if (useBackend) {
-                try {
-                    const res = await fetch(`/api/notes/${currentActiveVideoId}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ content })
-                    });
-                    const data = await res.json();
-                    
-                    if (res.ok) {
-                        noteHasChanges = false;
-                        document.getElementById('notes-status').innerText = 'Notes Saved!';
-                        
-                        if (!isSilent) {
-                            soundEffects.playSuccess();
-                            if (data.leveled_up) {
-                                triggerLevelUp(data.stats.level);
-                            }
-                            loadStats();
-                        }
-                    } else {
-                        document.getElementById('notes-status').innerText = 'Unsaved changes (Save Error)';
-                    }
-                } catch (err) {
-                    document.getElementById('notes-status').innerText = 'Unsaved changes (Network Error)';
-                }
-            } else {
-                localStore.saveNotes(currentUser.username, currentActiveVideoId, content);
-                noteHasChanges = false;
-                document.getElementById('notes-status').innerText = 'Notes Saved!';
-                
-                if (!isSilent) {
-                    soundEffects.playSuccess();
-                    awardXPOffline(5);
-                    loadStats();
-                }
-            }
+            // No-op (interactive notes editor has been replaced with chapter-wise video references)
         }
 
         // --- POMODORO TIMER LOGIC ---
@@ -4435,22 +4368,15 @@
             
             const syllabusTabBtn = document.getElementById('subtab-syllabus-btn');
             const videosTabBtn = document.getElementById('subtab-videos-btn');
-            const syllabusWorkspace = document.getElementById('learn-syllabus-workspace');
-            const videosWorkspace = document.getElementById('learn-videos-workspace');
             
             if (subTabId === 'syllabus') {
                 syllabusTabBtn.className = 'btn btn-sm btn-primary';
                 videosTabBtn.className = 'btn btn-sm btn-ghost';
-                syllabusWorkspace.classList.remove('hidden');
-                videosWorkspace.classList.add('hidden');
-                loadClassResources();
             } else {
                 syllabusTabBtn.className = 'btn btn-sm btn-ghost';
                 videosTabBtn.className = 'btn btn-sm btn-primary';
-                syllabusWorkspace.classList.add('hidden');
-                videosWorkspace.classList.remove('hidden');
-                loadVideos();
             }
+            loadClassResources();
         }
 
         function filterClass(className) {
@@ -4589,169 +4515,219 @@
                 const card = document.createElement('div');
                 card.className = 'chapter-card glass';
 
-                const mindMapPath = res.resources ? res.resources['mind_map'] : null;
-
-                let resourceItemsHtml = '';
-                resourceConfig.forEach(config => {
-                    const filePath = res.resources ? res.resources[config.key] : null;
-                    
-                    let actionHtml = '';
-                    let badgeHtml = '';
-                    
-                    if (filePath) {
-                        badgeHtml = `<span class="status-badge status-available"><i data-lucide="check" style="width:10px;height:10px;"></i> Available</span>`;
-                        actionHtml = `
-                            <button onclick="viewResource('${escapeHTML(filePath)}', '${escapeHTML(res.chapter_name)} - ${escapeHTML(config.label)}')" class="btn btn-xs btn-primary" title="View PDF/Image">
-                                <i data-lucide="eye" style="width:12px;height:12px;"></i>
-                            </button>
-                            <button onclick="deleteResource(${res.id}, '${config.key}')" class="btn btn-xs btn-secondary" style="border-color: rgba(239, 68, 68, 0.2); color: #ef4444; background: rgba(239, 68, 68, 0.05);" title="Delete Resource">
-                                <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
-                            </button>
-                        `;
+                if (activeLearnSubTab === 'videos') {
+                    let videoItemsHtml = '';
+                    if (res.videos && res.videos.length > 0) {
+                        res.videos.forEach(v => {
+                            const icon = v.video_type === 'Playlist' ? 'list-video' : (v.video_type === 'Educational Video' ? 'video' : 'play-circle');
+                            videoItemsHtml += `
+                                <div class="video-reference-row" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md); transition: all 0.2s;" onmouseover="this.style.background='rgba(255, 255, 255, 0.04)'; this.style.borderColor='rgba(255, 255, 255, 0.1)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.02)'; this.style.borderColor='rgba(255, 255, 255, 0.05)'">
+                                    <span onclick="playChapterVideo('${escapeHTML(v.video_url)}', '${escapeHTML(v.video_title)}')" style="font-size: 0.9rem; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
+                                        <i data-lucide="${icon}" style="width: 16px; height: 16px; color: var(--color-primary);"></i>
+                                        ${escapeHTML(v.video_title)}
+                                    </span>
+                                    <div style="display: flex; gap: 6px;">
+                                        <button onclick="openEditVideoModal(${res.id}, ${v.id}, '${escapeHTML(v.video_title)}', '${escapeHTML(v.video_url)}', '${escapeHTML(v.video_type)}')" class="btn btn-xs btn-ghost" title="Edit Video Reference" style="padding: 4px 6px;">
+                                            <i data-lucide="edit-2" style="width: 12px; height: 12px; color: var(--text-muted);"></i>
+                                        </button>
+                                        <button onclick="deleteChapterVideo(${v.id})" class="btn btn-xs btn-ghost" title="Delete Video Reference" style="padding: 4px 6px;">
+                                            <i data-lucide="trash-2" style="width: 12px; height: 12px; color: #ef4444;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        });
                     } else {
-                        badgeHtml = `<span class="status-badge status-not-added"><i data-lucide="x" style="width:10px;height:10px;"></i> Not Added</span>`;
-                        actionHtml = `
-                            <button onclick="triggerInlineUpload(${res.id}, '${config.key}')" class="btn btn-xs btn-ghost" title="Upload PDF/Image">
-                                <i data-lucide="upload-cloud" style="width:12px;height:12px;"></i> Upload
-                            </button>
-                        `;
+                        videoItemsHtml = `<div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 12px; text-align: center; border: 1px dashed var(--glass-border); border-radius: var(--border-radius-md);">No video references added yet.</div>`;
                     }
 
-                    resourceItemsHtml += `
-                        <div class="resource-item">
-                            <span class="resource-label">${config.label}</span>
-                            <div class="resource-actions" style="display:flex; align-items:center; gap:8px;">
-                                ${badgeHtml}
-                                ${actionHtml}
+                    card.innerHTML = `
+                        <div class="chapter-info" style="margin-bottom: 16px;">
+                            <span class="chapter-number-badge">Ch ${res.chapter_no}</span>
+                            <div>
+                                <h3 class="chapter-title">${escapeHTML(res.chapter_name)}</h3>
+                                ${res.sub_section ? `<span style="font-size: 0.75rem; color: var(--color-purple); font-weight:600;">${escapeHTML(res.sub_section)}</span>` : ''}
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h4 style="font-size: 0.95rem; font-weight: 700; color: white; display: flex; align-items: center; gap: 6px;">
+                                    🎥 Video References
+                                </h4>
+                                <button onclick="openAddVideoModal(${res.id})" class="btn btn-xs btn-primary" style="padding: 4px 8px;">
+                                    <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Add Video
+                                </button>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+                                ${videoItemsHtml}
                             </div>
                         </div>
                     `;
-                });
+                } else {
+                    const mindMapPath = res.resources ? res.resources['mind_map'] : null;
 
-                // Build video references row and list
-                let videoItemsHtml = '';
-                if (res.videos && res.videos.length > 0) {
-                    res.videos.forEach(v => {
-                        const icon = v.video_type === 'Playlist' ? 'list-video' : (v.video_type === 'Educational Video' ? 'video' : 'play-circle');
-                        videoItemsHtml += `
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; background: rgba(255, 255, 255, 0.01); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-sm);">
-                                <span onclick="playChapterVideo('${escapeHTML(v.video_url)}', '${escapeHTML(v.video_title)}')" style="font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
-                                    <i data-lucide="${icon}" style="width: 14px; height: 14px; color: var(--color-primary);"></i>
-                                    ${escapeHTML(v.video_title)}
-                                </span>
-                                <div style="display: flex; gap: 4px;">
-                                    <button onclick="openEditVideoModal(${res.id}, ${v.id}, '${escapeHTML(v.video_title)}', '${escapeHTML(v.video_url)}', '${escapeHTML(v.video_type)}')" class="btn btn-xs btn-ghost" title="Edit Video Reference" style="padding: 2px 4px; border: none; background: transparent;">
-                                        <i data-lucide="edit-2" style="width: 11px; height: 11px; color: var(--text-muted);"></i>
-                                    </button>
-                                    <button onclick="deleteChapterVideo(${v.id})" class="btn btn-xs btn-ghost" title="Delete Video Reference" style="padding: 2px 4px; border: none; background: transparent;">
-                                        <i data-lucide="trash-2" style="width: 11px; height: 11px; color: #ef4444;"></i>
-                                    </button>
+                    let resourceItemsHtml = '';
+                    resourceConfig.forEach(config => {
+                        const filePath = res.resources ? res.resources[config.key] : null;
+                        
+                        let actionHtml = '';
+                        let badgeHtml = '';
+                        
+                        if (filePath) {
+                            badgeHtml = `<span class="status-badge status-available"><i data-lucide="check" style="width:10px;height:10px;"></i> Available</span>`;
+                            actionHtml = `
+                                <button onclick="viewResource('${escapeHTML(filePath)}', '${escapeHTML(res.chapter_name)} - ${escapeHTML(config.label)}')" class="btn btn-xs btn-primary" title="View PDF/Image">
+                                    <i data-lucide="eye" style="width:12px;height:12px;"></i>
+                                </button>
+                                <button onclick="deleteResource(${res.id}, '${config.key}')" class="btn btn-xs btn-secondary" style="border-color: rgba(239, 68, 68, 0.2); color: #ef4444; background: rgba(239, 68, 68, 0.05);" title="Delete Resource">
+                                    <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
+                                </button>
+                            `;
+                        } else {
+                            badgeHtml = `<span class="status-badge status-not-added"><i data-lucide="x" style="width:10px;height:10px;"></i> Not Added</span>`;
+                            actionHtml = `
+                                <button onclick="triggerInlineUpload(${res.id}, '${config.key}')" class="btn btn-xs btn-ghost" title="Upload PDF/Image">
+                                    <i data-lucide="upload-cloud" style="width:12px;height:12px;"></i> Upload
+                                </button>
+                            `;
+                        }
+
+                        resourceItemsHtml += `
+                            <div class="resource-item">
+                                <span class="resource-label">${config.label}</span>
+                                <div class="resource-actions" style="display:flex; align-items:center; gap:8px;">
+                                    ${badgeHtml}
+                                    ${actionHtml}
                                 </div>
                             </div>
                         `;
                     });
-                } else {
-                    videoItemsHtml = `<div style="font-size: 0.75rem; color: var(--text-muted); font-style: italic; padding: 4px 8px;">No video references added yet.</div>`;
-                }
 
-                const videosCount = res.videos ? res.videos.length : 0;
-                const videosBadgeClass = videosCount > 0 ? 'status-available' : 'status-not-added';
-                const videosBadgeText = videosCount > 0 ? `${videosCount} Video${videosCount > 1 ? 's' : ''}` : 'Not Added';
+                    // Build video references row and list
+                    let videoItemsHtml = '';
+                    if (res.videos && res.videos.length > 0) {
+                        res.videos.forEach(v => {
+                            const icon = v.video_type === 'Playlist' ? 'list-video' : (v.video_type === 'Educational Video' ? 'video' : 'play-circle');
+                            videoItemsHtml += `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; background: rgba(255, 255, 255, 0.01); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-sm);">
+                                    <span onclick="playChapterVideo('${escapeHTML(v.video_url)}', '${escapeHTML(v.video_title)}')" style="font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
+                                        <i data-lucide="${icon}" style="width: 14px; height: 14px; color: var(--color-primary);"></i>
+                                        ${escapeHTML(v.video_title)}
+                                    </span>
+                                    <div style="display: flex; gap: 4px;">
+                                        <button onclick="openEditVideoModal(${res.id}, ${v.id}, '${escapeHTML(v.video_title)}', '${escapeHTML(v.video_url)}', '${escapeHTML(v.video_type)}')" class="btn btn-xs btn-ghost" title="Edit Video Reference" style="padding: 2px 4px; border: none; background: transparent;">
+                                            <i data-lucide="edit-2" style="width: 11px; height: 11px; color: var(--text-muted);"></i>
+                                        </button>
+                                        <button onclick="deleteChapterVideo(${v.id})" class="btn btn-xs btn-ghost" title="Delete Video Reference" style="padding: 2px 4px; border: none; background: transparent;">
+                                            <i data-lucide="trash-2" style="width: 11px; height: 11px; color: #ef4444;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        videoItemsHtml = `<div style="font-size: 0.75rem; color: var(--text-muted); font-style: italic; padding: 4px 8px;">No video references added yet.</div>`;
+                    }
 
-                const videoRowHtml = `
-                    <div class="resource-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleVideosCollapsible(${res.id})">
-                            <span class="resource-label" style="display: flex; align-items: center; gap: 6px; color: white;">
-                                🎥 Video References
-                            </span>
-                            <div class="resource-actions" style="display: flex; align-items: center; gap: 8px;">
-                                <span class="status-badge ${videosBadgeClass}">
-                                    ${videosBadgeText}
+                    const videosCount = res.videos ? res.videos.length : 0;
+                    const videosBadgeClass = videosCount > 0 ? 'status-available' : 'status-not-added';
+                    const videosBadgeText = videosCount > 0 ? `${videosCount} Video${videosCount > 1 ? 's' : ''}` : 'Not Added';
+
+                    const videoRowHtml = `
+                        <div class="resource-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleVideosCollapsible(${res.id})">
+                                <span class="resource-label" style="display: flex; align-items: center; gap: 6px; color: white;">
+                                    🎥 Video References
                                 </span>
-                                <button onclick="event.stopPropagation(); openAddVideoModal(${res.id})" class="btn btn-xs btn-ghost" title="Add Video Reference" style="padding: 2px 6px;">
-                                    <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Add
-                                </button>
-                                <i data-lucide="chevron-down" id="video-chevron-${res.id}" style="width: 14px; height: 14px; transition: transform 0.2s;"></i>
+                                <div class="resource-actions" style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="status-badge ${videosBadgeClass}">
+                                        ${videosBadgeText}
+                                    </span>
+                                    <button onclick="event.stopPropagation(); openAddVideoModal(${res.id})" class="btn btn-xs btn-ghost" title="Add Video Reference" style="padding: 2px 6px;">
+                                        <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Add
+                                    </button>
+                                    <i data-lucide="chevron-down" id="video-chevron-${res.id}" style="width: 14px; height: 14px; transition: transform 0.2s;"></i>
+                                </div>
+                            </div>
+                            <div id="video-list-${res.id}" style="display: none; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--glass-border); flex-direction: column; gap: 6px;">
+                                ${videoItemsHtml}
                             </div>
                         </div>
-                        <div id="video-list-${res.id}" style="display: none; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--glass-border); flex-direction: column; gap: 6px;">
-                            ${videoItemsHtml}
-                        </div>
-                    </div>
-                `;
+                    `;
 
-                let mindMapBoxHtml = '';
-                if (mindMapPath) {
-                    const isPdf = mindMapPath.toLowerCase().endsWith('.pdf');
-                    let thumbnailContentHtml = '';
-                    if (isPdf) {
-                        thumbnailContentHtml = `
-                            <i data-lucide="file-text" style="width: 48px; height: 48px; color: var(--text-muted);"></i>
-                            <span style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 8px;">Mind Map PDF Document</span>
+                    let mindMapBoxHtml = '';
+                    if (mindMapPath) {
+                        const isPdf = mindMapPath.toLowerCase().endsWith('.pdf');
+                        let thumbnailContentHtml = '';
+                        if (isPdf) {
+                            thumbnailContentHtml = `
+                                <i data-lucide="file-text" style="width: 48px; height: 48px; color: var(--text-muted);"></i>
+                                <span style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 8px;">Mind Map PDF Document</span>
+                            `;
+                        } else {
+                            thumbnailContentHtml = `
+                                <img src="${escapeHTML(mindMapPath)}" style="width: 100%; height: 100%; object-fit: cover;">
+                            `;
+                        }
+
+                        mindMapBoxHtml = `
+                            <div class="mind-map-box">
+                                <div class="mind-map-header">
+                                    <span class="mind-map-title">
+                                        <i data-lucide="map" style="width: 14px; height: 14px; color: var(--color-primary);"></i> Mind Map
+                                    </span>
+                                    <div style="display:flex; gap: 4px;">
+                                        <button onclick="triggerInlineUpload(${res.id}, 'mind_map')" class="btn btn-xs btn-ghost" title="Replace Mind Map" style="padding: 2px 6px;">
+                                            <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i> Replace
+                                        </button>
+                                        <button onclick="deleteResource(${res.id}, 'mind_map')" class="btn btn-xs btn-secondary" style="border-color: rgba(239, 68, 68, 0.2); color: #ef4444; background: rgba(239, 68, 68, 0.05); padding: 2px 6px;" title="Delete Mind Map">
+                                            <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mind-map-thumbnail-container has-map">
+                                    ${thumbnailContentHtml}
+                                    <div class="mind-map-overlay">
+                                        <button onclick="openMindMapLightbox('${escapeHTML(mindMapPath)}')" class="btn btn-sm btn-primary">
+                                            <i data-lucide="maximize-2"></i> Quick Revision
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         `;
                     } else {
-                        thumbnailContentHtml = `
-                            <img src="${escapeHTML(mindMapPath)}" style="width: 100%; height: 100%; object-fit: cover;">
+                        mindMapBoxHtml = `
+                            <div class="mind-map-box">
+                                <div class="mind-map-header">
+                                    <span class="mind-map-title">
+                                        <i data-lucide="map" style="width: 14px; height: 14px; color: var(--text-muted);"></i> Mind Map
+                                    </span>
+                                </div>
+                                <div class="mind-map-thumbnail-container" onclick="triggerInlineUpload(${res.id}, 'mind_map')" style="cursor: pointer;">
+                                    <i data-lucide="plus-circle" style="width: 28px; height: 28px; color: var(--text-muted); margin-bottom: 6px;"></i>
+                                    <span style="font-size: 0.75rem; color: var(--text-secondary);">Upload Mind Map Image/PDF</span>
+                                </div>
+                            </div>
                         `;
                     }
 
-                    mindMapBoxHtml = `
-                        <div class="mind-map-box">
-                            <div class="mind-map-header">
-                                <span class="mind-map-title">
-                                    <i data-lucide="map" style="width: 14px; height: 14px; color: var(--color-primary);"></i> Mind Map
-                                </span>
-                                <div style="display:flex; gap: 4px;">
-                                    <button onclick="triggerInlineUpload(${res.id}, 'mind_map')" class="btn btn-xs btn-ghost" title="Replace Mind Map" style="padding: 2px 6px;">
-                                        <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i> Replace
-                                    </button>
-                                    <button onclick="deleteResource(${res.id}, 'mind_map')" class="btn btn-xs btn-secondary" style="border-color: rgba(239, 68, 68, 0.2); color: #ef4444; background: rgba(239, 68, 68, 0.05); padding: 2px 6px;" title="Delete Mind Map">
-                                        <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="mind-map-thumbnail-container has-map">
-                                ${thumbnailContentHtml}
-                                <div class="mind-map-overlay">
-                                    <button onclick="openMindMapLightbox('${escapeHTML(mindMapPath)}')" class="btn btn-sm btn-primary">
-                                        <i data-lucide="maximize-2"></i> Quick Revision
-                                    </button>
-                                </div>
+                    card.innerHTML = `
+                        <div class="chapter-info">
+                            <span class="chapter-number-badge">Ch ${res.chapter_no}</span>
+                            <div>
+                                <h3 class="chapter-title">${escapeHTML(res.chapter_name)}</h3>
+                                ${res.sub_section ? `<span style="font-size: 0.75rem; color: var(--color-purple); font-weight:600;">${escapeHTML(res.sub_section)}</span>` : ''}
                             </div>
                         </div>
-                    `;
-                } else {
-                    mindMapBoxHtml = `
-                        <div class="mind-map-box">
-                            <div class="mind-map-header">
-                                <span class="mind-map-title">
-                                    <i data-lucide="map" style="width: 14px; height: 14px; color: var(--text-muted);"></i> Mind Map
-                                </span>
-                            </div>
-                            <div class="mind-map-thumbnail-container" onclick="triggerInlineUpload(${res.id}, 'mind_map')" style="cursor: pointer;">
-                                <i data-lucide="plus-circle" style="width: 28px; height: 28px; color: var(--text-muted); margin-bottom: 6px;"></i>
-                                <span style="font-size: 0.75rem; color: var(--text-secondary);">Upload Mind Map Image/PDF</span>
-                            </div>
+                        
+                        <div class="resource-links-grid">
+                            ${resourceItemsHtml}
+                            ${videoRowHtml}
                         </div>
+
+                        ${mindMapBoxHtml}
                     `;
                 }
-
-                card.innerHTML = `
-                    <div class="chapter-info">
-                        <span class="chapter-number-badge">Ch ${res.chapter_no}</span>
-                        <div>
-                            <h3 class="chapter-title">${escapeHTML(res.chapter_name)}</h3>
-                            ${res.sub_section ? `<span style="font-size: 0.75rem; color: var(--color-purple); font-weight:600;">${escapeHTML(res.sub_section)}</span>` : ''}
-                        </div>
-                    </div>
-                    
-                    <div class="resource-links-grid">
-                        ${resourceItemsHtml}
-                        ${videoRowHtml}
-                    </div>
-
-                    ${mindMapBoxHtml}
-                `;
 
                 container.appendChild(card);
             });
