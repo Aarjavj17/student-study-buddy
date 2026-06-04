@@ -2497,41 +2497,46 @@
     <!-- --- OVERLAY: EDIT RESOURCE LINKS --- -->
     <div id="edit-links-modal" class="modal-overlay hidden">
         <div class="modal-card glass wide-modal-card">
-            <div class="modal-emoji">📝</div>
-            <h2 id="edit-modal-title">Edit Resources</h2>
-            <p id="edit-modal-subtitle" class="card-subtitle">Update solutions and notes links</p>
+            <div class="modal-emoji">📤</div>
+            <h2 id="edit-modal-title">Upload Study Materials</h2>
+            <p id="edit-modal-subtitle" class="card-subtitle">Select local PDF files to upload</p>
             
             <form id="edit-links-form" style="width: 100%; text-align: left; display: flex; flex-direction: column; gap: 14px; max-height: 70vh; overflow-y: auto; padding-right: 8px;">
                 <input type="hidden" id="edit-chapter-id">
                 
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label for="edit-notes-url"><i data-lucide="file-text"></i> Handwritten Notes URL 📖</label>
-                    <input type="text" id="edit-notes-url" placeholder="Paste Handwritten Notes PDF link">
+                    <label for="edit-notes-file"><i data-lucide="file-text"></i> Handwritten Notes PDF 📖</label>
+                    <input type="file" id="edit-notes-file" accept=".pdf" style="margin-top: 6px;">
+                    <span id="current-notes-status" style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-top: 4px;"></span>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label for="edit-ncert-url"><i data-lucide="book"></i> NCERT Solutions URL 📚</label>
-                    <input type="text" id="edit-ncert-url" placeholder="Paste NCERT Solutions PDF link">
+                    <label for="edit-ncert-file"><i data-lucide="book"></i> NCERT Solutions PDF 📚</label>
+                    <input type="file" id="edit-ncert-file" accept=".pdf" style="margin-top: 6px;">
+                    <span id="current-ncert-status" style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-top: 4px;"></span>
                 </div>
                 
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label for="edit-exemplar-url"><i data-lucide="target"></i> NCERT Exemplar Solutions URL 🎯</label>
-                    <input type="text" id="edit-exemplar-url" placeholder="Paste Exemplar Solutions PDF link">
+                    <label for="edit-exemplar-file"><i data-lucide="target"></i> NCERT Exemplar Solutions PDF 🎯</label>
+                    <input type="file" id="edit-exemplar-file" accept=".pdf" style="margin-top: 6px;">
+                    <span id="current-exemplar-status" style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-top: 4px;"></span>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label for="edit-book-pdf-url"><i data-lucide="file"></i> NCERT Book PDF URL 📕</label>
-                    <input type="text" id="edit-book-pdf-url" placeholder="Paste NCERT Book PDF link">
+                    <label for="edit-book-pdf-file"><i data-lucide="file"></i> NCERT Book PDF 📕</label>
+                    <input type="file" id="edit-book-pdf-file" accept=".pdf" style="margin-top: 6px;">
+                    <span id="current-book-pdf-status" style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-top: 4px;"></span>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label for="edit-formula-sheet-url"><i data-lucide="ruler"></i> Formula Sheet URL 📐</label>
-                    <input type="text" id="edit-formula-sheet-url" placeholder="Paste Formula Sheet PDF link">
+                    <label for="edit-formula-sheet-file"><i data-lucide="ruler"></i> Formula Sheet PDF 📐</label>
+                    <input type="file" id="edit-formula-sheet-file" accept=".pdf" style="margin-top: 6px;">
+                    <span id="current-formula-sheet-status" style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-top: 4px;"></span>
                 </div>
                 
                 <div class="modal-buttons" style="display: flex; gap: 12px; margin-top: 8px; width: 100%;">
                     <button type="button" id="edit-links-cancel" class="btn btn-secondary" style="flex: 1;">Cancel</button>
-                    <button type="submit" class="btn btn-primary" style="flex: 1;">Save Changes</button>
+                    <button type="submit" id="edit-submit-btn" class="btn btn-primary" style="flex: 1;">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -4470,14 +4475,24 @@
             if (!resource) return;
 
             document.getElementById('edit-chapter-id').value = resource.id;
-            document.getElementById('edit-modal-title').innerText = `Edit Chapter ${resource.chapter_no}`;
-            document.getElementById('edit-modal-subtitle').innerText = `Update resources for ${resource.chapter_name}`;
+            document.getElementById('edit-modal-title').innerText = `Upload for Ch ${resource.chapter_no}`;
+            document.getElementById('edit-modal-subtitle').innerText = `${resource.chapter_name}`;
 
-            document.getElementById('edit-notes-url').value = resource.notes_url || '';
-            document.getElementById('edit-ncert-url').value = resource.ncert_url || '';
-            document.getElementById('edit-exemplar-url').value = resource.exemplar_url || '';
-            document.getElementById('edit-book-pdf-url').value = resource.book_pdf_url || '';
-            document.getElementById('edit-formula-sheet-url').value = resource.formula_sheet_url || '';
+            // Reset file inputs
+            document.getElementById('edit-notes-file').value = '';
+            document.getElementById('edit-ncert-file').value = '';
+            document.getElementById('edit-exemplar-file').value = '';
+            document.getElementById('edit-book-pdf-file').value = '';
+            document.getElementById('edit-formula-sheet-file').value = '';
+
+            // Update status labels
+            const getStatusLabel = (url) => url ? `<span style="color: var(--color-green-hover); font-weight: bold;">✓ Uploaded</span> (${url.split('/').pop()})` : '<span style="color: var(--text-muted);">✗ Not Uploaded</span>';
+            
+            document.getElementById('current-notes-status').innerHTML = getStatusLabel(resource.notes_url);
+            document.getElementById('current-ncert-status').innerHTML = getStatusLabel(resource.ncert_url);
+            document.getElementById('current-exemplar-status').innerHTML = getStatusLabel(resource.exemplar_url);
+            document.getElementById('current-book-pdf-status').innerHTML = getStatusLabel(resource.book_pdf_url);
+            document.getElementById('current-formula-sheet-status').innerHTML = getStatusLabel(resource.formula_sheet_url);
 
             document.getElementById('edit-links-modal').classList.remove('hidden');
             lucide.createIcons();
@@ -4488,18 +4503,34 @@
             soundEffects.playPop();
 
             const resourceId = parseInt(document.getElementById('edit-chapter-id').value);
-            const notes_url = document.getElementById('edit-notes-url').value.trim();
-            const ncert_url = document.getElementById('edit-ncert-url').value.trim();
-            const exemplar_url = document.getElementById('edit-exemplar-url').value.trim();
-            const book_pdf_url = document.getElementById('edit-book-pdf-url').value.trim();
-            const formula_sheet_url = document.getElementById('edit-formula-sheet-url').value.trim();
+            const notesFile = document.getElementById('edit-notes-file').files[0];
+            const ncertFile = document.getElementById('edit-ncert-file').files[0];
+            const exemplarFile = document.getElementById('edit-exemplar-file').files[0];
+            const bookPdfFile = document.getElementById('edit-book-pdf-file').files[0];
+            const formulaSheetFile = document.getElementById('edit-formula-sheet-file').files[0];
+
+            if (!notesFile && !ncertFile && !exemplarFile && !bookPdfFile && !formulaSheetFile) {
+                alert("Please select at least one PDF file to upload.");
+                return;
+            }
+
+            const submitBtn = document.getElementById('edit-submit-btn');
+            const originalBtnHtml = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span>Uploading...</span>`;
 
             if (useBackend) {
                 try {
+                    const formData = new FormData();
+                    if (notesFile) formData.append('notes_file', notesFile);
+                    if (ncertFile) formData.append('ncert_file', ncertFile);
+                    if (exemplarFile) formData.append('exemplar_file', exemplarFile);
+                    if (bookPdfFile) formData.append('book_pdf_file', bookPdfFile);
+                    if (formulaSheetFile) formData.append('formula_sheet_file', formulaSheetFile);
+
                     const res = await fetch(`/api/resources/${resourceId}`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ notes_url, ncert_url, exemplar_url, book_pdf_url, formula_sheet_url })
+                        body: formData
                     });
 
                     if (res.ok) {
@@ -4508,22 +4539,26 @@
                         document.getElementById('edit-links-modal').classList.add('hidden');
                         loadClassResources();
                     } else {
-                        alert("Failed to update resource links.");
+                        alert("Failed to upload PDFs.");
                     }
                 } catch (err) {
                     console.error(err);
-                    alert("Network error updating resource links.");
+                    alert("Network error uploading PDFs.");
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnHtml;
                 }
             } else {
-                // Update local storage
+                // Update local storage simulation
                 const resources = localStore.getResources(selectedClass, selectedSubject);
                 const idx = resources.findIndex(r => r.id === resourceId);
                 if (idx !== -1) {
-                    resources[idx].notes_url = notes_url;
-                    resources[idx].ncert_url = ncert_url;
-                    resources[idx].exemplar_url = exemplar_url;
-                    resources[idx].book_pdf_url = book_pdf_url;
-                    resources[idx].formula_sheet_url = formula_sheet_url;
+                    if (notesFile) resources[idx].notes_url = `/static/uploads/mock_resource_${resourceId}_notes_url.pdf`;
+                    if (ncertFile) resources[idx].ncert_url = `/static/uploads/mock_resource_${resourceId}_ncert_url.pdf`;
+                    if (exemplarFile) resources[idx].exemplar_url = `/static/uploads/mock_resource_${resourceId}_exemplar_url.pdf`;
+                    if (bookPdfFile) resources[idx].book_pdf_url = `/static/uploads/mock_resource_${resourceId}_book_pdf_url.pdf`;
+                    if (formulaSheetFile) resources[idx].formula_sheet_url = `/static/uploads/mock_resource_${resourceId}_formula_sheet_url.pdf`;
+                    
                     localStore.saveResources(selectedClass, selectedSubject, resources);
                     
                     soundEffects.playSuccess();
@@ -4531,6 +4566,8 @@
                     document.getElementById('edit-links-modal').classList.add('hidden');
                     loadClassResources();
                 }
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
             }
         }
 

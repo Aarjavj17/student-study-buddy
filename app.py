@@ -568,23 +568,53 @@ def update_resource(resource_id):
     if not user:
         return jsonify({'error': 'Unauthorised.'}), 401
         
-    data = request.json or {}
-    ncert_url = data.get('ncert_url', '').strip()
-    notes_url = data.get('notes_url', '').strip()
-    exemplar_url = data.get('exemplar_url', '').strip()
-    book_pdf_url = data.get('book_pdf_url', '').strip()
-    formula_sheet_url = data.get('formula_sheet_url', '').strip()
-    
     db = get_db()
     cursor = db.cursor()
+    
+    # Fetch current state to preserve existing values if no new file is uploaded
+    cursor.execute('SELECT * FROM class_resources WHERE id = ?', (resource_id,))
+    row = cursor.fetchone()
+    if not row:
+        return jsonify({'error': 'Resource not found.'}), 404
+        
+    uploads_dir = os.path.join(app.root_path, 'static', 'uploads')
+    os.makedirs(uploads_dir, exist_ok=True)
+    
+    fields = ['ncert_url', 'notes_url', 'exemplar_url', 'book_pdf_url', 'formula_sheet_url']
+    update_values = {}
+    
+    for field in fields:
+        file_key = field.replace('_url', '_file')
+        # Check if file is in request
+        if file_key in request.files:
+            file = request.files[file_key]
+            if file and file.filename != '':
+                # Save file locally
+                filename = f"resource_{resource_id}_{field}.pdf"
+                filepath = os.path.join(uploads_dir, filename)
+                file.save(filepath)
+                # Store static web path
+                update_values[field] = f"/static/uploads/{filename}"
+            else:
+                update_values[field] = row[field]
+        else:
+            update_values[field] = row[field]
+            
     cursor.execute('''
     UPDATE class_resources 
     SET ncert_url = ?, notes_url = ?, exemplar_url = ?, book_pdf_url = ?, formula_sheet_url = ? 
     WHERE id = ?
-    ''', (ncert_url, notes_url, exemplar_url, book_pdf_url, formula_sheet_url, resource_id))
+    ''', (
+        update_values['ncert_url'],
+        update_values['notes_url'],
+        update_values['exemplar_url'],
+        update_values['book_pdf_url'],
+        update_values['formula_sheet_url'],
+        resource_id
+    ))
     db.commit()
     
-    return jsonify({'message': 'Resource links updated successfully.'})
+    return jsonify({'message': 'Resource PDFs uploaded and updated successfully.'})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
