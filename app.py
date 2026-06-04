@@ -555,15 +555,83 @@ def get_resources(class_name, subject_name):
     db = get_db()
     cursor = db.cursor()
     cursor.execute('''
-    SELECT * FROM class_resources 
-    WHERE class_name = ? AND subject_name = ? 
-    ORDER BY chapter_no ASC
+    SELECT 
+        cc.id, cc.class_name, cc.subject_name, cc.sub_section, cc.chapter_no, cc.chapter_name,
+        cr.resource_type, cr.file_path
+    FROM class_chapters cc
+    LEFT JOIN chapter_resources cr ON cc.id = cr.chapter_id
+    WHERE cc.class_name = ? AND cc.subject_name = ?
+    ORDER BY cc.id ASC
     ''', (class_name, subject_name))
-    resources = [dict(row) for row in cursor.fetchall()]
-    return jsonify(resources)
+    rows = cursor.fetchall()
+    
+    chapters_dict = {}
+    for row in rows:
+        ch_id = row['id']
+        if ch_id not in chapters_dict:
+            chapters_dict[ch_id] = {
+                'id': row['id'],
+                'class_name': row['class_name'],
+                'subject_name': row['subject_name'],
+                'sub_section': row['sub_section'],
+                'chapter_no': row['chapter_no'],
+                'chapter_name': row['chapter_name'],
+                'resources': {}
+            }
+        if row['resource_type'] and row['file_path']:
+            chapters_dict[ch_id]['resources'][row['resource_type']] = row['file_path']
+            
+    return jsonify(list(chapters_dict.values()))
 
-@app.route('/api/resources/<int:resource_id>', methods=['POST'])
-def update_resource(resource_id):
+@app.route('/api/chapters/<int:chapter_id>/resources/<resource_type>', methods=['POST'])
+def upload_chapter_resource(chapter_id, resource_type):
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorised.'}), 401
+        
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part in request.'}), 400
+        
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file.'}), 400
+        
+    # Check allowed formats: .pdf, .png, .jpg, .jpeg
+    allowed_extensions = {'.pdf', '.png', '.jpg', '.jpeg'}
+    _, ext = os.path.splitext(file.filename.lower())
+    if ext not in allowed_extensions:
+        return jsonify({'error': 'Unsupported file type. Only PDF and images (.png, .jpg, .jpeg) are allowed.'}), 400
+        
+    uploads_dir = os.path.join(app.root_path, 'static', 'uploads')
+    os.makedirs(uploads_dir, exist_ok=True)
+    
+    filename = f"resource_{chapter_id}_{resource_type}{ext}"
+    filepath = os.path.join(uploads_dir, filename)
+    file.save(filepath)
+    file_path = f"/static/uploads/{filename}"
+    
+    db = get_db()
+    cursor = db.cursor()
+    
+    # Confirm chapter exists
+    cursor.execute('SELECT id FROM class_chapters WHERE id = ?', (chapter_id,))
+    if not cursor.fetchone():
+        return jsonify({'error': 'Chapter not found.'}), 404
+        
+    cursor.execute('''
+    INSERT INTO chapter_resources (chapter_id, resource_type, file_path)
+    VALUES (?, ?, ?)
+    ON CONFLICT(chapter_id, resource_type) DO UPDATE SET file_path=excluded.file_path
+    ''', (chapter_id, resource_type, file_path))
+    db.commit()
+    
+    return jsonify({
+        'message': 'Resource uploaded successfully.',
+        'file_path': file_path
+    })
+
+@app.route('/api/chapters/<int:chapter_id>/resources/<resource_type>', methods=['DELETE'])
+def delete_chapter_resource(chapter_id, resource_type):
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Unauthorised.'}), 401
@@ -571,50 +639,24 @@ def update_resource(resource_id):
     db = get_db()
     cursor = db.cursor()
     
-    # Fetch current state to preserve existing values if no new file is uploaded
-    cursor.execute('SELECT * FROM class_resources WHERE id = ?', (resource_id,))
+    cursor.execute('SELECT file_path FROM chapter_resources WHERE chapter_id = ? AND resource_type = ?', (chapter_id, resource_type))
     row = cursor.fetchone()
     if not row:
         return jsonify({'error': 'Resource not found.'}), 404
         
-    uploads_dir = os.path.join(app.root_path, 'static', 'uploads')
-    os.makedirs(uploads_dir, exist_ok=True)
-    
-    fields = ['ncert_url', 'notes_url', 'exemplar_url', 'book_pdf_url', 'formula_sheet_url']
-    update_values = {}
-    
-    for field in fields:
-        file_key = field.replace('_url', '_file')
-        # Check if file is in request
-        if file_key in request.files:
-            file = request.files[file_key]
-            if file and file.filename != '':
-                # Save file locally
-                filename = f"resource_{resource_id}_{field}.pdf"
-                filepath = os.path.join(uploads_dir, filename)
-                file.save(filepath)
-                # Store static web path
-                update_values[field] = f"/static/uploads/{filename}"
-            else:
-                update_values[field] = row[field]
-        else:
-            update_values[field] = row[field]
-            
-    cursor.execute('''
-    UPDATE class_resources 
-    SET ncert_url = ?, notes_url = ?, exemplar_url = ?, book_pdf_url = ?, formula_sheet_url = ? 
-    WHERE id = ?
-    ''', (
-        update_values['ncert_url'],
-        update_values['notes_url'],
-        update_values['exemplar_url'],
-        update_values['book_pdf_url'],
-        update_values['formula_sheet_url'],
-        resource_id
-    ))
+    file_path = row['file_path']
+    if file_path.startswith('/static/'):
+        disk_path = os.path.join(app.root_path, file_path.lstrip('/'))
+        if os.path.exists(disk_path):
+            try:
+                os.remove(disk_path)
+            except Exception as e:
+                print(f"Warning: Could not remove file {disk_path}: {e}")
+                
+    cursor.execute('DELETE FROM chapter_resources WHERE chapter_id = ? AND resource_type = ?', (chapter_id, resource_type))
     db.commit()
     
-    return jsonify({'message': 'Resource PDFs uploaded and updated successfully.'})
+    return jsonify({'message': 'Resource deleted successfully.'})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
