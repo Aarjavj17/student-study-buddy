@@ -202,6 +202,17 @@ def init_db():
         UNIQUE(chapter_id, resource_type)
     )
     ''')
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS chapter_videos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        chapter_id INTEGER NOT NULL,
+        video_title TEXT NOT NULL,
+        video_url TEXT NOT NULL,
+        video_type TEXT DEFAULT 'YouTube',
+        FOREIGN KEY(chapter_id) REFERENCES class_chapters(id) ON DELETE CASCADE
+    )
+    ''')
     conn.commit()
     
     # --- SEED DEFAULT DATA ---
@@ -480,6 +491,30 @@ def init_db():
             VALUES (?, ?, ?, ?, ?)
             ''', (class_name, sub_name, sub_sec, ch_no, ch_name))
         
+    # Seed default chapter videos
+    default_videos = [
+        ('Class 9', 'Mathematics', '', 'Number Systems', 'Introduction to Number Systems', 'https://www.youtube.com/watch?v=NybHckSEQBI', 'YouTube'),
+        ('Class 9', 'Science', 'Biology', 'Cell', 'The Fundamental Unit of Life - Cell', 'https://www.youtube.com/watch?v=yjSNU6YC1s0', 'YouTube'),
+        ('Class 10', 'Science', 'Chemistry', 'Chemical Reactions and Equations', 'Chemical Reactions One Shot', 'https://www.youtube.com/watch?v=T4K86v_yQNg', 'YouTube')
+    ]
+    for cls, sub, sec, ch_name, v_title, v_url, v_type in default_videos:
+        cursor.execute('''
+            SELECT id FROM class_chapters 
+            WHERE class_name = ? AND subject_name = ? AND sub_section = ? AND chapter_name = ?
+        ''', (cls, sub, sec, ch_name))
+        row = cursor.fetchone()
+        if row:
+            ch_id = row['id']
+            cursor.execute('''
+                SELECT id FROM chapter_videos 
+                WHERE chapter_id = ? AND video_url = ?
+            ''', (ch_id, v_url))
+            if not cursor.fetchone():
+                cursor.execute('''
+                    INSERT INTO chapter_videos (chapter_id, video_title, video_url, video_type)
+                    VALUES (?, ?, ?, ?)
+                ''', (ch_id, v_title, v_url, v_type))
+
     conn.commit()
     conn.close()
     print("Database initialised and seeded successfully!")

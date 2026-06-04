@@ -2591,6 +2591,44 @@
     <!-- SHARED HIDDEN FILE INPUT -->
     <input type="file" id="shared-file-input" style="display: none;" accept=".pdf,.png,.jpg,.jpeg" onchange="handleSharedFileChange(event)">
 
+    <!-- --- OVERLAY: ADD / EDIT VIDEO REFERENCE --- -->
+    <div id="video-manage-modal" class="modal-overlay hidden" style="z-index: 1250;">
+        <div class="modal-card glass wide-modal-card">
+            <div class="modal-emoji">🎥</div>
+            <h2 id="video-modal-title">Add Video Reference</h2>
+            <p id="video-modal-subtitle" class="card-subtitle">Provide a YouTube link, playlist, or educational video URL</p>
+            
+            <form id="video-manage-form" onsubmit="handleVideoSubmit(event)" style="width: 100%; text-align: left; display: flex; flex-direction: column; gap: 14px;">
+                <input type="hidden" id="video-chapter-id">
+                <input type="hidden" id="video-id">
+                
+                <div class="form-group">
+                    <label for="video-title-input"><i data-lucide="type"></i> Video Title</label>
+                    <input type="text" id="video-title-input" placeholder="e.g. One Shot Revision, Exercise 1.2" required style="width:100%; padding: 10px; background: rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); color:white;">
+                </div>
+
+                <div class="form-group">
+                    <label for="video-url-input"><i data-lucide="link"></i> Video URL / YouTube Link</label>
+                    <input type="url" id="video-url-input" placeholder="e.g. https://www.youtube.com/watch?v=..." required style="width:100%; padding: 10px; background: rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); color:white;">
+                </div>
+
+                <div class="form-group">
+                    <label for="video-type-input"><i data-lucide="tag"></i> Reference Type</label>
+                    <select id="video-type-input" style="width:100%; padding: 10px; background: rgba(0,0,0,0.4); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); color:white; outline:none;">
+                        <option value="YouTube">YouTube Video</option>
+                        <option value="Playlist">Playlist Link</option>
+                        <option value="Educational Video">Educational Video File</option>
+                    </select>
+                </div>
+                
+                <div class="modal-buttons" style="display: flex; gap: 12px; margin-top: 8px; width: 100%;">
+                    <button type="button" onclick="closeVideoManageModal()" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+                    <button type="submit" id="video-submit-btn" class="btn btn-primary" style="flex: 1;">Save Video</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- --- OVERLAY: INLINE PDF VIEWER --- -->
     <div id="pdf-viewer-modal" class="modal-overlay hidden" style="z-index: 1200;">
         <div class="modal-card glass pdf-viewer-card" style="width: 90vw; height: 90vh; max-width: 1200px; padding: 20px; align-items: stretch; gap: 12px;">
@@ -4590,6 +4628,58 @@
                     `;
                 });
 
+                // Build video references row and list
+                let videoItemsHtml = '';
+                if (res.videos && res.videos.length > 0) {
+                    res.videos.forEach(v => {
+                        const icon = v.video_type === 'Playlist' ? 'list-video' : (v.video_type === 'Educational Video' ? 'video' : 'play-circle');
+                        videoItemsHtml += `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; background: rgba(255, 255, 255, 0.01); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-sm);">
+                                <span onclick="playChapterVideo('${escapeHTML(v.video_url)}', '${escapeHTML(v.video_title)}')" style="font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
+                                    <i data-lucide="${icon}" style="width: 14px; height: 14px; color: var(--color-primary);"></i>
+                                    ${escapeHTML(v.video_title)}
+                                </span>
+                                <div style="display: flex; gap: 4px;">
+                                    <button onclick="openEditVideoModal(${res.id}, ${v.id}, '${escapeHTML(v.video_title)}', '${escapeHTML(v.video_url)}', '${escapeHTML(v.video_type)}')" class="btn btn-xs btn-ghost" title="Edit Video Reference" style="padding: 2px 4px; border: none; background: transparent;">
+                                        <i data-lucide="edit-2" style="width: 11px; height: 11px; color: var(--text-muted);"></i>
+                                    </button>
+                                    <button onclick="deleteChapterVideo(${v.id})" class="btn btn-xs btn-ghost" title="Delete Video Reference" style="padding: 2px 4px; border: none; background: transparent;">
+                                        <i data-lucide="trash-2" style="width: 11px; height: 11px; color: #ef4444;"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    videoItemsHtml = `<div style="font-size: 0.75rem; color: var(--text-muted); font-style: italic; padding: 4px 8px;">No video references added yet.</div>`;
+                }
+
+                const videosCount = res.videos ? res.videos.length : 0;
+                const videosBadgeClass = videosCount > 0 ? 'status-available' : 'status-not-added';
+                const videosBadgeText = videosCount > 0 ? `${videosCount} Video${videosCount > 1 ? 's' : ''}` : 'Not Added';
+
+                const videoRowHtml = `
+                    <div class="resource-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleVideosCollapsible(${res.id})">
+                            <span class="resource-label" style="display: flex; align-items: center; gap: 6px; color: white;">
+                                🎥 Video References
+                            </span>
+                            <div class="resource-actions" style="display: flex; align-items: center; gap: 8px;">
+                                <span class="status-badge ${videosBadgeClass}">
+                                    ${videosBadgeText}
+                                </span>
+                                <button onclick="event.stopPropagation(); openAddVideoModal(${res.id})" class="btn btn-xs btn-ghost" title="Add Video Reference" style="padding: 2px 6px;">
+                                    <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Add
+                                </button>
+                                <i data-lucide="chevron-down" id="video-chevron-${res.id}" style="width: 14px; height: 14px; transition: transform 0.2s;"></i>
+                            </div>
+                        </div>
+                        <div id="video-list-${res.id}" style="display: none; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--glass-border); flex-direction: column; gap: 6px;">
+                            ${videoItemsHtml}
+                        </div>
+                    </div>
+                `;
+
                 let mindMapBoxHtml = '';
                 if (mindMapPath) {
                     const isPdf = mindMapPath.toLowerCase().endsWith('.pdf');
@@ -4657,6 +4747,7 @@
                     
                     <div class="resource-links-grid">
                         ${resourceItemsHtml}
+                        ${videoRowHtml}
                     </div>
 
                     ${mindMapBoxHtml}
@@ -4666,6 +4757,18 @@
             });
 
             lucide.createIcons();
+        }
+
+        function toggleVideosCollapsible(chapterId) {
+            const listDiv = document.getElementById(`video-list-${chapterId}`);
+            const chevron = document.getElementById(`video-chevron-${chapterId}`);
+            if (listDiv.style.display === 'none') {
+                listDiv.style.display = 'flex';
+                chevron.style.transform = 'rotate(180deg)';
+            } else {
+                listDiv.style.display = 'none';
+                chevron.style.transform = 'rotate(0deg)';
+            }
         }
 
         function openInlinePDF(url, title) {
@@ -4682,6 +4785,176 @@
                 openMindMapLightbox(url);
             } else {
                 openInlinePDF(url, title);
+            }
+        }
+
+        function playChapterVideo(url, title) {
+            soundEffects.playPop();
+            let embedUrl = url;
+            
+            // Convert youtube watch links to embed links
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                let videoId = '';
+                if (url.includes('v=')) {
+                    videoId = url.split('v=')[1].split('&')[0];
+                } else if (url.includes('youtu.be/')) {
+                    videoId = url.split('youtu.be/')[1].split('?')[0];
+                } else if (url.includes('embed/')) {
+                    videoId = url.split('embed/')[1].split('?')[0];
+                }
+                
+                if (videoId) {
+                    embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+                }
+            }
+            
+            document.getElementById('pdf-viewer-title').innerText = title;
+            document.getElementById('pdf-frame').src = embedUrl;
+            document.getElementById('pdf-viewer-modal').classList.remove('hidden');
+        }
+
+        function openAddVideoModal(chapterId) {
+            soundEffects.playPop();
+            document.getElementById('video-chapter-id').value = chapterId;
+            document.getElementById('video-id').value = '';
+            document.getElementById('video-modal-title').innerText = "Add Video Reference";
+            document.getElementById('video-title-input').value = '';
+            document.getElementById('video-url-input').value = '';
+            document.getElementById('video-type-input').value = 'YouTube';
+            document.getElementById('video-manage-modal').classList.remove('hidden');
+        }
+
+        function openEditVideoModal(chapterId, videoId, title, url, type) {
+            soundEffects.playPop();
+            event.stopPropagation(); // Avoid triggering expand/collapse of card row
+            document.getElementById('video-chapter-id').value = chapterId;
+            document.getElementById('video-id').value = videoId;
+            document.getElementById('video-modal-title').innerText = "Edit Video Reference";
+            document.getElementById('video-title-input').value = title;
+            document.getElementById('video-url-input').value = url;
+            document.getElementById('video-type-input').value = type;
+            document.getElementById('video-manage-modal').classList.remove('hidden');
+        }
+
+        function closeVideoManageModal() {
+            soundEffects.playPop();
+            document.getElementById('video-manage-modal').classList.add('hidden');
+        }
+
+        async function handleVideoSubmit(e) {
+            e.preventDefault();
+            soundEffects.playPop();
+
+            const chapterId = parseInt(document.getElementById('video-chapter-id').value);
+            const videoId = document.getElementById('video-id').value;
+            const title = document.getElementById('video-title-input').value.trim();
+            const videoUrl = document.getElementById('video-url-input').value.trim();
+            const type = document.getElementById('video-type-input').value;
+
+            if (useBackend) {
+                try {
+                    const isEdit = videoId !== '';
+                    const url = isEdit ? `/api/videos/${videoId}` : `/api/chapters/${chapterId}/videos`;
+                    const method = isEdit ? 'PUT' : 'POST';
+
+                    const res = await fetch(url, {
+                        method: method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            video_title: title,
+                            video_url: videoUrl,
+                            video_type: type
+                        })
+                    });
+
+                    if (res.ok) {
+                        soundEffects.playSuccess();
+                        triggerConfetti(0.15);
+                        closeVideoManageModal();
+                        loadClassResources();
+                    } else {
+                        const err = await res.json();
+                        alert(err.error || "Failed to save video reference.");
+                    }
+                } catch (err) {
+                    console.error("Video submit error:", err);
+                    alert("Network error saving video reference.");
+                }
+            } else {
+                // Update local storage simulation
+                const resources = localStore.getResources(selectedClass, selectedSubject);
+                const chIdx = resources.findIndex(r => r.id === chapterId);
+                if (chIdx !== -1) {
+                    if (!resources[chIdx].videos) {
+                        resources[chIdx].videos = [];
+                    }
+                    const isEdit = videoId !== '';
+                    if (isEdit) {
+                        const vIdx = resources[chIdx].videos.findIndex(v => v.id === parseInt(videoId));
+                        if (vIdx !== -1) {
+                            resources[chIdx].videos[vIdx] = {
+                                id: parseInt(videoId),
+                                video_title: title,
+                                video_url: videoUrl,
+                                video_type: type
+                            };
+                        }
+                    } else {
+                        resources[chIdx].videos.push({
+                            id: Date.now(),
+                            video_title: title,
+                            video_url: videoUrl,
+                            video_type: type
+                        });
+                    }
+                    localStore.saveResources(selectedClass, selectedSubject, resources);
+                    soundEffects.playSuccess();
+                    triggerConfetti(0.15);
+                    closeVideoManageModal();
+                    loadClassResources();
+                }
+            }
+        }
+
+        async function deleteChapterVideo(videoId) {
+            event.stopPropagation(); // Prevent card row toggling
+            if (!confirm("Are you sure you want to delete this video reference?")) return;
+
+            if (useBackend) {
+                try {
+                    const res = await fetch(`/api/videos/${videoId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (res.ok) {
+                        soundEffects.playSuccess();
+                        loadClassResources();
+                    } else {
+                        alert("Failed to delete video reference.");
+                    }
+                } catch (err) {
+                    console.error("Video delete error:", err);
+                    alert("Network error deleting video reference.");
+                }
+            } else {
+                // Local storage delete
+                const resources = localStore.getResources(selectedClass, selectedSubject);
+                let found = false;
+                for (let i = 0; i < resources.length; i++) {
+                    if (resources[i].videos) {
+                        const vIdx = resources[i].videos.findIndex(v => v.id === videoId);
+                        if (vIdx !== -1) {
+                            resources[i].videos.splice(vIdx, 1);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (found) {
+                    localStore.saveResources(selectedClass, selectedSubject, resources);
+                    soundEffects.playSuccess();
+                    loadClassResources();
+                }
             }
         }
 

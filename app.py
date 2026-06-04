@@ -576,10 +576,30 @@ def get_resources(class_name, subject_name):
                 'sub_section': row['sub_section'],
                 'chapter_no': row['chapter_no'],
                 'chapter_name': row['chapter_name'],
-                'resources': {}
+                'resources': {},
+                'videos': []
             }
         if row['resource_type'] and row['file_path']:
             chapters_dict[ch_id]['resources'][row['resource_type']] = row['file_path']
+            
+    # Fetch all video references for these chapters
+    cursor.execute('''
+    SELECT cv.id, cv.chapter_id, cv.video_title, cv.video_url, cv.video_type
+    FROM chapter_videos cv
+    JOIN class_chapters cc ON cv.chapter_id = cc.id
+    WHERE cc.class_name = ? AND cc.subject_name = ?
+    ''', (class_name, subject_name))
+    video_rows = cursor.fetchall()
+    
+    for v_row in video_rows:
+        ch_id = v_row['chapter_id']
+        if ch_id in chapters_dict:
+            chapters_dict[ch_id]['videos'].append({
+                'id': v_row['id'],
+                'video_title': v_row['video_title'],
+                'video_url': v_row['video_url'],
+                'video_type': v_row['video_type']
+            })
             
     return jsonify(list(chapters_dict.values()))
 
@@ -657,6 +677,103 @@ def delete_chapter_resource(chapter_id, resource_type):
     db.commit()
     
     return jsonify({'message': 'Resource deleted successfully.'})
+
+@app.route('/api/chapters/<int:chapter_id>/videos', methods=['POST'])
+def add_chapter_video(chapter_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorised.'}), 401
+        
+    data = request.json or {}
+    video_title = data.get('video_title', '').strip()
+    video_url = data.get('video_url', '').strip()
+    video_type = data.get('video_type', 'YouTube').strip()
+    
+    if not video_title or not video_url:
+        return jsonify({'error': 'Video title and URL are required.'}), 400
+        
+    db = get_db()
+    cursor = db.cursor()
+    
+    cursor.execute('SELECT id FROM class_chapters WHERE id = ?', (chapter_id,))
+    if not cursor.fetchone():
+        return jsonify({'error': 'Chapter not found.'}), 404
+        
+    cursor.execute('''
+    INSERT INTO chapter_videos (chapter_id, video_title, video_url, video_type)
+    VALUES (?, ?, ?, ?)
+    ''', (chapter_id, video_title, video_url, video_type))
+    db.commit()
+    
+    new_id = cursor.lastrowid
+    return jsonify({
+        'message': 'Video added successfully.',
+        'video': {
+            'id': new_id,
+            'chapter_id': chapter_id,
+            'video_title': video_title,
+            'video_url': video_url,
+            'video_type': video_type
+        }
+    })
+
+@app.route('/api/videos/<int:video_id>', methods=['PUT'])
+def edit_chapter_video(video_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorised.'}), 401
+        
+    data = request.json or {}
+    video_title = data.get('video_title', '').strip()
+    video_url = data.get('video_url', '').strip()
+    video_type = data.get('video_type', 'YouTube').strip()
+    
+    if not video_title or not video_url:
+        return jsonify({'error': 'Video title and URL are required.'}), 400
+        
+    db = get_db()
+    cursor = db.cursor()
+    
+    cursor.execute('SELECT id, chapter_id FROM chapter_videos WHERE id = ?', (video_id,))
+    video = cursor.fetchone()
+    if not video:
+        return jsonify({'error': 'Video not found.'}), 404
+        
+    cursor.execute('''
+    UPDATE chapter_videos 
+    SET video_title = ?, video_url = ?, video_type = ?
+    WHERE id = ?
+    ''', (video_title, video_url, video_type, video_id))
+    db.commit()
+    
+    return jsonify({
+        'message': 'Video updated successfully.',
+        'video': {
+            'id': video_id,
+            'chapter_id': video['chapter_id'],
+            'video_title': video_title,
+            'video_url': video_url,
+            'video_type': video_type
+        }
+    })
+
+@app.route('/api/videos/<int:video_id>', methods=['DELETE'])
+def delete_chapter_video(video_id):
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorised.'}), 401
+        
+    db = get_db()
+    cursor = db.cursor()
+    
+    cursor.execute('SELECT id FROM chapter_videos WHERE id = ?', (video_id,))
+    if not cursor.fetchone():
+        return jsonify({'error': 'Video not found.'}), 404
+        
+    cursor.execute('DELETE FROM chapter_videos WHERE id = ?', (video_id,))
+    db.commit()
+    
+    return jsonify({'message': 'Video deleted successfully.'})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
