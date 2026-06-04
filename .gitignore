@@ -16,3 +16,7 @@ database.db
 
 # VS Code settings (optional, usually kept local)
 .vscode/
+
+# Uploaded resources
+static/uploads/
+

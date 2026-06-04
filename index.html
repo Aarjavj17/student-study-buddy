@@ -151,6 +151,22 @@
             border-color: rgba(255, 255, 255, 0.2);
         }
 
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border-color: transparent;
+        }
+        .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+        .btn-ghost.active {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--color-primary);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
         .btn-outline {
             background: transparent;
             color: var(--text-primary);
@@ -2112,6 +2128,13 @@
 
         <!-- MAIN WINDOW -->
         <main class="main-content">
+            <!-- OFFLINE WARNING BANNER -->
+            <div id="offline-warning-banner" class="hidden" style="margin: 20px 20px 0 20px; padding: 12px 20px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--border-radius-md); display: flex; align-items: center; gap: 12px; color: #fca5a5; font-size: 0.9rem; z-index: 100;">
+                <i data-lucide="alert-triangle" style="width: 20px; height: 20px; color: #f87171; flex-shrink: 0;"></i>
+                <div>
+                    <strong>Offline Standalone Mode:</strong> Collaboration sync is disabled because the app was opened offline or via file protocol. Run the server using <code>start.command</code> and open <a href="http://127.0.0.1:5000/" style="color: #6366f1; text-decoration: underline;">http://127.0.0.1:5000/</a> to sync with other users.
+                </div>
+            </div>
             
             <!-- TOP BAR (STATS & OVERVIEWS) -->
             <header class="topbar glass">
@@ -2185,13 +2208,34 @@
                                     <div class="timer-display" id="timer-time">25:00</div>
                                 </div>
                                 
-                                <div class="timer-controls">
-                                    <button id="timer-toggle-btn" class="btn btn-round btn-primary">
+                                <div class="timer-controls" style="display: flex; gap: 12px; justify-content: center; margin-top: 15px;">
+                                    <button id="timer-toggle-btn" class="btn btn-round btn-primary" title="Start/Pause">
                                         <i data-lucide="play" id="timer-toggle-icon"></i>
                                     </button>
-                                    <button id="timer-reset-btn" class="btn btn-round btn-outline">
+                                    <button id="timer-stop-btn" class="btn btn-round btn-outline" style="border-color: rgba(239, 68, 68, 0.4); color: #ef4444;" title="Stop Focus Session">
+                                        <i data-lucide="square"></i>
+                                    </button>
+                                    <button id="timer-reset-btn" class="btn btn-round btn-outline" title="Reset to Default (25m)">
                                         <i data-lucide="rotate-ccw"></i>
                                     </button>
+                                </div>
+                                
+                                <div class="timer-duration-control" style="margin-top: 16px; width: 100%; display: flex; flex-direction: column; gap: 12px; border-top: 1px dashed var(--glass-border); padding-top: 16px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                                        <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Focus Duration:</span>
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <input type="number" id="custom-timer-input" placeholder="Min" min="1" max="720" style="width: 70px; padding: 6px 10px; border-radius: var(--border-radius-sm); background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: white; font-size: 0.85rem; text-align: center; height: auto;">
+                                            <button id="custom-timer-apply-btn" class="btn btn-sm btn-primary" style="padding: 6px 12px; font-size: 0.8rem;">Apply</button>
+                                        </div>
+                                    </div>
+                                    <div class="preset-buttons" style="display: flex; gap: 6px; justify-content: space-between; flex-wrap: wrap;">
+                                        <button class="btn btn-xs btn-ghost preset-btn active" data-minutes="25" style="flex: 1; min-width: 45px; padding: 4px 8px; font-size: 0.75rem;">25m</button>
+                                        <button class="btn btn-xs btn-ghost preset-btn" data-minutes="15" style="flex: 1; min-width: 45px; padding: 4px 8px; font-size: 0.75rem;">15m</button>
+                                        <button class="btn btn-xs btn-ghost preset-btn" data-minutes="30" style="flex: 1; min-width: 45px; padding: 4px 8px; font-size: 0.75rem;">30m</button>
+                                        <button class="btn btn-xs btn-ghost preset-btn" data-minutes="45" style="flex: 1; min-width: 45px; padding: 4px 8px; font-size: 0.75rem;">45m</button>
+                                        <button class="btn btn-xs btn-ghost preset-btn" data-minutes="60" style="flex: 1; min-width: 45px; padding: 4px 8px; font-size: 0.75rem;">60m</button>
+                                        <button class="btn btn-xs btn-ghost preset-btn" data-minutes="90" style="flex: 1; min-width: 45px; padding: 4px 8px; font-size: 0.75rem;">90m</button>
+                                    </div>
                                 </div>
                                 
                                 <div class="timer-task-selector-wrapper">
@@ -2942,6 +2986,8 @@
             if (!window.location.protocol.startsWith('http')) {
                 useBackend = false;
                 console.log("No HTTP protocol detected. Running in Local Standalone (localStorage) mode.");
+                const banner = document.getElementById('offline-warning-banner');
+                if (banner) banner.classList.remove('hidden');
                 checkAuthStatus();
                 return;
             }
@@ -2951,10 +2997,14 @@
                 const res = await fetch('/api/auth/status');
                 useBackend = true;
                 console.log("Live backend detected. Operating in Database mode.");
+                const banner = document.getElementById('offline-warning-banner');
+                if (banner) banner.classList.add('hidden');
                 checkAuthStatus();
             } catch (err) {
                 useBackend = false;
                 console.log("Backend ping failed. Falling back to Local Standalone mode.");
+                const banner = document.getElementById('offline-warning-banner');
+                if (banner) banner.classList.remove('hidden');
                 checkAuthStatus();
             }
         }
@@ -3028,12 +3078,56 @@
                 });
             }
 
-            // Pomodoro Timer controls
+            // Pomodoro & Manual Timer controls
             document.getElementById('timer-toggle-btn').addEventListener('click', toggleTimer);
             document.getElementById('timer-reset-btn').addEventListener('click', resetTimer);
             document.getElementById('timer-task-select').addEventListener('change', (e) => {
                 activeFocusTaskId = e.target.value || null;
             });
+
+            // Stop Focus Session Button
+            const stopBtn = document.getElementById('timer-stop-btn');
+            if (stopBtn) {
+                stopBtn.addEventListener('click', stopTimer);
+            }
+
+            // Preset Focus Durations
+            const presetBtns = document.querySelectorAll('.preset-btn');
+            presetBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const minutes = parseInt(btn.getAttribute('data-minutes'));
+                    setTimerDuration(minutes);
+                    
+                    presetBtns.forEach(b => {
+                        b.classList.remove('active');
+                        b.classList.remove('btn-primary');
+                        b.classList.add('btn-ghost');
+                    });
+                    btn.classList.add('active');
+                    btn.classList.remove('btn-ghost');
+                    btn.classList.add('btn-primary');
+                });
+            });
+
+            // Custom Focus Duration Apply
+            const applyBtn = document.getElementById('custom-timer-apply-btn');
+            if (applyBtn) {
+                applyBtn.addEventListener('click', () => {
+                    const input = document.getElementById('custom-timer-input');
+                    const mins = parseInt(input.value);
+                    if (isNaN(mins) || mins < 1 || mins > 720) {
+                        alert("Please enter a valid duration between 1 and 720 minutes.");
+                        return;
+                    }
+                    setTimerDuration(mins);
+                    
+                    presetBtns.forEach(b => {
+                        b.classList.remove('active');
+                        b.classList.remove('btn-primary');
+                        b.classList.add('btn-ghost');
+                    });
+                });
+            }
 
             // Cheer Me Up Button
             document.getElementById('btn-cheer').addEventListener('click', showCheerUpQuote);
@@ -3061,16 +3155,52 @@
                 document.getElementById('levelup-modal').classList.add('hidden');
             });
 
-            // Class 9th Edit Resources Modal
-            document.getElementById('edit-links-cancel').addEventListener('click', () => {
-                document.getElementById('edit-links-modal').classList.add('hidden');
-            });
-            document.getElementById('edit-links-form').addEventListener('submit', handleEditLinksSubmit);
+            // PDF/Video Viewer Close
+            const pdfCloseBtn = document.getElementById('pdf-viewer-close');
+            if (pdfCloseBtn) {
+                pdfCloseBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    closePdfViewer();
+                });
+            }
 
-            // PDF Viewer Close
-            document.getElementById('pdf-viewer-close').addEventListener('click', () => {
-                document.getElementById('pdf-viewer-modal').classList.add('hidden');
-                document.getElementById('pdf-frame').src = '';
+            // Click outside PDF Viewer modal to close
+            const pdfModal = document.getElementById('pdf-viewer-modal');
+            if (pdfModal) {
+                pdfModal.addEventListener('click', (e) => {
+                    if (e.target === pdfModal) {
+                        closePdfViewer();
+                    }
+                });
+            }
+
+            // Click outside Mind Map lightbox to close
+            const mindmapLightbox = document.getElementById('mind-map-lightbox');
+            if (mindmapLightbox) {
+                mindmapLightbox.addEventListener('click', (e) => {
+                    if (e.target === mindmapLightbox) {
+                        closeMindMapLightbox();
+                    }
+                });
+            }
+
+            // Click outside Video Management modal to close
+            const videoModal = document.getElementById('video-manage-modal');
+            if (videoModal) {
+                videoModal.addEventListener('click', (e) => {
+                    if (e.target === videoModal) {
+                        closeVideoManageModal();
+                    }
+                });
+            }
+
+            // ESC key to close active overlays
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closePdfViewer();
+                    closeMindMapLightbox();
+                    closeVideoManageModal();
+                }
             });
         }
 
@@ -3741,29 +3871,88 @@
             }
         }
 
+        function setTimerDuration(minutes) {
+            clearInterval(timerInterval);
+            timerRunning = false;
+            timerDuration = minutes * 60;
+            timerSecondsLeft = timerDuration;
+            
+            const mins = Math.floor(timerSecondsLeft / 60);
+            const secs = timerSecondsLeft % 60;
+            document.getElementById('timer-time').innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            updateTimerCircle(1);
+            
+            const btnIcon = document.getElementById('timer-toggle-icon');
+            if (btnIcon) {
+                btnIcon.setAttribute('data-lucide', 'play');
+                lucide.createIcons();
+            }
+        }
+
+        function stopTimer() {
+            soundEffects.playPop();
+            clearInterval(timerInterval);
+            timerRunning = false;
+            timerSecondsLeft = timerDuration;
+            
+            const mins = Math.floor(timerSecondsLeft / 60);
+            const secs = timerSecondsLeft % 60;
+            document.getElementById('timer-time').innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            updateTimerCircle(1);
+            
+            const btnIcon = document.getElementById('timer-toggle-icon');
+            if (btnIcon) {
+                btnIcon.setAttribute('data-lucide', 'play');
+                lucide.createIcons();
+            }
+        }
+
         function resetTimer() {
             soundEffects.playPop();
             clearInterval(timerInterval);
             timerRunning = false;
+            timerDuration = 25 * 60;
             timerSecondsLeft = timerDuration;
             document.getElementById('timer-time').innerText = '25:00';
             updateTimerCircle(1);
             
             const btnIcon = document.getElementById('timer-toggle-icon');
-            btnIcon.setAttribute('data-lucide', 'play');
-            lucide.createIcons();
+            if (btnIcon) {
+                btnIcon.setAttribute('data-lucide', 'play');
+                lucide.createIcons();
+            }
+            
+            // Set 25m preset active in UI
+            const presetBtns = document.querySelectorAll('.preset-btn');
+            presetBtns.forEach(b => {
+                const mins = parseInt(b.getAttribute('data-minutes'));
+                if (mins === 25) {
+                    b.classList.add('active');
+                    b.classList.remove('btn-ghost');
+                    b.classList.add('btn-primary');
+                } else {
+                    b.classList.remove('active');
+                    b.classList.remove('btn-primary');
+                    b.classList.add('btn-ghost');
+                }
+            });
         }
 
         async function handleTimerComplete() {
             clearInterval(timerInterval);
             timerRunning = false;
             timerSecondsLeft = timerDuration;
-            document.getElementById('timer-time').innerText = '25:00';
+            
+            const mins = Math.floor(timerDuration / 60);
+            const secs = timerDuration % 60;
+            document.getElementById('timer-time').innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
             updateTimerCircle(1);
             
             const btnIcon = document.getElementById('timer-toggle-icon');
-            btnIcon.setAttribute('data-lucide', 'play');
-            lucide.createIcons();
+            if (btnIcon) {
+                btnIcon.setAttribute('data-lucide', 'play');
+                lucide.createIcons();
+            }
             
             soundEffects.playLevelUp();
             triggerConfetti(0.5);
@@ -4584,7 +4773,7 @@
                                 </button>
                             `;
                         } else {
-                            badgeHtml = `<span class="status-badge status-not-added"><i data-lucide="x" style="width:10px;height:10px;"></i> Not Added</span>`;
+                            badgeHtml = `<span class="status-badge status-not-added"><i data-lucide="x" style="width:10px;height:10px;"></i> Not Uploaded</span>`;
                             actionHtml = `
                                 <button onclick="triggerInlineUpload(${res.id}, '${config.key}')" class="btn btn-xs btn-ghost" title="Upload PDF/Image">
                                     <i data-lucide="upload-cloud" style="width:12px;height:12px;"></i> Upload
@@ -4789,6 +4978,18 @@
             document.getElementById('pdf-viewer-modal').classList.remove('hidden');
         }
 
+        function closePdfViewer() {
+            soundEffects.playPop();
+            const modal = document.getElementById('pdf-viewer-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+            const frame = document.getElementById('pdf-frame');
+            if (frame) {
+                frame.src = '';
+            }
+        }
+
         function openAddVideoModal(chapterId) {
             soundEffects.playPop();
             document.getElementById('video-chapter-id').value = chapterId;
@@ -4972,51 +5173,32 @@
                     alert("Network error uploading resource.");
                 }
             } else {
-                const resources = localStore.getResources(selectedClass, selectedSubject);
-                const idx = resources.findIndex(r => r.id === chapterId);
-                if (idx !== -1) {
-                    if (!resources[idx].resources) {
-                        resources[idx].resources = {};
-                    }
-                    const fakeUrl = `/static/uploads/mock_resource_${chapterId}_${resourceType}${file.name.slice(file.name.lastIndexOf('.'))}`;
-                    resources[idx].resources[resourceType] = fakeUrl;
-                    localStore.saveResources(selectedClass, selectedSubject, resources);
-                    
-                    soundEffects.playSuccess();
-                    triggerConfetti(0.2);
-                    loadClassResources();
-                }
+                alert("Collaboration sync is offline in standalone mode. Please run the Flask server via start.command and open http://127.0.0.1:5000/ to upload shared resources.");
             }
         }
 
         async function deleteResource(chapterId, resourceType) {
+            if (!useBackend) {
+                alert("Collaboration sync is offline in standalone mode. Please run the Flask server via start.command and open http://127.0.0.1:5000/ to manage resources.");
+                return;
+            }
+
             if (!confirm(`Are you sure you want to delete this resource?`)) return;
 
-            if (useBackend) {
-                try {
-                    const res = await fetch(`/api/chapters/${chapterId}/resources/${resourceType}`, {
-                        method: 'DELETE'
-                    });
+            try {
+                const res = await fetch(`/api/chapters/${chapterId}/resources/${resourceType}`, {
+                    method: 'DELETE'
+                });
 
-                    if (res.ok) {
-                        soundEffects.playSuccess();
-                        loadClassResources();
-                    } else {
-                        alert("Failed to delete resource.");
-                    }
-                } catch (err) {
-                    console.error("Delete error:", err);
-                    alert("Network error deleting resource.");
-                }
-            } else {
-                const resources = localStore.getResources(selectedClass, selectedSubject);
-                const idx = resources.findIndex(r => r.id === chapterId);
-                if (idx !== -1 && resources[idx].resources) {
-                    delete resources[idx].resources[resourceType];
-                    localStore.saveResources(selectedClass, selectedSubject, resources);
+                if (res.ok) {
                     soundEffects.playSuccess();
                     loadClassResources();
+                } else {
+                    alert("Failed to delete resource.");
                 }
+            } catch (err) {
+                console.error("Delete error:", err);
+                alert("Network error deleting resource.");
             }
         }
 
