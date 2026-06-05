@@ -2555,30 +2555,7 @@
                     <label for="reg-lastname"><i data-lucide="info"></i> Last Name</label>
                     <input type="text" id="reg-lastname" placeholder="Enter last name">
                 </div>
-                <div class="form-group reg-only-field" id="reg-email-group">
-                    <label for="reg-email" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                        <span><i data-lucide="mail"></i> Email Address</span>
-                        <span id="email-verify-status" class="status-badge status-not-added" style="display: none; padding: 2px 6px; font-size: 0.7rem;">Not Verified</span>
-                    </label>
-                    <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
-                        <input type="email" id="reg-email" placeholder="Enter email (e.g. name@domain.com)" autocomplete="email" style="flex: 1;">
-                        <button type="button" id="btn-send-email-otp" class="btn btn-sm btn-outline" style="display: none; height: 45px; padding: 0 16px; align-items: center; justify-content: center; font-weight: 600; white-space: nowrap;">Send OTP</button>
-                    </div>
-                    
-                    <!-- Inline Email OTP Container -->
-                    <div id="email-otp-verification-area" class="glass" style="display: none; margin-top: 10px; padding: 12px; border-radius: var(--border-radius-md); border: 1px solid rgba(99, 102, 241, 0.2); background: rgba(15, 23, 42, 0.65);">
-                        <p style="font-size: 0.82rem; margin-bottom: 8px; color: var(--text-secondary);">
-                            📧 Verification code sent to email. Enter it below:
-                            <span id="dev-email-otp-toast" style="font-weight: bold; color: var(--color-warning); font-size: 0.85rem; margin-left: 6px;"></span>
-                        </p>
-                        <div style="display: flex; gap: 8px;">
-                            <input type="text" id="email-verification-code" placeholder="6-digit OTP" maxlength="6" style="flex: 1; padding: 8px 12px; font-size: 0.9rem; text-align: center; letter-spacing: 2px;">
-                            <button type="button" id="btn-verify-email-code" class="btn btn-sm btn-primary" style="padding: 0 16px;">Verify</button>
-                            <button type="button" id="btn-change-email" class="btn btn-sm btn-secondary" style="padding: 0 12px;">Edit</button>
-                        </div>
-                        <div id="email-otp-error" style="color: var(--color-error); font-size: 0.8rem; margin-top: 6px; display: none;"></div>
-                    </div>
-                </div>
+
                 <div class="form-group reg-only-field" id="reg-mobile-group">
                     <label for="reg-mobile" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                         <span><i data-lucide="phone"></i> Mobile Number</span>
@@ -2967,7 +2944,7 @@
                     <div class="filters-panel glass" style="padding: 20px; border-radius: var(--border-radius-lg); display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px;">
                         <!-- Class Filter & Search Bar Row -->
                         <div style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="display: none !important; align-items: center; gap: 12px;">
                                 <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">Select Class:</span>
                                 <div class="class-filter-buttons" style="display: flex; gap: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); padding: 4px; border-radius: var(--border-radius-md);">
                                     <button id="class-filter-9-btn" class="btn btn-sm btn-primary" onclick="filterClass('Class 9')">Class 9</button>
@@ -3752,7 +3729,7 @@ Click one of the suggestions below, or type your own question!</div>
         let currentUser = null;
         let activeTab = 'dashboard';
         let isRegisterMode = false;
-        let emailVerified = false;
+        let emailVerified = true;
         let mobileVerified = false;
         
         // Static Seeding Data for Offline Standalone Mode
@@ -4154,7 +4131,7 @@ Click one of the suggestions below, or type your own question!</div>
                 
                 errorEl.classList.add('hidden');
                 
-                const regInputs = ['reg-firstname', 'reg-lastname', 'reg-email', 'reg-mobile'];
+                const regInputs = ['reg-firstname', 'reg-lastname', 'reg-mobile'];
                 
                 if (isRegisterMode) {
                     formEl.classList.add('register-mode');
@@ -4198,8 +4175,6 @@ Click one of the suggestions below, or type your own question!</div>
                 }
                 
                 if (isRegisterMode) {
-                    const emailStatus = document.getElementById('email-verify-status');
-                    if (emailStatus) emailStatus.style.display = 'inline-flex';
                     const mobileStatus = document.getElementById('mobile-verify-status');
                     if (mobileStatus) mobileStatus.style.display = 'inline-flex';
                 }
@@ -4213,62 +4188,6 @@ Click one of the suggestions below, or type your own question!</div>
 
             // Auth Form Submission
             document.getElementById('auth-form').addEventListener('submit', handleAuthSubmit);
-
-            // Registration Inline Verification Trigger and Handling
-            const emailInput = document.getElementById('reg-email');
-            if (emailInput) {
-                const triggerEmailVerification = () => {
-                    if (!isRegisterMode || emailVerified) return;
-                    const emailVal = emailInput.value.trim();
-                    if (emailVal.includes('@') && emailVal.includes('.')) {
-                        sendEmailOTP();
-                    }
-                };
-                emailInput.addEventListener('blur', triggerEmailVerification);
-                emailInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        triggerEmailVerification();
-                    }
-                });
-                
-                // Show/hide Send OTP button inline as they type
-                emailInput.addEventListener('input', () => {
-                    const sendBtn = document.getElementById('btn-send-email-otp');
-                    if (!sendBtn) return;
-                    const emailVal = emailInput.value.trim();
-                    const emailVerifyArea = document.getElementById('email-otp-verification-area');
-                    const emailVerifyVisible = emailVerifyArea && emailVerifyArea.style.display !== 'none';
-                    
-                    if (isRegisterMode && !emailVerified && !emailVerifyVisible && emailVal.includes('@') && emailVal.includes('.')) {
-                        sendBtn.style.display = 'inline-flex';
-                    } else {
-                        sendBtn.style.display = 'none';
-                    }
-                });
-            }
-
-            const sendEmailBtn = document.getElementById('btn-send-email-otp');
-            if (sendEmailBtn) {
-                sendEmailBtn.addEventListener('click', sendEmailOTP);
-            }
-            const emailVerifyBtn = document.getElementById('btn-verify-email-code');
-            if (emailVerifyBtn) {
-                emailVerifyBtn.addEventListener('click', verifyEmailOTP);
-            }
-            const emailCodeInput = document.getElementById('email-verification-code');
-            if (emailCodeInput) {
-                emailCodeInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        verifyEmailOTP();
-                    }
-                });
-            }
-            const emailChangeBtn = document.getElementById('btn-change-email');
-            if (emailChangeBtn) {
-                emailChangeBtn.addEventListener('click', cancelEmailVerification);
-            }
 
             const mobileInput = document.getElementById('reg-mobile');
             if (mobileInput) {
@@ -4589,7 +4508,7 @@ Click one of the suggestions below, or type your own question!</div>
             if (!submitBtn) return;
             
             if (isRegisterMode) {
-                if (emailVerified && mobileVerified) {
+                if (mobileVerified) {
                     submitBtn.disabled = false;
                     submitBtn.classList.remove('btn-secondary');
                     submitBtn.classList.add('btn-primary');
@@ -4598,7 +4517,7 @@ Click one of the suggestions below, or type your own question!</div>
                     submitBtn.disabled = true;
                     submitBtn.classList.remove('btn-primary');
                     submitBtn.classList.add('btn-secondary');
-                    submitBtn.querySelector('span').innerText = "Verify Email & Mobile to Register";
+                    submitBtn.querySelector('span').innerText = "Verify Mobile to Register";
                 }
             } else {
                 submitBtn.disabled = false;
@@ -4609,43 +4528,26 @@ Click one of the suggestions below, or type your own question!</div>
         }
 
         function resetRegistrationOTPState() {
-            emailVerified = false;
+            emailVerified = true;
             mobileVerified = false;
             localEmailOTP = '';
             localMobileOTP = '';
             
-            const emailInput = document.getElementById('reg-email');
-            if (emailInput) {
-                emailInput.disabled = false;
-                emailInput.value = '';
-            }
             const mobileInput = document.getElementById('reg-mobile');
             if (mobileInput) {
                 mobileInput.disabled = false;
                 mobileInput.value = '';
             }
             
-            const emailVerifyArea = document.getElementById('email-otp-verification-area');
-            if (emailVerifyArea) emailVerifyArea.style.display = 'none';
             const mobileVerifyArea = document.getElementById('mobile-otp-verification-area');
             if (mobileVerifyArea) mobileVerifyArea.style.display = 'none';
             
-            const emailCodeInput = document.getElementById('email-verification-code');
-            if (emailCodeInput) emailCodeInput.value = '';
             const mobileCodeInput = document.getElementById('mobile-verification-code');
             if (mobileCodeInput) mobileCodeInput.value = '';
             
-            const emailToast = document.getElementById('dev-email-otp-toast');
-            if (emailToast) emailToast.innerText = '';
             const mobileToast = document.getElementById('dev-mobile-otp-toast');
             if (mobileToast) mobileToast.innerText = '';
             
-            const emailStatus = document.getElementById('email-verify-status');
-            if (emailStatus) {
-                emailStatus.style.display = 'none';
-                emailStatus.innerText = 'Not Verified';
-                emailStatus.className = 'status-badge status-not-added';
-            }
             const mobileStatus = document.getElementById('mobile-verify-status');
             if (mobileStatus) {
                 mobileStatus.style.display = 'none';
@@ -4653,8 +4555,6 @@ Click one of the suggestions below, or type your own question!</div>
                 mobileStatus.className = 'status-badge status-not-added';
             }
             
-            const sendEmailBtn = document.getElementById('btn-send-email-otp');
-            if (sendEmailBtn) sendEmailBtn.style.display = 'none';
             const sendMobileBtn = document.getElementById('btn-send-mobile-otp');
             if (sendMobileBtn) sendMobileBtn.style.display = 'none';
             
@@ -4662,7 +4562,6 @@ Click one of the suggestions below, or type your own question!</div>
         }
 
         function updateRegistrationFieldsState() {
-            const emailInput = document.getElementById('reg-email');
             const mobileInput = document.getElementById('reg-mobile');
             const classSelect = document.getElementById('reg-class');
             const usernameInput = document.getElementById('username');
@@ -4675,18 +4574,11 @@ Click one of the suggestions below, or type your own question!</div>
             }
             
             // In register mode:
-            // Email is editable only if not verified and verification is not in progress
-            const emailVerifyArea = document.getElementById('email-otp-verification-area');
-            const emailVerifyVisible = emailVerifyArea && emailVerifyArea.style.display !== 'none';
-            if (emailInput) {
-                emailInput.disabled = emailVerified || emailVerifyVisible;
-            }
-            
-            // Mobile is enabled only if email is verified
+            // Mobile is enabled by default
             const mobileVerifyArea = document.getElementById('mobile-otp-verification-area');
             const mobileVerifyVisible = mobileVerifyArea && mobileVerifyArea.style.display !== 'none';
             if (mobileInput) {
-                mobileInput.disabled = !emailVerified || mobileVerified || mobileVerifyVisible;
+                mobileInput.disabled = mobileVerified || mobileVerifyVisible;
                 
                 // Opacity style indicator
                 const mobileGroup = document.getElementById('reg-mobile-group');
@@ -4695,15 +4587,13 @@ Click one of the suggestions below, or type your own question!</div>
                 }
             }
             
-            // Class, Username, Password are enabled only if both are verified
-            const bothVerified = emailVerified && mobileVerified;
-            
+            // Class, Username, Password are enabled only if mobile is verified
             const regFields = [classSelect, usernameInput, passwordInput];
             regFields.forEach(el => {
                 if (el) {
-                    el.disabled = !bothVerified;
+                    el.disabled = !mobileVerified;
                     if (el.parentElement) {
-                        el.parentElement.style.opacity = bothVerified ? '1' : '0.5';
+                        el.parentElement.style.opacity = mobileVerified ? '1' : '0.5';
                     }
                 }
             });
@@ -4711,143 +4601,7 @@ Click one of the suggestions below, or type your own question!</div>
             updateAuthSubmitButtonState();
         }
 
-        async function sendEmailOTP() {
-            const emailInput = document.getElementById('reg-email');
-            const emailVal = emailInput.value.trim();
-            const errorEl = document.getElementById('email-otp-error');
-            const otpArea = document.getElementById('email-otp-verification-area');
-            const devToast = document.getElementById('dev-email-otp-toast');
-            const sendBtn = document.getElementById('btn-send-email-otp');
-            
-            if (!emailVal.includes('@') || !emailVal.includes('.')) {
-                return;
-            }
-            
-            if (emailVerified) return;
-            
-            emailInput.disabled = true;
-            errorEl.style.display = 'none';
-            otpArea.style.display = 'block';
-            devToast.innerText = "Sending...";
-            if (sendBtn) sendBtn.style.display = 'none';
-            
-            updateRegistrationFieldsState();
-            
-            try {
-                if (useBackend) {
-                    const res = await fetch('/api/auth/send-email-otp', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: emailVal })
-                    });
-                    const data = await res.json();
-                    if (res.ok) {
-                        localEmailOTP = data.otp;
-                        devToast.innerText = `(Dev code: ${data.otp})`;
-                        soundEffects.playPop();
-                        const codeInput = document.getElementById('email-verification-code');
-                        if (codeInput) codeInput.focus();
-                    } else {
-                        throw new Error(data.error || "Failed to send OTP.");
-                    }
-                } else {
-                    localEmailOTP = Math.floor(100000 + Math.random() * 900000).toString();
-                    devToast.innerText = `(Dev code: ${localEmailOTP})`;
-                    soundEffects.playPop();
-                    const codeInput = document.getElementById('email-verification-code');
-                    if (codeInput) codeInput.focus();
-                }
-            } catch (err) {
-                errorEl.innerText = err.message;
-                errorEl.style.display = 'block';
-                devToast.innerText = "";
-                otpArea.style.display = 'none';
-                emailInput.disabled = false;
-                updateRegistrationFieldsState();
-            }
-        }
 
-        async function verifyEmailOTP() {
-            const emailInput = document.getElementById('reg-email');
-            const emailVal = emailInput.value.trim();
-            const codeInput = document.getElementById('email-verification-code');
-            const codeVal = codeInput.value.trim();
-            const errorEl = document.getElementById('email-otp-error');
-            const otpArea = document.getElementById('email-otp-verification-area');
-            const statusBadge = document.getElementById('email-verify-status');
-            
-            errorEl.style.display = 'none';
-            
-            if (codeVal.length !== 6) {
-                errorEl.innerText = "Please enter a 6-digit verification code.";
-                errorEl.style.display = 'block';
-                soundEffects.playFail();
-                return;
-            }
-            
-            try {
-                if (useBackend) {
-                    const res = await fetch('/api/auth/verify-email-otp', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: emailVal, otp: codeVal })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) {
-                        throw new Error(data.error || "Invalid code.");
-                    }
-                } else {
-                    if (codeVal !== localEmailOTP) {
-                        throw new Error("Invalid verification code.");
-                    }
-                }
-                
-                emailVerified = true;
-                otpArea.style.display = 'none';
-                
-                statusBadge.innerText = "✓ Verified";
-                statusBadge.className = "status-badge status-available";
-                statusBadge.style.display = "inline-flex";
-                
-                soundEffects.playSuccess();
-                updateRegistrationFieldsState();
-                
-                const mobileInput = document.getElementById('reg-mobile');
-                if (mobileInput) mobileInput.focus();
-                
-            } catch (err) {
-                errorEl.innerText = err.message;
-                errorEl.style.display = 'block';
-                soundEffects.playFail();
-            }
-        }
-
-        function cancelEmailVerification() {
-            const emailInput = document.getElementById('reg-email');
-            const otpArea = document.getElementById('email-otp-verification-area');
-            const statusBadge = document.getElementById('email-verify-status');
-            const devToast = document.getElementById('dev-email-otp-toast');
-            const sendBtn = document.getElementById('btn-send-email-otp');
-            
-            emailVerified = false;
-            if (emailInput) {
-                emailInput.value = '';
-            }
-            if (otpArea) otpArea.style.display = 'none';
-            if (devToast) devToast.innerText = '';
-            const emailCodeInput = document.getElementById('email-verification-code');
-            if (emailCodeInput) emailCodeInput.value = '';
-            if (sendBtn) sendBtn.style.display = 'none';
-            
-            if (statusBadge) {
-                statusBadge.innerText = "Not Verified";
-                statusBadge.className = "status-badge status-not-added";
-                statusBadge.style.display = "inline-flex";
-            }
-            
-            updateRegistrationFieldsState();
-            if (emailInput) emailInput.focus();
-        }
 
         async function sendMobileOTP() {
             const mobileInput = document.getElementById('reg-mobile');
@@ -5010,7 +4764,7 @@ Click one of the suggestions below, or type your own question!</div>
             if (toggleLink) toggleLink.innerText = 'Register here';
             
             // Reset fields & required flags
-            const regInputs = ['reg-firstname', 'reg-lastname', 'reg-email', 'reg-mobile'];
+            const regInputs = ['reg-firstname', 'reg-lastname', 'reg-mobile'];
             regInputs.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -5110,7 +4864,7 @@ Click one of the suggestions below, or type your own question!</div>
             if (isRegister) {
                 first_name = document.getElementById('reg-firstname').value.trim();
                 last_name = document.getElementById('reg-lastname').value.trim();
-                email = document.getElementById('reg-email').value.trim();
+                email = '';
                 mobile = document.getElementById('reg-mobile').value.trim();
                 class_name = document.getElementById('reg-class').value;
                 
@@ -5128,12 +4882,6 @@ Click one of the suggestions below, or type your own question!</div>
                 }
                 if (!first_name || !last_name) {
                     errorEl.innerText = 'First name and last name are required.';
-                    errorEl.classList.remove('hidden');
-                    soundEffects.playFail();
-                    return;
-                }
-                if (!emailVerified) {
-                    errorEl.innerText = 'Email verification is required.';
                     errorEl.classList.remove('hidden');
                     soundEffects.playFail();
                     return;
@@ -7166,6 +6914,10 @@ Click one of the suggestions below, or type your own question!</div>
         let activeUploadResourceType = null;
 
         function switchLearnSubTab(subTabId) {
+            // Guard: sample papers only for Class 10
+            if (subTabId === 'sample' && selectedClass !== 'Class 10') {
+                subTabId = 'syllabus';
+            }
             soundEffects.playPop();
             activeLearnSubTab = subTabId;
             
@@ -7214,12 +6966,28 @@ Click one of the suggestions below, or type your own question!</div>
             const btn9 = document.getElementById('class-filter-9-btn');
             const btn10 = document.getElementById('class-filter-10-btn');
             
-            if (className === 'Class 9') {
-                btn9.className = 'btn btn-sm btn-primary';
-                btn10.className = 'btn btn-sm btn-ghost';
-            } else {
-                btn9.className = 'btn btn-sm btn-ghost';
-                btn10.className = 'btn btn-sm btn-primary';
+            if (btn9 && btn10) {
+                if (className === 'Class 9') {
+                    btn9.className = 'btn btn-sm btn-primary';
+                    btn10.className = 'btn btn-sm btn-ghost';
+                } else {
+                    btn9.className = 'btn btn-sm btn-ghost';
+                    btn10.className = 'btn btn-sm btn-primary';
+                }
+            }
+            
+            // Show/hide sample papers subtab button based on class (only Class 10 gets sample papers)
+            const sampleBtn = document.getElementById('subtab-sample-btn');
+            if (sampleBtn) {
+                if (className === 'Class 10') {
+                    sampleBtn.style.display = 'inline-flex';
+                } else {
+                    sampleBtn.style.display = 'none';
+                    // If we were on the sample papers tab, switch back to syllabus
+                    if (activeLearnSubTab === 'sample') {
+                        switchLearnSubTab('syllabus');
+                    }
+                }
             }
             
             if (activeLearnSubTab === 'sample') {
