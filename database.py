@@ -23,9 +23,41 @@ def init_db():
         level INTEGER DEFAULT 1,
         streak INTEGER DEFAULT 0,
         last_study_date TEXT,
-        total_hours REAL DEFAULT 0.0
+        total_hours REAL DEFAULT 0.0,
+        role TEXT DEFAULT 'student',
+        avatar TEXT DEFAULT '',
+        first_name TEXT DEFAULT '',
+        last_name TEXT DEFAULT '',
+        email TEXT DEFAULT '',
+        mobile TEXT DEFAULT '',
+        class_name TEXT DEFAULT 'Class 9'
     )
     ''')
+    
+    # Check if role & avatar columns exist (migration check)
+    cursor.execute("PRAGMA table_info(users)")
+    columns = [row[1] for row in cursor.fetchall()]
+    if 'role' not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'student'")
+        conn.commit()
+    if 'avatar' not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT ''")
+        conn.commit()
+    if 'first_name' not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN first_name TEXT DEFAULT ''")
+        conn.commit()
+    if 'last_name' not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN last_name TEXT DEFAULT ''")
+        conn.commit()
+    if 'email' not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN email TEXT DEFAULT ''")
+        conn.commit()
+    if 'mobile' not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN mobile TEXT DEFAULT ''")
+        conn.commit()
+    if 'class_name' not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN class_name TEXT DEFAULT 'Class 9'")
+        conn.commit()
     
     # 2. Tasks Table
     cursor.execute('''
@@ -196,10 +228,37 @@ def init_db():
         FOREIGN KEY(chapter_id) REFERENCES class_chapters(id) ON DELETE CASCADE
     )
     ''')
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS sample_papers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        class_name TEXT NOT NULL,
+        subject_name TEXT NOT NULL,
+        paper_title TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    ''')
     conn.commit()
     
     # --- SEED DEFAULT DATA ---
     
+    # Seed default admin user
+    from werkzeug.security import generate_password_hash
+    admin_hash = generate_password_hash('admin123')
+    cursor.execute("SELECT id, password FROM users WHERE username = 'admin'")
+    row = cursor.fetchone()
+    if not row:
+        cursor.execute('''
+            INSERT INTO users (username, password, xp, level, streak, total_hours, role, email, mobile)
+            VALUES ('admin', ?, 0, 1, 0, 0.0, 'admin', 'admin@gmail.com', '9999999999')
+        ''', (admin_hash,))
+    else:
+        current_hash = row['password']
+        if not current_hash.startswith('pbkdf2:') and not current_hash.startswith('scrypt:'):
+            cursor.execute("UPDATE users SET password = ? WHERE id = ?", (admin_hash, row['id']))
+        cursor.execute("UPDATE users SET email = 'admin@gmail.com', mobile = '9999999999' WHERE username = 'admin'")
+
     # Seed Videos
     videos_data = [
         ('maths_algebra', 'Introduction to Algebra Basics', 'Maths', 'NybHckSEQBI', 'Learn the fundamental rules of Algebra, variables, and solving simple equations with Math Antics.'),
@@ -559,6 +618,20 @@ def init_db():
                 INSERT INTO quiz_questions (chapter_id, difficulty, question_type, question, options, correct_index, match_answers, case_text)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ''', (ch, diff, q_type, q_text, opts, corr, matches, case))
+
+    # Seed default sample papers
+    default_sample_papers = [
+        ('Class 10', 'Mathematics', 'CBSE Class 10 Mathematics Standard Sample Paper (2025-26)', '/static/uploads/sample_maths_10.pdf'),
+        ('Class 10', 'Science', 'CBSE Class 10 Science Practice Board Paper', '/static/uploads/sample_science_10.pdf'),
+        ('Class 9', 'Mathematics', 'Class 9 Mathematics Term-1 Sample Question Paper', '/static/uploads/sample_maths_9.pdf')
+    ]
+    for cls, sub, title, path in default_sample_papers:
+        cursor.execute('SELECT id FROM sample_papers WHERE class_name = ? AND subject_name = ? AND paper_title = ?', (cls, sub, title))
+        if not cursor.fetchone():
+            cursor.execute('''
+                INSERT INTO sample_papers (class_name, subject_name, paper_title, file_path)
+                VALUES (?, ?, ?, ?)
+            ''', (cls, sub, title, path))
 
     conn.commit()
     conn.close()

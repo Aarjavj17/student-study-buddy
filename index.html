@@ -197,7 +197,7 @@
         }
 
         /* Inputs styling */
-        input[type="text"], input[type="password"], textarea, select {
+        input[type="text"], input[type="password"], input[type="email"], input[type="tel"], textarea, select {
             width: 100%;
             padding: 12px 16px;
             background: rgba(15, 23, 42, 0.4);
@@ -210,7 +210,7 @@
             transition: all 0.2s ease;
         }
 
-        input[type="text"]:focus, input[type="password"]:focus, textarea:focus, select:focus {
+        input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus, input[type="tel"]:focus, textarea:focus, select:focus {
             border-color: var(--color-primary);
             background: rgba(15, 23, 42, 0.6);
             box-shadow: 0 0 12px var(--color-primary-glow);
@@ -316,6 +316,14 @@
             text-align: left;
         }
 
+        .auth-form .reg-only-field {
+            display: none;
+        }
+
+        .auth-form.register-mode .reg-only-field {
+            display: block;
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
@@ -364,18 +372,7 @@
 
         /* --- SIDEBAR --- */
         .sidebar {
-            width: var(--sidebar-width);
-            flex-shrink: 0;
-            height: 100vh;
-            position: sticky;
-            top: 0;
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid var(--glass-border);
-            border-top: none;
-            border-bottom: none;
-            border-left: none;
-            border-radius: 0;
+            display: none !important;
         }
 
         .sidebar-logo {
@@ -463,6 +460,8 @@
             justify-content: space-between;
             padding: 20px 24px;
             border-radius: var(--border-radius-lg);
+            position: relative;
+            z-index: 1000;
         }
 
         .topbar-welcome h2 {
@@ -597,6 +596,492 @@
         .tab-content.active {
             display: block;
             opacity: 1;
+        }
+
+        /* --- USER AVATAR SYSTEM --- */
+        .topbar-user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 6px 14px;
+            border-radius: var(--border-radius-md);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .topbar-user-profile:hover {
+            background: rgba(255, 255, 255, 0.16);
+            border-color: rgba(99, 102, 241, 0.5);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.2);
+        }
+
+        .user-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1.5px solid var(--color-primary);
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-avatar-edit-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            color: white;
+            font-size: 0.8rem;
+            transition: opacity 0.2s ease;
+        }
+
+        .topbar-user-profile:hover .user-avatar-edit-overlay {
+            opacity: 1;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.08) !important;
+        }
+
+        /* Avatar Selection Grid in Setup Modal */
+        .avatar-selection-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 18px 0;
+        }
+
+        .avatar-option-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 2px solid var(--glass-border);
+            border-radius: var(--border-radius-md);
+            padding: 14px;
+            font-size: 2.2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+        }
+
+        .avatar-option-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: var(--glass-border-hover);
+            transform: scale(1.05);
+        }
+
+        .avatar-option-card.selected {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--color-primary);
+            box-shadow: 0 0 15px var(--color-primary-glow);
+            transform: scale(1.08);
+        }
+
+        .avatar-upload-divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .avatar-upload-divider::before, .avatar-upload-divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px dashed var(--glass-border);
+        }
+
+        .avatar-upload-divider:not(:empty)::before {
+            margin-right: .5em;
+        }
+
+        .avatar-upload-divider:not(:empty)::after {
+            margin-left: .5em;
+        }
+
+        .custom-avatar-upload-zone {
+            border: 2px dashed var(--glass-border);
+            border-radius: var(--border-radius-md);
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.01);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .custom-avatar-upload-zone:hover {
+            border-color: var(--color-primary);
+            background: rgba(99, 102, 241, 0.03);
+        }
+
+        .custom-avatar-upload-zone i {
+            color: var(--text-muted);
+            width: 24px;
+            height: 24px;
+        }
+
+        .custom-avatar-upload-zone span {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .custom-avatar-preview {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            border: 2px solid var(--color-primary);
+            overflow: hidden;
+            display: none;
+            margin-top: 10px;
+            box-shadow: 0 0 12px var(--color-primary-glow);
+        }
+
+        .custom-avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* --- AI CHATBOT SYSTEM --- */
+        .chatbot-container {
+            position: fixed;
+            bottom: 96px;
+            right: 24px;
+            width: 380px;
+            height: 520px;
+            max-height: calc(100vh - 140px);
+            max-width: calc(100vw - 48px);
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-lg);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            
+            /* Animation details */
+            opacity: 0;
+            transform: scale(0.85) translateY(40px);
+            pointer-events: none;
+            transform-origin: bottom right;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .chatbot-container.open {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+        }
+
+        .chat-widget-toggle {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+            z-index: 999;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .chat-widget-toggle:hover {
+            transform: scale(1.08) rotate(8deg);
+            box-shadow: 0 4px 25px rgba(99, 102, 241, 0.6);
+        }
+
+        .chat-widget-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .chat-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .chat-close-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            transform: rotate(90deg);
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--glass-border);
+            background: linear-gradient(to right, rgba(99, 102, 241, 0.05), transparent);
+        }
+
+        .chat-bot-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+            animation: float-bot 3s infinite ease-in-out;
+        }
+
+        @keyframes float-bot {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .chat-bot-info h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: white;
+            font-family: var(--font-playful);
+        }
+
+        .chat-bot-info p {
+            font-size: 0.8rem;
+            color: var(--color-success);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 2px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--color-success);
+            box-shadow: 0 0 8px var(--color-success);
+            display: inline-block;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .chat-message-row {
+            display: flex;
+            width: 100%;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .chat-message-row.user-msg {
+            flex-direction: row-reverse;
+        }
+
+        .chat-message-bubble {
+            max-width: 70%;
+            padding: 14px 18px;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .chat-message-row.bot-msg .chat-message-bubble {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            border-top-left-radius: 4px;
+        }
+
+        .chat-message-row.user-msg .chat-message-bubble {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
+            color: white;
+            border-top-right-radius: 4px;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+        }
+
+        .chat-message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .chat-message-row.bot-msg .chat-message-avatar {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
+            color: white;
+        }
+
+        .chat-message-row.user-msg .chat-message-avatar {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+        }
+
+        .chat-quick-actions {
+            padding: 10px 24px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            border-top: 1px dashed var(--glass-border);
+            background: rgba(15, 23, 42, 0.15);
+        }
+
+        .chat-action-chip {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            padding: 8px 14px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .chat-action-chip:hover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--color-primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .chat-input-area {
+            padding: 20px 24px;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            gap: 12px;
+            background: rgba(15, 23, 42, 0.3);
+        }
+
+        .chat-input-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .chat-input-wrapper input {
+            width: 100%;
+            padding: 14px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            color: white;
+            font-size: 0.95rem;
+            font-family: var(--font-sans);
+            transition: all 0.25s ease;
+        }
+
+        .chat-input-wrapper input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
+        }
+
+        .chat-send-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-purple));
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .chat-send-btn:hover {
+            transform: scale(1.05) rotate(5deg);
+            box-shadow: 0 4px 18px rgba(99, 102, 241, 0.5);
+        }
+
+        /* Typing Indicator Animation */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            justify-content: center;
+            height: 20px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--text-muted);
+            animation: typing-bounce 1.4s infinite ease-in-out both;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing-bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
         }
 
         /* --- DASHBOARD GRID & WIDGETS --- */
@@ -2057,19 +2542,77 @@
         <div class="auth-card glass">
             <div class="auth-header">
                 <span class="auth-icon-wrapper"><i data-lucide="graduation-cap" class="logo-icon-lg"></i></span>
-                <h2>Welcome to Student Buddy</h2>
-                <p>Your friendly companion for playful study & growth!</p>
-            </div>
-            
-            <div class="auth-tabs">
-                <button id="tab-login-btn" class="auth-tab active">Login</button>
-                <button id="tab-register-btn" class="auth-tab">Register</button>
+                <h2 id="auth-card-title">Login to Student Buddy</h2>
+                <p id="auth-card-subtitle">Your friendly companion for playful study & growth!</p>
             </div>
             
             <form id="auth-form" class="auth-form">
+                <div class="form-group reg-only-field">
+                    <label for="reg-firstname"><i data-lucide="info"></i> First Name</label>
+                    <input type="text" id="reg-firstname" placeholder="Enter first name">
+                </div>
+                <div class="form-group reg-only-field">
+                    <label for="reg-lastname"><i data-lucide="info"></i> Last Name</label>
+                    <input type="text" id="reg-lastname" placeholder="Enter last name">
+                </div>
+                <div class="form-group reg-only-field" id="reg-email-group">
+                    <label for="reg-email" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <span><i data-lucide="mail"></i> Email Address</span>
+                        <span id="email-verify-status" class="status-badge status-not-added" style="display: none; padding: 2px 6px; font-size: 0.7rem;">Not Verified</span>
+                    </label>
+                    <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+                        <input type="email" id="reg-email" placeholder="Enter email (e.g. name@domain.com)" autocomplete="email" style="flex: 1;">
+                        <button type="button" id="btn-send-email-otp" class="btn btn-sm btn-outline" style="display: none; height: 45px; padding: 0 16px; align-items: center; justify-content: center; font-weight: 600; white-space: nowrap;">Send OTP</button>
+                    </div>
+                    
+                    <!-- Inline Email OTP Container -->
+                    <div id="email-otp-verification-area" class="glass" style="display: none; margin-top: 10px; padding: 12px; border-radius: var(--border-radius-md); border: 1px solid rgba(99, 102, 241, 0.2); background: rgba(15, 23, 42, 0.65);">
+                        <p style="font-size: 0.82rem; margin-bottom: 8px; color: var(--text-secondary);">
+                            📧 Verification code sent to email. Enter it below:
+                            <span id="dev-email-otp-toast" style="font-weight: bold; color: var(--color-warning); font-size: 0.85rem; margin-left: 6px;"></span>
+                        </p>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="email-verification-code" placeholder="6-digit OTP" maxlength="6" style="flex: 1; padding: 8px 12px; font-size: 0.9rem; text-align: center; letter-spacing: 2px;">
+                            <button type="button" id="btn-verify-email-code" class="btn btn-sm btn-primary" style="padding: 0 16px;">Verify</button>
+                            <button type="button" id="btn-change-email" class="btn btn-sm btn-secondary" style="padding: 0 12px;">Edit</button>
+                        </div>
+                        <div id="email-otp-error" style="color: var(--color-error); font-size: 0.8rem; margin-top: 6px; display: none;"></div>
+                    </div>
+                </div>
+                <div class="form-group reg-only-field" id="reg-mobile-group">
+                    <label for="reg-mobile" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <span><i data-lucide="phone"></i> Mobile Number</span>
+                        <span id="mobile-verify-status" class="status-badge status-not-added" style="display: none; padding: 2px 6px; font-size: 0.7rem;">Not Verified</span>
+                    </label>
+                    <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+                        <input type="tel" id="reg-mobile" placeholder="Enter 10-digit mobile number" style="flex: 1;">
+                        <button type="button" id="btn-send-mobile-otp" class="btn btn-sm btn-outline" style="display: none; height: 45px; padding: 0 16px; align-items: center; justify-content: center; font-weight: 600; white-space: nowrap;">Send OTP</button>
+                    </div>
+                    
+                    <!-- Inline Mobile OTP Container -->
+                    <div id="mobile-otp-verification-area" class="glass" style="display: none; margin-top: 10px; padding: 12px; border-radius: var(--border-radius-md); border: 1px solid rgba(99, 102, 241, 0.2); background: rgba(15, 23, 42, 0.65);">
+                        <p style="font-size: 0.82rem; margin-bottom: 8px; color: var(--text-secondary);">
+                            📱 Verification code sent to mobile. Enter it below:
+                            <span id="dev-mobile-otp-toast" style="font-weight: bold; color: var(--color-warning); font-size: 0.85rem; margin-left: 6px;"></span>
+                        </p>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="mobile-verification-code" placeholder="6-digit OTP" maxlength="6" style="flex: 1; padding: 8px 12px; font-size: 0.9rem; text-align: center; letter-spacing: 2px;">
+                            <button type="button" id="btn-verify-mobile-code" class="btn btn-sm btn-primary" style="padding: 0 16px;">Verify</button>
+                            <button type="button" id="btn-change-mobile" class="btn btn-sm btn-secondary" style="padding: 0 12px;">Edit</button>
+                        </div>
+                        <div id="mobile-otp-error" style="color: var(--color-error); font-size: 0.8rem; margin-top: 6px; display: none;"></div>
+                    </div>
+                </div>
+                <div class="form-group reg-only-field">
+                    <label for="reg-class"><i data-lucide="book-open"></i> Select Class</label>
+                    <select id="reg-class" style="width: 100%; padding: 12px 16px; border-radius: var(--border-radius-md); background: rgba(0, 0, 0, 0.25); border: 1px solid var(--glass-border); color: white; outline: none; transition: border-color 0.2s; font-family: inherit;">
+                        <option value="Class 9">Class 9</option>
+                        <option value="Class 10">Class 10</option>
+                    </select>
+                </div>
                 <div class="form-group">
-                    <label for="username"><i data-lucide="user"></i> Username</label>
-                    <input type="text" id="username" placeholder="Enter username (min 3 chars)" required autocomplete="username">
+                    <label for="username"><i data-lucide="user"></i> Username, Email or Mobile Number</label>
+                    <input type="text" id="username" placeholder="Enter username, email or mobile" required autocomplete="username">
                 </div>
                 <div class="form-group">
                     <label for="password"><i data-lucide="lock"></i> Password</label>
@@ -2081,6 +2624,11 @@
                 <button type="submit" id="auth-submit-btn" class="btn btn-primary btn-block">
                     <span>Let's Go!</span> <i data-lucide="arrow-right"></i>
                 </button>
+                
+                <div class="auth-toggle-footer" style="text-align: center; margin-top: 20px; font-size: 0.88rem; color: var(--text-secondary);">
+                    <span id="auth-toggle-text">New to Student Buddy?</span>
+                    <button type="button" id="auth-toggle-link" style="background: none; border: none; color: var(--color-primary); font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0 4px; font-family: inherit;">Register here</button>
+                </div>
             </form>
         </div>
     </div>
@@ -2100,26 +2648,33 @@
                     <i data-lucide="layout-dashboard"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="#planner" class="nav-item" data-tab="planner">
+                <a href="#planner" class="nav-item" data-tab="planner" style="display: none;">
                     <i data-lucide="calendar-todo"></i>
                     <span>Study Planner</span>
                 </a>
-                <a href="#learn" class="nav-item" data-tab="learn">
+                <a href="#learn" class="nav-item" data-tab="learn" style="display: none;">
                     <i data-lucide="book-open-check"></i>
                     <span>Learn Hub</span>
                 </a>
-                <a href="#quiz" class="nav-item" data-tab="quiz">
+                <a href="#quiz" class="nav-item" data-tab="quiz" style="display: none;">
                     <i data-lucide="brain-circuit"></i>
                     <span>Quiz Arena</span>
                 </a>
-                <a href="#progress" class="nav-item" data-tab="progress">
+                <a href="#progress" class="nav-item" data-tab="progress" style="display: none;">
                     <i data-lucide="line-chart"></i>
                     <span>Analytics</span>
                 </a>
             </nav>
             
             <div class="sidebar-footer">
-                <button id="logout-btn" class="btn btn-secondary btn-block">
+                <div class="sidebar-user-card glass" style="display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: var(--border-radius-md); margin-bottom: 12px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.01);">
+                    <div class="user-avatar" id="sidebar-user-avatar" style="width: 34px; height: 34px; font-size: 1.2rem; border-color: var(--color-purple);">🦁</div>
+                    <div class="user-info" style="display: flex; flex-direction: column; overflow: hidden; flex: 1;">
+                        <span class="username" id="sidebar-username" style="font-size: 0.85rem; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Student</span>
+                        <span class="role" id="sidebar-user-role" style="font-size: 0.7rem; color: var(--text-muted); text-transform: capitalize;">Student</span>
+                    </div>
+                </div>
+                <button id="logout-btn" class="btn btn-secondary btn-block" style="display: none;">
                     <i data-lucide="log-out"></i>
                     <span>Logout</span>
                 </button>
@@ -2138,9 +2693,67 @@
             
             <!-- TOP BAR (STATS & OVERVIEWS) -->
             <header class="topbar glass">
-                <div class="topbar-welcome">
-                    <h2 id="user-greeting">Hi, Student! 👋</h2>
-                    <p id="user-motto">Ready to learn something cool today without any pressure?</p>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- USER PROFILE CARD WITH DROPDOWN -->
+                    <div style="position: relative; display: inline-flex;">
+                        <div class="topbar-user-profile" id="topbar-profile-trigger" onclick="toggleProfileDropdown(event)" title="Account & Settings" style="cursor: pointer; position: relative;">
+                            <div class="user-avatar" id="topbar-user-avatar">🦁</div>
+                            <div class="user-avatar-edit-overlay">
+                                <i data-lucide="chevron-down" style="width: 14px; height: 14px;"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Floating Account & Navigation Dropdown Menu -->
+                        <div id="profile-dropdown" class="glass hidden" style="position: absolute; left: 0; top: 52px; width: 220px; border-radius: var(--border-radius-md); border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 10px 30px var(--glass-shadow); z-index: 1500; padding: 8px; display: flex; flex-direction: column; gap: 4px;">
+                            <div style="padding: 8px 10px 10px 10px; border-bottom: 1px solid var(--glass-border); margin-bottom: 6px;">
+                                <div style="font-weight: 700; font-size: 0.88rem; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" id="dropdown-fullname">Student</div>
+                                <div style="font-size: 0.72rem; color: var(--text-muted);" id="dropdown-class">Class 9</div>
+                            </div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <a href="#dashboard" class="dropdown-item" onclick="handleDropdownNav(event, 'dashboard')" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--border-radius-sm); color: var(--text-primary); text-decoration: none; font-size: 0.85rem; transition: background 0.2s;">
+                                    <i data-lucide="layout-dashboard" style="width: 15px; height: 15px; color: var(--color-purple);"></i>
+                                    <span>Dashboard</span>
+                                </a>
+                                <a href="#planner" class="dropdown-item" onclick="handleDropdownNav(event, 'planner')" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--border-radius-sm); color: var(--text-primary); text-decoration: none; font-size: 0.85rem; transition: background 0.2s;">
+                                    <i data-lucide="calendar-todo" style="width: 15px; height: 15px; color: var(--color-blue);"></i>
+                                    <span>Study Planner</span>
+                                </a>
+                                <a href="#learn" class="dropdown-item" onclick="handleDropdownNav(event, 'learn')" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--border-radius-sm); color: var(--text-primary); text-decoration: none; font-size: 0.85rem; transition: background 0.2s;">
+                                    <i data-lucide="book-open-check" style="width: 15px; height: 15px; color: var(--color-success);"></i>
+                                    <span>Learn Hub</span>
+                                </a>
+                                <a href="#quiz" class="dropdown-item" onclick="handleDropdownNav(event, 'quiz')" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--border-radius-sm); color: var(--text-primary); text-decoration: none; font-size: 0.85rem; transition: background 0.2s;">
+                                    <i data-lucide="brain-circuit" style="width: 15px; height: 15px; color: var(--color-pink);"></i>
+                                    <span>Quiz Arena</span>
+                                </a>
+                                <a href="#progress" class="dropdown-item" onclick="handleDropdownNav(event, 'progress')" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--border-radius-sm); color: var(--text-primary); text-decoration: none; font-size: 0.85rem; transition: background 0.2s;">
+                                    <i data-lucide="line-chart" style="width: 15px; height: 15px; color: var(--color-warning);"></i>
+                                    <span>Analytics</span>
+                                </a>
+                            </div>
+                            
+                            <div style="border-top: 1px solid var(--glass-border); margin: 4px 0; padding-top: 4px; display: flex; flex-direction: column; gap: 2px;">
+                                <a href="#" class="dropdown-item" onclick="handleDropdownEditProfile(event)" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--border-radius-sm); color: var(--text-primary); text-decoration: none; font-size: 0.85rem; transition: background 0.2s;">
+                                    <i data-lucide="edit-3" style="width: 15px; height: 15px; color: var(--text-secondary);"></i>
+                                    <span>Change Avatar</span>
+                                </a>
+                                <a href="#" class="dropdown-item" onclick="handleDropdownChangePassword(event)" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--border-radius-sm); color: var(--text-primary); text-decoration: none; font-size: 0.85rem; transition: background 0.2s;">
+                                    <i data-lucide="key-round" style="width: 15px; height: 15px; color: var(--text-secondary);"></i>
+                                    <span>Change Password</span>
+                                </a>
+                                <a href="#" class="dropdown-item" onclick="handleDropdownLogout(event)" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--border-radius-sm); color: var(--color-error); text-decoration: none; font-size: 0.85rem; transition: background 0.2s; font-weight: 600;">
+                                    <i data-lucide="log-out" style="width: 15px; height: 15px; color: var(--color-error);"></i>
+                                    <span>Logout</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="topbar-welcome">
+                        <h2 id="user-greeting">Hi, Student! 👋</h2>
+                        <p id="user-motto">Ready to learn something cool today without any pressure?</p>
+                    </div>
                 </div>
                 
                 <div class="topbar-stats">
@@ -2344,50 +2957,81 @@
                             <button id="subtab-videos-btn" class="btn btn-sm btn-ghost" onclick="switchLearnSubTab('videos')">
                                 <i data-lucide="video"></i> <span>Video References</span>
                             </button>
+                            <button id="subtab-sample-btn" class="btn btn-sm btn-ghost" onclick="switchLearnSubTab('sample')">
+                                <i data-lucide="file-text"></i> <span>Sample Papers</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Shared Filters and Search panel -->
+                    <div class="filters-panel glass" style="padding: 20px; border-radius: var(--border-radius-lg); display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px;">
+                        <!-- Class Filter & Search Bar Row -->
+                        <div style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">Select Class:</span>
+                                <div class="class-filter-buttons" style="display: flex; gap: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); padding: 4px; border-radius: var(--border-radius-md);">
+                                    <button id="class-filter-9-btn" class="btn btn-sm btn-primary" onclick="filterClass('Class 9')">Class 9</button>
+                                    <button id="class-filter-10-btn" class="btn btn-sm btn-ghost" onclick="filterClass('Class 10')">Class 10</button>
+                                </div>
+                            </div>
+                            <div class="search-wrapper" style="position: relative; flex: 1; max-width: 350px; min-width: 250px;">
+                                <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted);"></i>
+                                <input type="text" id="chapters-search-bar" placeholder="Search chapters..." style="width: 100%; padding: 10px 16px 10px 36px; border-radius: var(--border-radius-md); background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); color: white; outline: none; transition: border-color 0.2s;" onkeyup="handleChaptersSearch(this.value)">
+                            </div>
+                        </div>
+                        <!-- Subject Filter Row -->
+                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">Subjects:</span>
+                            <div class="subject-filter-list" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button class="btn btn-sm btn-primary subject-btn" data-subject="Mathematics" onclick="filterSubject('Mathematics')">📐 Mathematics</button>
+                                <button class="btn btn-sm btn-ghost subject-btn" data-subject="Science" onclick="filterSubject('Science')">🧪 Science</button>
+                                <button class="btn btn-sm btn-ghost subject-btn" data-subject="Social Science" onclick="filterSubject('Social Science')">🌍 Social Science</button>
+                                <button class="btn btn-sm btn-ghost subject-btn" data-subject="English" onclick="filterSubject('English')">📖 English</button>
+                                <button class="btn btn-sm btn-ghost subject-btn" data-subject="Hindi" onclick="filterSubject('Hindi')">✍️ Hindi</button>
+                            </div>
+                        </div>
+                        <!-- Subsection Filter Row -->
+                        <div id="subsection-filter-row" style="display: none; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px;">
+                            <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">Sub-sections:</span>
+                            <div id="subsection-filter-list" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <!-- Dynamic sub-section tabs -->
+                            </div>
                         </div>
                     </div>
 
                     <!-- SYLLABUS WORKSPACE -->
                     <div id="learn-syllabus-workspace" class="learn-sub-content">
-                        <!-- Filters and Search panel -->
-                        <div class="filters-panel glass" style="padding: 20px; border-radius: var(--border-radius-lg); display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px;">
-                            <!-- Class Filter & Search Bar Row -->
-                            <div style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center;">
-                                <div style="display: flex; align-items: center; gap: 12px;">
-                                    <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">Select Class:</span>
-                                    <div class="class-filter-buttons" style="display: flex; gap: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); padding: 4px; border-radius: var(--border-radius-md);">
-                                        <button id="class-filter-9-btn" class="btn btn-sm btn-primary" onclick="filterClass('Class 9')">Class 9</button>
-                                        <button id="class-filter-10-btn" class="btn btn-sm btn-ghost" onclick="filterClass('Class 10')">Class 10</button>
-                                    </div>
-                                </div>
-                                <div class="search-wrapper" style="position: relative; flex: 1; max-width: 350px; min-width: 250px;">
-                                    <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-muted);"></i>
-                                    <input type="text" id="chapters-search-bar" placeholder="Search chapters..." style="width: 100%; padding: 10px 16px 10px 36px; border-radius: var(--border-radius-md); background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); color: white; outline: none; transition: border-color 0.2s;" onkeyup="handleChaptersSearch(this.value)">
-                                </div>
-                            </div>
-                            <!-- Subject Filter Row -->
-                            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                                <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">Subjects:</span>
-                                <div class="subject-filter-list" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                    <button class="btn btn-sm btn-primary subject-btn" data-subject="Mathematics" onclick="filterSubject('Mathematics')">📐 Mathematics</button>
-                                    <button class="btn btn-sm btn-ghost subject-btn" data-subject="Science" onclick="filterSubject('Science')">🧪 Science</button>
-                                    <button class="btn btn-sm btn-ghost subject-btn" data-subject="Social Science" onclick="filterSubject('Social Science')">🌍 Social Science</button>
-                                    <button class="btn btn-sm btn-ghost subject-btn" data-subject="English" onclick="filterSubject('English')">📖 English</button>
-                                    <button class="btn btn-sm btn-ghost subject-btn" data-subject="Hindi" onclick="filterSubject('Hindi')">✍️ Hindi</button>
-                                </div>
-                            </div>
-                            <!-- Subsection Filter Row -->
-                            <div id="subsection-filter-row" style="display: none; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px;">
-                                <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">Sub-sections:</span>
-                                <div id="subsection-filter-list" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                    <!-- Dynamic sub-section tabs -->
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Chapters grid -->
                         <div class="chapters-grid" id="syllabus-chapters-container">
                             <!-- Dynamic chapter cards will be injected here -->
+                        </div>
+                    </div>
+
+                    <!-- SAMPLE PAPERS WORKSPACE -->
+                    <div id="learn-sample-workspace" class="learn-sub-content" style="display: none;">
+                        <!-- Upload Sample Paper Row/Form -->
+                        <div class="glass" style="padding: 20px; border-radius: var(--border-radius-lg); margin-bottom: 20px; display: flex; flex-direction: column; gap: 14px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i data-lucide="file-up" style="width: 20px; height: 20px; color: var(--color-primary);"></i>
+                                <h3 style="font-size: 1.1rem; font-weight: 700; color: white; margin: 0;">Upload New Sample Paper</h3>
+                            </div>
+                            <form id="upload-sample-paper-form" onsubmit="handleSamplePaperSubmit(event)" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+                                <input type="text" id="sample-paper-title-input" placeholder="e.g. CBSE 2025 Standard Mathematics" required style="flex: 1; min-width: 250px; padding: 10px 14px; border-radius: var(--border-radius-md); background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); color: white; outline: none; font-size: 0.9rem;">
+                                
+                                <input type="file" id="sample-paper-file-input" accept=".pdf,.png,.jpg,.jpeg" required style="display: none;" onchange="handleSampleFileSelection(event)">
+                                <button type="button" id="select-sample-file-btn" onclick="document.getElementById('sample-paper-file-input').click()" class="btn btn-secondary" style="padding: 10px 16px; display: flex; align-items: center; gap: 8px; border-radius: var(--border-radius-md);">
+                                    <i data-lucide="file"></i> <span id="select-sample-file-label" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Select PDF/Image</span>
+                                </button>
+                                
+                                <button type="submit" class="btn btn-primary" style="padding: 10px 20px; border-radius: var(--border-radius-md); display: flex; align-items: center; gap: 8px;">
+                                    <i data-lucide="upload-cloud"></i> Upload Paper
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Sample papers grid -->
+                        <div class="chapters-grid" id="sample-papers-container">
+                            <!-- Dynamic sample paper cards will be injected here -->
                         </div>
                     </div>
 
@@ -2621,10 +3265,200 @@
                     </div>
                 </div>
 
+                <!-- --- FLOATING AI CHATBOT WIDGET --- -->
+                <div id="chatbot-widget" class="chatbot-container">
+                    <!-- Header -->
+                    <div class="chat-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <div class="chat-bot-avatar">
+                                <i data-lucide="bot" style="width: 24px; height: 24px;"></i>
+                            </div>
+                            <div class="chat-bot-info">
+                                <h3>Buddy</h3>
+                                <p style="margin: 0;"><span class="status-dot"></span> Online Study Buddy</p>
+                            </div>
+                        </div>
+                        <button type="button" class="chat-close-btn" onclick="toggleChatbot(event)" title="Close Chat">
+                            <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+                        </button>
+                    </div>
+
+                    <!-- Messages Area -->
+                    <div class="chat-messages" id="chat-messages-container">
+                        <!-- Initial Bot Message -->
+                        <div class="chat-message-row bot-msg">
+                            <div class="chat-message-avatar">
+                                <i data-lucide="bot" style="width: 16px; height: 16px;"></i>
+                            </div>
+                            <div class="chat-message-bubble">Hello! I'm **Buddy**, your personal AI study assistant. 👋
+
+I can help you explain complex Math & Science concepts, offer study tips, draft a study schedule, tell jokes to lighten the load, or give you motivational quotes! 
+
+Click one of the suggestions below, or type your own question!</div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions Grid -->
+                    <div class="chat-quick-actions">
+                        <button type="button" class="chat-action-chip" onclick="sendQuickChatMessage('Give me a study tip')">
+                            <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i> Give me a study tip
+                        </button>
+                        <button type="button" class="chat-action-chip" onclick="sendQuickChatMessage('Explain a Science concept')">
+                            <i data-lucide="atom" style="width: 14px; height: 14px;"></i> Explain a Science concept
+                        </button>
+                        <button type="button" class="chat-action-chip" onclick="sendQuickChatMessage('Tell me a Math joke')">
+                            <i data-lucide="smile" style="width: 14px; height: 14px;"></i> Tell me a Math joke
+                        </button>
+                        <button type="button" class="chat-action-chip" onclick="sendQuickChatMessage('I need some motivation')">
+                            <i data-lucide="zap" style="width: 14px; height: 14px;"></i> Get motivated
+                        </button>
+                    </div>
+
+                    <!-- Input Area -->
+                    <form class="chat-input-area" onsubmit="handleChatSubmit(event)">
+                        <div class="chat-input-wrapper">
+                            <input type="text" id="chat-message-input" placeholder="Ask Buddy anything..." autocomplete="off">
+                        </div>
+                        <button type="submit" class="chat-send-btn" title="Send Message">
+                            <i data-lucide="send" style="width: 18px; height: 18px;"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Floating Chat Toggle Button -->
+                <button type="button" id="chatbot-toggle-btn" class="chat-widget-toggle" onclick="toggleChatbot(event)" title="Talk to Buddy">
+                    <i data-lucide="message-square-text" style="width: 24px; height: 24px;"></i>
+                </button>
+
 
 
             </section>
         </main>
+    </div>
+
+    <!-- --- OVERLAY: OTP VERIFICATION --- -->
+    <div id="otp-verification-modal" class="modal-overlay hidden" style="z-index: 1600;">
+        <div class="modal-card glass" style="width: 400px; max-width: 90%;">
+            <div class="modal-emoji">🔐</div>
+            <h2>Security Verification</h2>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px;">We've sent a 6-digit OTP verification code to both your email and mobile number.</p>
+            
+            <form id="otp-form" onsubmit="submitOTPVerification(event)" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="form-group">
+                    <label for="otp-email-input"><i data-lucide="mail"></i> Email OTP</label>
+                    <input type="text" id="otp-email-input" placeholder="Enter 6-digit Email OTP" required pattern="\d{6}" maxlength="6" style="text-align: center; letter-spacing: 4px; font-weight: bold; font-size: 1.1rem; padding: 12px; background: rgba(0,0,0,0.3); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); color:white; outline:none;">
+                </div>
+                <div class="form-group">
+                    <label for="otp-mobile-input"><i data-lucide="phone"></i> Mobile OTP</label>
+                    <input type="text" id="otp-mobile-input" placeholder="Enter 6-digit Mobile OTP" required pattern="\d{6}" maxlength="6" style="text-align: center; letter-spacing: 4px; font-weight: bold; font-size: 1.1rem; padding: 12px; background: rgba(0,0,0,0.3); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); color:white; outline:none;">
+                </div>
+                
+                <!-- Toast-style OTP debugger panel to help user easily copy-paste -->
+                <div id="otp-preview-toast" style="padding: 10px; border-radius: var(--border-radius-sm); background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.3); font-size: 0.8rem; text-align: center; color: #a5b4fc; font-family: monospace;">
+                    Dev OTP Preview: Email: <span id="toast-email-otp" style="font-weight:bold;">------</span> | Mobile: <span id="toast-mobile-otp" style="font-weight:bold;">------</span>
+                </div>
+                
+                <div id="otp-error" class="error-msg hidden" style="margin-top: 5px;"></div>
+                
+                <div class="modal-buttons" style="margin-top: 10px;">
+                    <button type="button" class="btn btn-outline" style="flex: 1;" onclick="closeOTPVerificationModal()">Cancel</button>
+                    <button type="submit" id="btn-verify-otp" class="btn btn-primary" style="flex: 1;">Verify & Register</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- --- OVERLAY: EXTRA FILE INPUTS AND LOGISTICS --- -->
+
+    <!-- --- OVERLAY: AVATAR SETUP / PROFILE EDIT --- -->
+    <div id="avatar-setup-modal" class="modal-overlay hidden" style="z-index: 1500;">
+        <div class="modal-card glass" style="width: 400px; max-width: 90%;">
+            <div class="modal-emoji">🎨</div>
+            <h2>Choose Your Avatar</h2>
+            <p>Select a fun emoji avatar or upload your own profile picture!</p>
+            
+            <!-- Emoji Selection Grid -->
+            <div class="avatar-selection-grid">
+                <div class="avatar-option-card" onclick="selectEmojiAvatar('🦁')" data-emoji="🦁">🦁</div>
+                <div class="avatar-option-card" onclick="selectEmojiAvatar('🦊')" data-emoji="🦊">🦊</div>
+                <div class="avatar-option-card" onclick="selectEmojiAvatar('🐼')" data-emoji="🐼">🐼</div>
+                <div class="avatar-option-card" onclick="selectEmojiAvatar('🦄')" data-emoji="🦄">🦄</div>
+                <div class="avatar-option-card" onclick="selectEmojiAvatar('🚀')" data-emoji="🚀">🚀</div>
+                <div class="avatar-option-card" onclick="selectEmojiAvatar('🎓')" data-emoji="🎓">🎓</div>
+                <div class="avatar-option-card" onclick="selectEmojiAvatar('🦖')" data-emoji="🦖">🦖</div>
+                <div class="avatar-option-card" onclick="selectEmojiAvatar('👾')" data-emoji="👾">👾</div>
+            </div>
+            
+            <div class="avatar-upload-divider">OR</div>
+            
+            <!-- Custom Upload Zone -->
+            <div class="custom-avatar-upload-zone" onclick="document.getElementById('avatar-file-input').click()">
+                <i data-lucide="image-up"></i>
+                <span>Click to upload image</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">(PNG, JPG, JPEG, GIF up to 2MB)</span>
+                <input type="file" id="avatar-file-input" accept=".png,.jpg,.jpeg,.gif" style="display: none;" onchange="handleAvatarFileSelect(event)">
+            </div>
+            
+            <!-- Preview of custom avatar -->
+            <div style="display: flex; justify-content: center; width: 100%;">
+                <div class="custom-avatar-preview" id="custom-avatar-preview-box">
+                    <img id="custom-avatar-preview-img" src="" alt="Avatar Preview">
+                </div>
+            </div>
+            
+            <!-- Buttons -->
+            <div class="modal-buttons" style="margin-top: 24px;">
+                <button type="button" class="btn btn-outline" style="flex: 1;" onclick="closeAvatarModal()">Cancel</button>
+                <button type="button" id="btn-save-avatar" class="btn btn-primary" style="flex: 1;" onclick="saveSelectedAvatar()">Save Profile</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- --- OVERLAY: CHANGE PASSWORD --- -->
+    <div id="change-password-modal" class="modal-overlay hidden" style="z-index: 1500;">
+        <div class="modal-card glass" style="width: 400px; max-width: 90%;">
+            <div class="modal-emoji">🔑</div>
+            <h2>Change Password</h2>
+            <p>Enter your current password and choose a new secure password.</p>
+            
+            <div id="change-password-error" class="error-msg hidden" style="width: 100%; margin-top: 10px;">
+                <i data-lucide="alert-circle" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
+                <span id="change-password-error-text">Error message</span>
+            </div>
+            
+            <div id="change-password-success" class="error-msg hidden" style="width: 100%; margin-top: 10px; color: var(--color-success); background: var(--color-success-bg); border-color: rgba(16, 185, 129, 0.3);">
+                <i data-lucide="check-circle-2" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
+                <span id="change-password-success-text">Password changed successfully!</span>
+            </div>
+            
+            <form id="change-password-form" onsubmit="submitChangePassword(event)" style="width: 100%; display: flex; flex-direction: column; gap: 16px; margin-top: 10px; text-align: left;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="cp-current-password">
+                        <i data-lucide="lock" style="width: 14px; height: 14px;"></i> Current Password
+                    </label>
+                    <input type="password" id="cp-current-password" required placeholder="Enter current password">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="cp-new-password">
+                        <i data-lucide="key" style="width: 14px; height: 14px;"></i> New Password
+                    </label>
+                    <input type="password" id="cp-new-password" required placeholder="Min 4 characters">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="cp-confirm-password">
+                        <i data-lucide="key-round" style="width: 14px; height: 14px;"></i> Confirm New Password
+                    </label>
+                    <input type="password" id="cp-confirm-password" required placeholder="Confirm new password">
+                </div>
+                
+                <div class="modal-buttons" style="margin-top: 12px; display: flex; gap: 12px; width: 100%;">
+                    <button type="button" class="btn btn-outline" style="flex: 1;" onclick="closeChangePasswordModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Update Password</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- --- OVERLAY: BADGE UNLOCKED CELEBRATION --- -->
@@ -2917,6 +3751,9 @@
         // Global App State
         let currentUser = null;
         let activeTab = 'dashboard';
+        let isRegisterMode = false;
+        let emailVerified = false;
+        let mobileVerified = false;
         
         // Static Seeding Data for Offline Standalone Mode
         let localVideos = [
@@ -3125,6 +3962,43 @@
                 let normSub = subjectName.trim();
                 if (normSub === 'Mathematics') normSub = 'Maths';
                 localStorage.setItem(`sb_resources_${normClass}_${normSub}`, JSON.stringify(resourcesList));
+            },
+            getSamplePapers(className, subjectName) {
+                const normClass = className.replace('Class ', '').trim();
+                let normSub = subjectName.trim();
+                if (normSub === 'Mathematics') normSub = 'Maths';
+                const key = `sb_sample_papers_${normClass}_${normSub}`;
+                const data = localStorage.getItem(key);
+                if (!data) {
+                    let defaults = [];
+                    if (normClass === '10' && normSub === 'Maths') {
+                        defaults = [
+                            { id: 10101, class_name: className, subject_name: subjectName, paper_title: 'CBSE Class 10 Mathematics Standard Sample Paper (2025-26)', file_path: '/static/uploads/sample_maths_10.pdf', created_at: new Date().toISOString() },
+                            { id: 10102, class_name: className, subject_name: subjectName, paper_title: 'Class 10 Mathematics Basic Practice Paper', file_path: '/static/uploads/sample_maths_10_basic.pdf', created_at: new Date().toISOString() }
+                        ];
+                    } else if (normClass === '10' && normSub === 'Science') {
+                        defaults = [
+                            { id: 10201, class_name: className, subject_name: subjectName, paper_title: 'CBSE Class 10 Science Practice Board Paper', file_path: '/static/uploads/sample_science_10.pdf', created_at: new Date().toISOString() }
+                        ];
+                    } else if (normClass === '9' && normSub === 'Maths') {
+                        defaults = [
+                            { id: 9101, class_name: className, subject_name: subjectName, paper_title: 'Class 9 Mathematics Term-1 Sample Question Paper', file_path: '/static/uploads/sample_maths_9.pdf', created_at: new Date().toISOString() }
+                        ];
+                    } else {
+                        defaults = [
+                            { id: 10000 + Math.floor(Math.random() * 1000), class_name: className, subject_name: subjectName, paper_title: `${className} ${subjectName} Practice Test Paper`, file_path: '/static/uploads/sample_generic.pdf', created_at: new Date().toISOString() }
+                        ];
+                    }
+                    localStorage.setItem(key, JSON.stringify(defaults));
+                    return defaults;
+                }
+                return JSON.parse(data);
+            },
+            saveSamplePapers(className, subjectName, papers) {
+                const normClass = className.replace('Class ', '').trim();
+                let normSub = subjectName.trim();
+                if (normSub === 'Mathematics') normSub = 'Maths';
+                localStorage.setItem(`sb_sample_papers_${normClass}_${normSub}`, JSON.stringify(papers));
             }
         };
 
@@ -3267,25 +4141,189 @@
                 });
             });
 
-            // Auth Switch Login/Register Tabs
-            document.getElementById('tab-login-btn').addEventListener('click', () => {
-                document.getElementById('tab-login-btn').classList.add('active');
-                document.getElementById('tab-register-btn').classList.remove('active');
-                document.getElementById('auth-submit-btn').innerHTML = '<span>Let\'s Go!</span> <i data-lucide="arrow-right"></i>';
-                document.getElementById('auth-error').classList.add('hidden');
-                lucide.createIcons();
-            });
-            
-            document.getElementById('tab-register-btn').addEventListener('click', () => {
-                document.getElementById('tab-register-btn').classList.add('active');
-                document.getElementById('tab-login-btn').classList.remove('active');
-                document.getElementById('auth-submit-btn').innerHTML = '<span>Register Buddy</span> <i data-lucide="sparkles"></i>';
-                document.getElementById('auth-error').classList.add('hidden');
+            // Auth Toggle Login/Register footer link
+            document.getElementById('auth-toggle-link').addEventListener('click', () => {
+                isRegisterMode = !isRegisterMode;
+                const formEl = document.getElementById('auth-form');
+                const cardTitle = document.getElementById('auth-card-title');
+                const cardSubtitle = document.getElementById('auth-card-subtitle');
+                const submitBtn = document.getElementById('auth-submit-btn');
+                const toggleText = document.getElementById('auth-toggle-text');
+                const toggleLink = document.getElementById('auth-toggle-link');
+                const errorEl = document.getElementById('auth-error');
+                
+                errorEl.classList.add('hidden');
+                
+                const regInputs = ['reg-firstname', 'reg-lastname', 'reg-email', 'reg-mobile'];
+                
+                if (isRegisterMode) {
+                    formEl.classList.add('register-mode');
+                    cardTitle.innerText = 'Create Account';
+                    cardSubtitle.innerText = 'Register to unlock your playful study companion!';
+                    submitBtn.innerHTML = '<span>Register Buddy</span> <i data-lucide="sparkles"></i>';
+                    toggleText.innerText = 'Already have an account?';
+                    toggleLink.innerText = 'Login here';
+                    
+                    const labelEl = document.querySelector('label[for="username"]');
+                    if (labelEl) labelEl.innerHTML = '<i data-lucide="user"></i> Username';
+                    const inputEl = document.getElementById('username');
+                    if (inputEl) inputEl.placeholder = 'Enter username (min 3 chars)';
+                    
+                    // Add required attributes dynamically
+                    regInputs.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.required = true;
+                    });
+                } else {
+                    formEl.classList.remove('register-mode');
+                    cardTitle.innerText = 'Login to Student Buddy';
+                    cardSubtitle.innerText = 'Your friendly companion for playful study & growth!';
+                    submitBtn.innerHTML = '<span>Let\'s Go!</span> <i data-lucide="arrow-right"></i>';
+                    toggleText.innerText = 'New to Student Buddy?';
+                    toggleLink.innerText = 'Register here';
+                    
+                    const labelEl = document.querySelector('label[for="username"]');
+                    if (labelEl) labelEl.innerHTML = '<i data-lucide="user"></i> Username, Email or Mobile Number';
+                    const inputEl = document.getElementById('username');
+                    if (inputEl) inputEl.placeholder = 'Enter username, email or mobile';
+                    
+                    // Remove required attributes dynamically
+                    regInputs.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.required = false;
+                            el.value = '';
+                        }
+                    });
+                }
+                
+                if (isRegisterMode) {
+                    const emailStatus = document.getElementById('email-verify-status');
+                    if (emailStatus) emailStatus.style.display = 'inline-flex';
+                    const mobileStatus = document.getElementById('mobile-verify-status');
+                    if (mobileStatus) mobileStatus.style.display = 'inline-flex';
+                }
+                
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                
+                updateRegistrationFieldsState();
                 lucide.createIcons();
             });
 
             // Auth Form Submission
             document.getElementById('auth-form').addEventListener('submit', handleAuthSubmit);
+
+            // Registration Inline Verification Trigger and Handling
+            const emailInput = document.getElementById('reg-email');
+            if (emailInput) {
+                const triggerEmailVerification = () => {
+                    if (!isRegisterMode || emailVerified) return;
+                    const emailVal = emailInput.value.trim();
+                    if (emailVal.includes('@') && emailVal.includes('.')) {
+                        sendEmailOTP();
+                    }
+                };
+                emailInput.addEventListener('blur', triggerEmailVerification);
+                emailInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        triggerEmailVerification();
+                    }
+                });
+                
+                // Show/hide Send OTP button inline as they type
+                emailInput.addEventListener('input', () => {
+                    const sendBtn = document.getElementById('btn-send-email-otp');
+                    if (!sendBtn) return;
+                    const emailVal = emailInput.value.trim();
+                    const emailVerifyArea = document.getElementById('email-otp-verification-area');
+                    const emailVerifyVisible = emailVerifyArea && emailVerifyArea.style.display !== 'none';
+                    
+                    if (isRegisterMode && !emailVerified && !emailVerifyVisible && emailVal.includes('@') && emailVal.includes('.')) {
+                        sendBtn.style.display = 'inline-flex';
+                    } else {
+                        sendBtn.style.display = 'none';
+                    }
+                });
+            }
+
+            const sendEmailBtn = document.getElementById('btn-send-email-otp');
+            if (sendEmailBtn) {
+                sendEmailBtn.addEventListener('click', sendEmailOTP);
+            }
+            const emailVerifyBtn = document.getElementById('btn-verify-email-code');
+            if (emailVerifyBtn) {
+                emailVerifyBtn.addEventListener('click', verifyEmailOTP);
+            }
+            const emailCodeInput = document.getElementById('email-verification-code');
+            if (emailCodeInput) {
+                emailCodeInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        verifyEmailOTP();
+                    }
+                });
+            }
+            const emailChangeBtn = document.getElementById('btn-change-email');
+            if (emailChangeBtn) {
+                emailChangeBtn.addEventListener('click', cancelEmailVerification);
+            }
+
+            const mobileInput = document.getElementById('reg-mobile');
+            if (mobileInput) {
+                const triggerMobileVerification = () => {
+                    if (!isRegisterMode || mobileVerified) return;
+                    const mobileVal = mobileInput.value.trim();
+                    if (/^\d{10}$/.test(mobileVal)) {
+                        sendMobileOTP();
+                    }
+                };
+                mobileInput.addEventListener('blur', triggerMobileVerification);
+                mobileInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        triggerMobileVerification();
+                    }
+                });
+                
+                // Show/hide Send OTP button inline as they type
+                mobileInput.addEventListener('input', () => {
+                    const sendBtn = document.getElementById('btn-send-mobile-otp');
+                    if (!sendBtn) return;
+                    const mobileVal = mobileInput.value.trim();
+                    const mobileVerifyArea = document.getElementById('mobile-otp-verification-area');
+                    const mobileVerifyVisible = mobileVerifyArea && mobileVerifyArea.style.display !== 'none';
+                    
+                    if (isRegisterMode && !mobileVerified && !mobileVerifyVisible && /^\d{10}$/.test(mobileVal)) {
+                        sendBtn.style.display = 'inline-flex';
+                    } else {
+                        sendBtn.style.display = 'none';
+                    }
+                });
+            }
+
+            const sendMobileBtn = document.getElementById('btn-send-mobile-otp');
+            if (sendMobileBtn) {
+                sendMobileBtn.addEventListener('click', sendMobileOTP);
+            }
+            const mobileVerifyBtn = document.getElementById('btn-verify-mobile-code');
+            if (mobileVerifyBtn) {
+                mobileVerifyBtn.addEventListener('click', verifyMobileOTP);
+            }
+            const mobileCodeInput = document.getElementById('mobile-verification-code');
+            if (mobileCodeInput) {
+                mobileCodeInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        verifyMobileOTP();
+                    }
+                });
+            }
+            const mobileChangeBtn = document.getElementById('btn-change-mobile');
+            if (mobileChangeBtn) {
+                mobileChangeBtn.addEventListener('click', cancelMobileVerification);
+            }
 
             // Logout
             document.getElementById('logout-btn').addEventListener('click', handleLogout);
@@ -3448,6 +4486,20 @@
                     closeVideoManageModal();
                 }
             });
+            
+            // Click outside to close profile dropdown
+            document.addEventListener('click', (e) => {
+                const dropdown = document.getElementById('profile-dropdown');
+                const trigger = document.getElementById('topbar-profile-trigger');
+                if (dropdown && !dropdown.classList.contains('hidden')) {
+                    if (!dropdown.contains(e.target) && !trigger.contains(e.target)) {
+                        dropdown.classList.add('hidden');
+                    }
+                }
+            });
+            
+            // Initial fields state update
+            updateRegistrationFieldsState();
         }
 
         function switchTab(tabId) {
@@ -3532,21 +4584,510 @@
             }
         }
 
+        function updateAuthSubmitButtonState() {
+            const submitBtn = document.getElementById('auth-submit-btn');
+            if (!submitBtn) return;
+            
+            if (isRegisterMode) {
+                if (emailVerified && mobileVerified) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('btn-secondary');
+                    submitBtn.classList.add('btn-primary');
+                    submitBtn.querySelector('span').innerText = "Register Buddy";
+                } else {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.remove('btn-primary');
+                    submitBtn.classList.add('btn-secondary');
+                    submitBtn.querySelector('span').innerText = "Verify Email & Mobile to Register";
+                }
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('btn-secondary');
+                submitBtn.classList.add('btn-primary');
+                submitBtn.querySelector('span').innerText = "Let's Go!";
+            }
+        }
+
+        function resetRegistrationOTPState() {
+            emailVerified = false;
+            mobileVerified = false;
+            localEmailOTP = '';
+            localMobileOTP = '';
+            
+            const emailInput = document.getElementById('reg-email');
+            if (emailInput) {
+                emailInput.disabled = false;
+                emailInput.value = '';
+            }
+            const mobileInput = document.getElementById('reg-mobile');
+            if (mobileInput) {
+                mobileInput.disabled = false;
+                mobileInput.value = '';
+            }
+            
+            const emailVerifyArea = document.getElementById('email-otp-verification-area');
+            if (emailVerifyArea) emailVerifyArea.style.display = 'none';
+            const mobileVerifyArea = document.getElementById('mobile-otp-verification-area');
+            if (mobileVerifyArea) mobileVerifyArea.style.display = 'none';
+            
+            const emailCodeInput = document.getElementById('email-verification-code');
+            if (emailCodeInput) emailCodeInput.value = '';
+            const mobileCodeInput = document.getElementById('mobile-verification-code');
+            if (mobileCodeInput) mobileCodeInput.value = '';
+            
+            const emailToast = document.getElementById('dev-email-otp-toast');
+            if (emailToast) emailToast.innerText = '';
+            const mobileToast = document.getElementById('dev-mobile-otp-toast');
+            if (mobileToast) mobileToast.innerText = '';
+            
+            const emailStatus = document.getElementById('email-verify-status');
+            if (emailStatus) {
+                emailStatus.style.display = 'none';
+                emailStatus.innerText = 'Not Verified';
+                emailStatus.className = 'status-badge status-not-added';
+            }
+            const mobileStatus = document.getElementById('mobile-verify-status');
+            if (mobileStatus) {
+                mobileStatus.style.display = 'none';
+                mobileStatus.innerText = 'Not Verified';
+                mobileStatus.className = 'status-badge status-not-added';
+            }
+            
+            const sendEmailBtn = document.getElementById('btn-send-email-otp');
+            if (sendEmailBtn) sendEmailBtn.style.display = 'none';
+            const sendMobileBtn = document.getElementById('btn-send-mobile-otp');
+            if (sendMobileBtn) sendMobileBtn.style.display = 'none';
+            
+            updateRegistrationFieldsState();
+        }
+
+        function updateRegistrationFieldsState() {
+            const emailInput = document.getElementById('reg-email');
+            const mobileInput = document.getElementById('reg-mobile');
+            const classSelect = document.getElementById('reg-class');
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            
+            if (!isRegisterMode) {
+                if (usernameInput) usernameInput.disabled = false;
+                if (passwordInput) passwordInput.disabled = false;
+                return;
+            }
+            
+            // In register mode:
+            // Email is editable only if not verified and verification is not in progress
+            const emailVerifyArea = document.getElementById('email-otp-verification-area');
+            const emailVerifyVisible = emailVerifyArea && emailVerifyArea.style.display !== 'none';
+            if (emailInput) {
+                emailInput.disabled = emailVerified || emailVerifyVisible;
+            }
+            
+            // Mobile is enabled only if email is verified
+            const mobileVerifyArea = document.getElementById('mobile-otp-verification-area');
+            const mobileVerifyVisible = mobileVerifyArea && mobileVerifyArea.style.display !== 'none';
+            if (mobileInput) {
+                mobileInput.disabled = !emailVerified || mobileVerified || mobileVerifyVisible;
+                
+                // Opacity style indicator
+                const mobileGroup = document.getElementById('reg-mobile-group');
+                if (mobileGroup) {
+                    mobileGroup.style.opacity = mobileInput.disabled ? '0.5' : '1';
+                }
+            }
+            
+            // Class, Username, Password are enabled only if both are verified
+            const bothVerified = emailVerified && mobileVerified;
+            
+            const regFields = [classSelect, usernameInput, passwordInput];
+            regFields.forEach(el => {
+                if (el) {
+                    el.disabled = !bothVerified;
+                    if (el.parentElement) {
+                        el.parentElement.style.opacity = bothVerified ? '1' : '0.5';
+                    }
+                }
+            });
+            
+            updateAuthSubmitButtonState();
+        }
+
+        async function sendEmailOTP() {
+            const emailInput = document.getElementById('reg-email');
+            const emailVal = emailInput.value.trim();
+            const errorEl = document.getElementById('email-otp-error');
+            const otpArea = document.getElementById('email-otp-verification-area');
+            const devToast = document.getElementById('dev-email-otp-toast');
+            const sendBtn = document.getElementById('btn-send-email-otp');
+            
+            if (!emailVal.includes('@') || !emailVal.includes('.')) {
+                return;
+            }
+            
+            if (emailVerified) return;
+            
+            emailInput.disabled = true;
+            errorEl.style.display = 'none';
+            otpArea.style.display = 'block';
+            devToast.innerText = "Sending...";
+            if (sendBtn) sendBtn.style.display = 'none';
+            
+            updateRegistrationFieldsState();
+            
+            try {
+                if (useBackend) {
+                    const res = await fetch('/api/auth/send-email-otp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: emailVal })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        localEmailOTP = data.otp;
+                        devToast.innerText = `(Dev code: ${data.otp})`;
+                        soundEffects.playPop();
+                        const codeInput = document.getElementById('email-verification-code');
+                        if (codeInput) codeInput.focus();
+                    } else {
+                        throw new Error(data.error || "Failed to send OTP.");
+                    }
+                } else {
+                    localEmailOTP = Math.floor(100000 + Math.random() * 900000).toString();
+                    devToast.innerText = `(Dev code: ${localEmailOTP})`;
+                    soundEffects.playPop();
+                    const codeInput = document.getElementById('email-verification-code');
+                    if (codeInput) codeInput.focus();
+                }
+            } catch (err) {
+                errorEl.innerText = err.message;
+                errorEl.style.display = 'block';
+                devToast.innerText = "";
+                otpArea.style.display = 'none';
+                emailInput.disabled = false;
+                updateRegistrationFieldsState();
+            }
+        }
+
+        async function verifyEmailOTP() {
+            const emailInput = document.getElementById('reg-email');
+            const emailVal = emailInput.value.trim();
+            const codeInput = document.getElementById('email-verification-code');
+            const codeVal = codeInput.value.trim();
+            const errorEl = document.getElementById('email-otp-error');
+            const otpArea = document.getElementById('email-otp-verification-area');
+            const statusBadge = document.getElementById('email-verify-status');
+            
+            errorEl.style.display = 'none';
+            
+            if (codeVal.length !== 6) {
+                errorEl.innerText = "Please enter a 6-digit verification code.";
+                errorEl.style.display = 'block';
+                soundEffects.playFail();
+                return;
+            }
+            
+            try {
+                if (useBackend) {
+                    const res = await fetch('/api/auth/verify-email-otp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: emailVal, otp: codeVal })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.error || "Invalid code.");
+                    }
+                } else {
+                    if (codeVal !== localEmailOTP) {
+                        throw new Error("Invalid verification code.");
+                    }
+                }
+                
+                emailVerified = true;
+                otpArea.style.display = 'none';
+                
+                statusBadge.innerText = "✓ Verified";
+                statusBadge.className = "status-badge status-available";
+                statusBadge.style.display = "inline-flex";
+                
+                soundEffects.playSuccess();
+                updateRegistrationFieldsState();
+                
+                const mobileInput = document.getElementById('reg-mobile');
+                if (mobileInput) mobileInput.focus();
+                
+            } catch (err) {
+                errorEl.innerText = err.message;
+                errorEl.style.display = 'block';
+                soundEffects.playFail();
+            }
+        }
+
+        function cancelEmailVerification() {
+            const emailInput = document.getElementById('reg-email');
+            const otpArea = document.getElementById('email-otp-verification-area');
+            const statusBadge = document.getElementById('email-verify-status');
+            const devToast = document.getElementById('dev-email-otp-toast');
+            const sendBtn = document.getElementById('btn-send-email-otp');
+            
+            emailVerified = false;
+            if (emailInput) {
+                emailInput.value = '';
+            }
+            if (otpArea) otpArea.style.display = 'none';
+            if (devToast) devToast.innerText = '';
+            const emailCodeInput = document.getElementById('email-verification-code');
+            if (emailCodeInput) emailCodeInput.value = '';
+            if (sendBtn) sendBtn.style.display = 'none';
+            
+            if (statusBadge) {
+                statusBadge.innerText = "Not Verified";
+                statusBadge.className = "status-badge status-not-added";
+                statusBadge.style.display = "inline-flex";
+            }
+            
+            updateRegistrationFieldsState();
+            if (emailInput) emailInput.focus();
+        }
+
+        async function sendMobileOTP() {
+            const mobileInput = document.getElementById('reg-mobile');
+            const mobileVal = mobileInput.value.trim();
+            const errorEl = document.getElementById('mobile-otp-error');
+            const otpArea = document.getElementById('mobile-otp-verification-area');
+            const devToast = document.getElementById('dev-mobile-otp-toast');
+            const sendBtn = document.getElementById('btn-send-mobile-otp');
+            
+            if (!/^\d{10}$/.test(mobileVal)) {
+                return;
+            }
+            
+            if (mobileVerified) return;
+            
+            mobileInput.disabled = true;
+            errorEl.style.display = 'none';
+            otpArea.style.display = 'block';
+            devToast.innerText = "Sending...";
+            if (sendBtn) sendBtn.style.display = 'none';
+            
+            updateRegistrationFieldsState();
+            
+            try {
+                if (useBackend) {
+                    const res = await fetch('/api/auth/send-mobile-otp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mobile: mobileVal })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        localMobileOTP = data.otp;
+                        devToast.innerText = `(Dev code: ${data.otp})`;
+                        soundEffects.playPop();
+                        const codeInput = document.getElementById('mobile-verification-code');
+                        if (codeInput) codeInput.focus();
+                    } else {
+                        throw new Error(data.error || "Failed to send OTP.");
+                    }
+                } else {
+                    localMobileOTP = Math.floor(100000 + Math.random() * 900000).toString();
+                    devToast.innerText = `(Dev code: ${localMobileOTP})`;
+                    soundEffects.playPop();
+                    const codeInput = document.getElementById('mobile-verification-code');
+                    if (codeInput) codeInput.focus();
+                }
+            } catch (err) {
+                errorEl.innerText = err.message;
+                errorEl.style.display = 'block';
+                devToast.innerText = "";
+                otpArea.style.display = 'none';
+                mobileInput.disabled = false;
+                updateRegistrationFieldsState();
+            }
+        }
+
+        async function verifyMobileOTP() {
+            const mobileInput = document.getElementById('reg-mobile');
+            const mobileVal = mobileInput.value.trim();
+            const codeInput = document.getElementById('mobile-verification-code');
+            const codeVal = codeInput.value.trim();
+            const errorEl = document.getElementById('mobile-otp-error');
+            const otpArea = document.getElementById('mobile-otp-verification-area');
+            const statusBadge = document.getElementById('mobile-verify-status');
+            
+            errorEl.style.display = 'none';
+            
+            if (codeVal.length !== 6) {
+                errorEl.innerText = "Please enter a 6-digit verification code.";
+                errorEl.style.display = 'block';
+                soundEffects.playFail();
+                return;
+            }
+            
+            try {
+                if (useBackend) {
+                    const res = await fetch('/api/auth/verify-mobile-otp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mobile: mobileVal, otp: codeVal })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.error || "Invalid code.");
+                    }
+                } else {
+                    if (codeVal !== localMobileOTP) {
+                        throw new Error("Invalid verification code.");
+                    }
+                }
+                
+                mobileVerified = true;
+                otpArea.style.display = 'none';
+                
+                statusBadge.innerText = "✓ Verified";
+                statusBadge.className = "status-badge status-available";
+                statusBadge.style.display = "inline-flex";
+                
+                soundEffects.playSuccess();
+                updateRegistrationFieldsState();
+                
+                const classSelect = document.getElementById('reg-class');
+                if (classSelect) classSelect.focus();
+                
+            } catch (err) {
+                errorEl.innerText = err.message;
+                errorEl.style.display = 'block';
+                soundEffects.playFail();
+            }
+        }
+
+        function cancelMobileVerification() {
+            const mobileInput = document.getElementById('reg-mobile');
+            const otpArea = document.getElementById('mobile-otp-verification-area');
+            const statusBadge = document.getElementById('mobile-verify-status');
+            const devToast = document.getElementById('dev-mobile-otp-toast');
+            const sendBtn = document.getElementById('btn-send-mobile-otp');
+            
+            mobileVerified = false;
+            if (mobileInput) {
+                mobileInput.value = '';
+            }
+            if (otpArea) otpArea.style.display = 'none';
+            if (devToast) devToast.innerText = '';
+            const mobileCodeInput = document.getElementById('mobile-verification-code');
+            if (mobileCodeInput) mobileCodeInput.value = '';
+            if (sendBtn) sendBtn.style.display = 'none';
+            
+            if (statusBadge) {
+                statusBadge.innerText = "Not Verified";
+                statusBadge.className = "status-badge status-not-added";
+                statusBadge.style.display = "inline-flex";
+            }
+            
+            updateRegistrationFieldsState();
+            if (mobileInput) mobileInput.focus();
+        }
+
         function showLogin() {
             document.getElementById('auth-container').classList.add('active');
             document.getElementById('app-container').classList.add('hidden');
             currentUser = null;
+            
+            // Reset to Login mode
+            isRegisterMode = false;
+            const formEl = document.getElementById('auth-form');
+            if (formEl) formEl.classList.remove('register-mode');
+            
+            const cardTitle = document.getElementById('auth-card-title');
+            const cardSubtitle = document.getElementById('auth-card-subtitle');
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const toggleText = document.getElementById('auth-toggle-text');
+            const toggleLink = document.getElementById('auth-toggle-link');
+            
+            if (cardTitle) cardTitle.innerText = 'Login to Student Buddy';
+            if (cardSubtitle) cardSubtitle.innerText = 'Your friendly companion for playful study & growth!';
+            if (submitBtn) submitBtn.innerHTML = '<span>Let\'s Go!</span> <i data-lucide="arrow-right"></i>';
+            if (toggleText) toggleText.innerText = 'New to Student Buddy?';
+            if (toggleLink) toggleLink.innerText = 'Register here';
+            
+            // Reset fields & required flags
+            const regInputs = ['reg-firstname', 'reg-lastname', 'reg-email', 'reg-mobile'];
+            regInputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.required = false;
+                    el.value = '';
+                }
+            });
+            
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('auth-error').classList.add('hidden');
+            
+            resetRegistrationOTPState();
+            lucide.createIcons();
         }
 
         function showApp() {
             document.getElementById('auth-container').classList.remove('active');
             document.getElementById('app-container').classList.remove('hidden');
-            document.getElementById('user-greeting').innerText = `Hi, ${currentUser.username}! 👋`;
+            document.getElementById('user-greeting').innerText = `Hi, ${currentUser.first_name || currentUser.username}! 👋`;
             
+            // Render user profile avatar in topbar and sidebar
+            updateAvatarUI();
+
+            // Prompt user if avatar is not set
+            if (!currentUser.avatar) {
+                openAvatarModal(true);
+            }
+            
+            // Reset active tab to dashboard on login
+            activeTab = 'dashboard';
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                if (item.getAttribute('data-tab') === 'dashboard') {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                if (content.getAttribute('id') === 'tab-dashboard') {
+                    content.classList.add('active');
+                } else {
+                    content.classList.remove('active');
+                }
+            });
+
+            // Re-render subtabs to syllabus defaults
+            activeLearnSubTab = 'syllabus';
+            const syllabusTabBtn = document.getElementById('subtab-syllabus-btn');
+            const videosTabBtn = document.getElementById('subtab-videos-btn');
+            const sampleTabBtn = document.getElementById('subtab-sample-btn');
+            if (syllabusTabBtn) syllabusTabBtn.className = 'btn btn-sm btn-primary';
+            if (videosTabBtn) videosTabBtn.className = 'btn btn-sm btn-ghost';
+            if (sampleTabBtn) sampleTabBtn.className = 'btn btn-sm btn-ghost';
+
+            const syllabusWorkspace = document.getElementById('learn-syllabus-workspace');
+            const sampleWorkspace = document.getElementById('learn-sample-workspace');
+            if (syllabusWorkspace) syllabusWorkspace.style.display = 'block';
+            if (sampleWorkspace) sampleWorkspace.style.display = 'none';
+
+            const uploadForm = document.getElementById('upload-sample-paper-form');
+            if (uploadForm && uploadForm.parentElement) {
+                uploadForm.parentElement.style.display = 'none';
+            }
+
+            // Clear cache to force reload
+            classResources = [];
+            samplePapers = [];
+            quizChapters = [];
+
             // Initial data pull
             loadStats();
             populatePlannerDropdown();
             loadVideos();
+            filterClass(currentUser.class_name || 'Class 9');
             lucide.createIcons();
         }
 
@@ -3558,15 +5099,73 @@
             
             errorEl.classList.add('hidden');
             
-            const isRegister = document.getElementById('tab-register-btn').classList.contains('active');
+            const isRegister = isRegisterMode;
+            
+            let first_name = '';
+            let last_name = '';
+            let email = '';
+            let mobile = '';
+            let class_name = 'Class 9';
+            
+            if (isRegister) {
+                first_name = document.getElementById('reg-firstname').value.trim();
+                last_name = document.getElementById('reg-lastname').value.trim();
+                email = document.getElementById('reg-email').value.trim();
+                mobile = document.getElementById('reg-mobile').value.trim();
+                class_name = document.getElementById('reg-class').value;
+                
+                if (usernameInput.length < 3) {
+                    errorEl.innerText = 'Username must be at least 3 characters.';
+                    errorEl.classList.remove('hidden');
+                    soundEffects.playFail();
+                    return;
+                }
+                if (passwordInput.length < 4) {
+                    errorEl.innerText = 'Password must be at least 4 characters.';
+                    errorEl.classList.remove('hidden');
+                    soundEffects.playFail();
+                    return;
+                }
+                if (!first_name || !last_name) {
+                    errorEl.innerText = 'First name and last name are required.';
+                    errorEl.classList.remove('hidden');
+                    soundEffects.playFail();
+                    return;
+                }
+                if (!emailVerified) {
+                    errorEl.innerText = 'Email verification is required.';
+                    errorEl.classList.remove('hidden');
+                    soundEffects.playFail();
+                    return;
+                }
+                if (!mobileVerified) {
+                    errorEl.innerText = 'Mobile number verification is required.';
+                    errorEl.classList.remove('hidden');
+                    soundEffects.playFail();
+                    return;
+                }
+            }
             
             if (useBackend) {
                 const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
+                const payload = isRegister ? {
+                    username: usernameInput,
+                    password: passwordInput,
+                    first_name,
+                    last_name,
+                    email,
+                    mobile,
+                    class_name
+                } : {
+                    username: usernameInput,
+                    password: passwordInput
+                };
+                
                 try {
                     const res = await fetch(endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username: usernameInput, password: passwordInput })
+                        body: JSON.stringify(payload)
                     });
                     
                     const data = await res.json();
@@ -3603,6 +5202,7 @@
                         return;
                     }
                     
+                    const role = usernameInput.toLowerCase().includes('admin') || usernameInput.toLowerCase().includes('owner') ? 'admin' : 'student';
                     const newUser = {
                         username: usernameInput,
                         password: passwordInput, // Plain for simple offline demo
@@ -3611,6 +5211,13 @@
                         streak: 1,
                         last_study_date: new Date().toISOString().split('T')[0],
                         total_hours: 0.0,
+                        role: role,
+                        avatar: '',
+                        first_name: first_name,
+                        last_name: last_name,
+                        email: email,
+                        mobile: mobile,
+                        class_name: class_name,
                         badges: [{ badge_name: 'Ignition Flame 🔥', unlocked_at: new Date().toISOString() }]
                     };
                     
@@ -3620,12 +5227,24 @@
                     currentUser = newUser;
                     
                     soundEffects.playSuccess();
+                    document.getElementById('username').value = '';
+                    document.getElementById('password').value = '';
                     triggerBadgeUnlock('Ignition Flame 🔥');
                     showApp();
                 } else {
-                    const user = users[usernameInput];
+                    let user = users[usernameInput];
+                    if (!user) {
+                        const foundUserKey = Object.keys(users).find(key => {
+                            const u = users[key];
+                            return u.email === usernameInput || u.mobile === usernameInput;
+                        });
+                        if (foundUserKey) {
+                            user = users[foundUserKey];
+                        }
+                    }
+                    
                     if (!user || user.password !== passwordInput) {
-                        errorEl.innerText = 'Invalid username or password.';
+                        errorEl.innerText = 'Invalid credentials or password.';
                         errorEl.classList.remove('hidden');
                         soundEffects.playFail();
                         return;
@@ -3667,6 +5286,39 @@
                 resetTimer();
             }
             
+            // Clean up cached elements and UI values
+            const container = document.getElementById('syllabus-chapters-container');
+            if (container) container.innerHTML = '';
+            const quizContainer = document.getElementById('quiz-topics-container');
+            if (quizContainer) quizContainer.innerHTML = '';
+            const sampleContainer = document.getElementById('sample-papers-container');
+            if (sampleContainer) sampleContainer.innerHTML = '';
+            
+            classResources = [];
+            samplePapers = [];
+            quizChapters = [];
+            currentUser = null;
+
+            // Reset Chatbot Widget State on Logout
+            const widget = document.getElementById('chatbot-widget');
+            if (widget) {
+                widget.classList.remove('open');
+            }
+            chatHistory = [];
+            const chatMessages = document.getElementById('chat-messages-container');
+            if (chatMessages) {
+                chatMessages.innerHTML = `
+                    <div class="chat-message-row bot-msg">
+                        <div class="chat-message-avatar"><i data-lucide="bot" style="width: 16px; height: 16px;"></i></div>
+                        <div class="chat-message-bubble">Hello! I'm **Buddy**, your personal AI study assistant. 👋
+
+I can help you explain complex Math & Science concepts, offer study tips, draft a study schedule, tell jokes to lighten the load, or give you motivational quotes! 
+
+Click one of the suggestions below, or type your own question!</div>
+                    </div>
+                `;
+            }
+
             if (useBackend) {
                 try {
                     await fetch('/api/auth/logout', { method: 'POST' });
@@ -4365,6 +6017,8 @@
                 return;
             }
             
+            const isAdminOrOwner = currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner');
+
             filteredChapters.forEach(ch => {
                 const card = document.createElement('div');
                 card.className = 'quiz-topic-card glass';
@@ -4372,6 +6026,12 @@
                 const subClass = `tag-${selectedQuizSubject.toLowerCase()}`;
                 const subSecDisplay = ch.sub_section ? `<span class="quiz-topic-subject ${subClass}">${escapeHTML(ch.sub_section)}</span>` : '';
                 
+                const manageBtnHtml = isAdminOrOwner ? `
+                    <button class="btn btn-outline" style="padding: 8px 12px;" title="Manage Questions" onclick="openQuizQuestionsMgmtModal(${ch.id}, '${escapeJSString(ch.chapter_name)}')">
+                        <i data-lucide="settings"></i>
+                    </button>
+                ` : '';
+
                 card.innerHTML = `
                     <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                         <span style="font-size: 0.75rem; font-weight: 600; color: var(--color-primary);">CH ${ch.chapter_no}</span>
@@ -4383,9 +6043,7 @@
                         <button class="btn btn-primary" style="flex: 1; padding: 8px 12px;" onclick="openQuizSetupModal(${ch.id}, '${escapeJSString(ch.chapter_name)}')">
                             <i data-lucide="play"></i> Start Quiz
                         </button>
-                        <button class="btn btn-outline" style="padding: 8px 12px;" title="Manage Questions" onclick="openQuizQuestionsMgmtModal(${ch.id}, '${escapeJSString(ch.chapter_name)}')">
-                            <i data-lucide="settings"></i>
-                        </button>
+                        ${manageBtnHtml}
                     </div>
                 `;
                 container.appendChild(card);
@@ -4950,6 +6608,11 @@
         }
 
         async function deleteQuizQuestion(questionId) {
+            const isAdminOrOwner = currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner');
+            if (!isAdminOrOwner) {
+                alert("Access Denied: Only administrators and owners can delete questions.");
+                return;
+            }
             if (!confirm("Are you sure you want to delete this question?")) return;
             
             if (useBackend) {
@@ -5081,6 +6744,11 @@
 
         async function handleQuizQuestionSubmit(event) {
             event.preventDefault();
+            const isAdminOrOwner = currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner');
+            if (!isAdminOrOwner) {
+                alert("Access Denied: Only administrators and owners can manage questions.");
+                return;
+            }
             
             const questionId = document.getElementById('quiz-form-question-id').value;
             const chapterId = document.getElementById('quiz-mgmt-chapter-id').value;
@@ -5503,15 +7171,39 @@
             
             const syllabusTabBtn = document.getElementById('subtab-syllabus-btn');
             const videosTabBtn = document.getElementById('subtab-videos-btn');
+            const sampleTabBtn = document.getElementById('subtab-sample-btn');
             
-            if (subTabId === 'syllabus') {
-                syllabusTabBtn.className = 'btn btn-sm btn-primary';
-                videosTabBtn.className = 'btn btn-sm btn-ghost';
-            } else {
-                syllabusTabBtn.className = 'btn btn-sm btn-ghost';
-                videosTabBtn.className = 'btn btn-sm btn-primary';
+            syllabusTabBtn.className = subTabId === 'syllabus' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-ghost';
+            videosTabBtn.className = subTabId === 'videos' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-ghost';
+            sampleTabBtn.className = subTabId === 'sample' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-ghost';
+            
+            const syllabusWorkspace = document.getElementById('learn-syllabus-workspace');
+            const sampleWorkspace = document.getElementById('learn-sample-workspace');
+            const subsectionRow = document.getElementById('subsection-filter-row');
+            
+            const searchBar = document.getElementById('chapters-search-bar');
+            if (searchBar) {
+                searchBar.placeholder = subTabId === 'sample' ? 'Search sample papers...' : 'Search chapters...';
             }
-            loadClassResources();
+            
+            if (subTabId === 'sample') {
+                if (syllabusWorkspace) syllabusWorkspace.style.display = 'none';
+                if (sampleWorkspace) sampleWorkspace.style.display = 'block';
+                if (subsectionRow) subsectionRow.style.display = 'none';
+                
+                // Hide/show upload form container depending on role
+                const isAdminOrOwner = currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner');
+                const uploadForm = document.getElementById('upload-sample-paper-form');
+                if (uploadForm && uploadForm.parentElement) {
+                    uploadForm.parentElement.style.display = isAdminOrOwner ? 'flex' : 'none';
+                }
+                
+                loadSamplePapers();
+            } else {
+                if (syllabusWorkspace) syllabusWorkspace.style.display = 'block';
+                if (sampleWorkspace) sampleWorkspace.style.display = 'none';
+                loadClassResources();
+            }
         }
 
         function filterClass(className) {
@@ -5529,7 +7221,12 @@
                 btn9.className = 'btn btn-sm btn-ghost';
                 btn10.className = 'btn btn-sm btn-primary';
             }
-            loadClassResources();
+            
+            if (activeLearnSubTab === 'sample') {
+                loadSamplePapers();
+            } else {
+                loadClassResources();
+            }
         }
 
         function filterSubject(subjectName) {
@@ -5545,12 +7242,21 @@
                     btn.className = 'btn btn-sm btn-ghost subject-btn';
                 }
             });
-            loadClassResources();
+            
+            if (activeLearnSubTab === 'sample') {
+                loadSamplePapers();
+            } else {
+                loadClassResources();
+            }
         }
 
         function handleChaptersSearch(value) {
             chaptersSearchQuery = value;
-            renderClassResources();
+            if (activeLearnSubTab === 'sample') {
+                renderSamplePapers();
+            } else {
+                renderClassResources();
+            }
         }
 
         function renderSubsections() {
@@ -5645,6 +7351,7 @@
 
             const category = SUBJECT_CATEGORIES[selectedSubject] || 'core';
             const resourceConfig = category === 'languages' ? LANGUAGE_RESOURCES : CORE_RESOURCES;
+            const isAdminOrOwner = currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner');
 
             filteredResources.forEach(res => {
                 const card = document.createElement('div');
@@ -5655,26 +7362,35 @@
                     if (res.videos && res.videos.length > 0) {
                         res.videos.forEach(v => {
                             const icon = v.video_type === 'Playlist' ? 'list-video' : (v.video_type === 'Educational Video' ? 'video' : 'play-circle');
+                            const videoActionsHtml = isAdminOrOwner ? `
+                                <div style="display: flex; gap: 6px;">
+                                    <button onclick="openEditVideoModal(${res.id}, ${v.id}, '${escapeHTML(v.video_title)}', '${escapeHTML(v.video_url)}', '${escapeHTML(v.video_type)}')" class="btn btn-xs btn-ghost" title="Edit Video Reference" style="padding: 4px 6px;">
+                                        <i data-lucide="edit-2" style="width: 12px; height: 12px; color: var(--text-muted);"></i>
+                                    </button>
+                                    <button onclick="deleteChapterVideo(${v.id})" class="btn btn-xs btn-ghost" title="Delete Video Reference" style="padding: 4px 6px;">
+                                        <i data-lucide="trash-2" style="width: 12px; height: 12px; color: #ef4444;"></i>
+                                    </button>
+                                </div>
+                            ` : '';
                             videoItemsHtml += `
                                 <div class="video-reference-row" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-md); transition: all 0.2s;" onmouseover="this.style.background='rgba(255, 255, 255, 0.04)'; this.style.borderColor='rgba(255, 255, 255, 0.1)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.02)'; this.style.borderColor='rgba(255, 255, 255, 0.05)'">
                                     <span onclick="playChapterVideo('${escapeHTML(v.video_url)}', '${escapeHTML(v.video_title)}')" style="font-size: 0.9rem; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
                                         <i data-lucide="${icon}" style="width: 16px; height: 16px; color: var(--color-primary);"></i>
                                         ${escapeHTML(v.video_title)}
                                     </span>
-                                    <div style="display: flex; gap: 6px;">
-                                        <button onclick="openEditVideoModal(${res.id}, ${v.id}, '${escapeHTML(v.video_title)}', '${escapeHTML(v.video_url)}', '${escapeHTML(v.video_type)}')" class="btn btn-xs btn-ghost" title="Edit Video Reference" style="padding: 4px 6px;">
-                                            <i data-lucide="edit-2" style="width: 12px; height: 12px; color: var(--text-muted);"></i>
-                                        </button>
-                                        <button onclick="deleteChapterVideo(${v.id})" class="btn btn-xs btn-ghost" title="Delete Video Reference" style="padding: 4px 6px;">
-                                            <i data-lucide="trash-2" style="width: 12px; height: 12px; color: #ef4444;"></i>
-                                        </button>
-                                    </div>
+                                    ${videoActionsHtml}
                                 </div>
                             `;
                         });
                     } else {
                         videoItemsHtml = `<div style="font-size: 0.85rem; color: var(--text-muted); font-style: italic; padding: 12px; text-align: center; border: 1px dashed var(--glass-border); border-radius: var(--border-radius-md);">No video references added yet.</div>`;
                     }
+
+                    const addVideoBtnHtml = isAdminOrOwner ? `
+                        <button onclick="openAddVideoModal(${res.id})" class="btn btn-xs btn-primary" style="padding: 4px 8px;">
+                            <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Add Video
+                        </button>
+                    ` : '';
 
                     card.innerHTML = `
                         <div class="chapter-info" style="margin-bottom: 16px;">
@@ -5689,9 +7405,7 @@
                                 <h4 style="font-size: 0.95rem; font-weight: 700; color: white; display: flex; align-items: center; gap: 6px;">
                                     🎥 Video References
                                 </h4>
-                                <button onclick="openAddVideoModal(${res.id})" class="btn btn-xs btn-primary" style="padding: 4px 8px;">
-                                    <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Add Video
-                                </button>
+                                ${addVideoBtnHtml}
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
                                 ${videoItemsHtml}
@@ -5714,17 +7428,18 @@
                                 <button onclick="viewResource('${escapeHTML(filePath)}', '${escapeHTML(res.chapter_name)} - ${escapeHTML(config.label)}')" class="btn btn-xs btn-primary" title="View PDF/Image">
                                     <i data-lucide="eye" style="width:12px;height:12px;"></i>
                                 </button>
+                            ` + (isAdminOrOwner ? `
                                 <button onclick="deleteResource(${res.id}, '${config.key}')" class="btn btn-xs btn-secondary" style="border-color: rgba(239, 68, 68, 0.2); color: #ef4444; background: rgba(239, 68, 68, 0.05);" title="Delete Resource">
                                     <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
                                 </button>
-                            `;
+                            ` : '');
                         } else {
                             badgeHtml = `<span class="status-badge status-not-added"><i data-lucide="x" style="width:10px;height:10px;"></i> Not Uploaded</span>`;
-                            actionHtml = `
+                            actionHtml = isAdminOrOwner ? `
                                 <button onclick="triggerInlineUpload(${res.id}, '${config.key}')" class="btn btn-xs btn-ghost" title="Upload PDF/Image">
                                     <i data-lucide="upload-cloud" style="width:12px;height:12px;"></i> Upload
                                 </button>
-                            `;
+                            ` : '';
                         }
 
                         resourceItemsHtml += `
@@ -5743,20 +7458,23 @@
                     if (res.videos && res.videos.length > 0) {
                         res.videos.forEach(v => {
                             const icon = v.video_type === 'Playlist' ? 'list-video' : (v.video_type === 'Educational Video' ? 'video' : 'play-circle');
+                            const videoActionsHtml = isAdminOrOwner ? `
+                                <div style="display: flex; gap: 4px;">
+                                    <button onclick="openEditVideoModal(${res.id}, ${v.id}, '${escapeHTML(v.video_title)}', '${escapeHTML(v.video_url)}', '${escapeHTML(v.video_type)}')" class="btn btn-xs btn-ghost" title="Edit Video Reference" style="padding: 2px 4px; border: none; background: transparent;">
+                                        <i data-lucide="edit-2" style="width: 11px; height: 11px; color: var(--text-muted);"></i>
+                                    </button>
+                                    <button onclick="deleteChapterVideo(${v.id})" class="btn btn-xs btn-ghost" title="Delete Video Reference" style="padding: 2px 4px; border: none; background: transparent;">
+                                        <i data-lucide="trash-2" style="width: 11px; height: 11px; color: #ef4444;"></i>
+                                    </button>
+                                </div>
+                            ` : '';
                             videoItemsHtml += `
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; background: rgba(255, 255, 255, 0.01); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: var(--border-radius-sm);">
                                     <span onclick="playChapterVideo('${escapeHTML(v.video_url)}', '${escapeHTML(v.video_title)}')" style="font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
                                         <i data-lucide="${icon}" style="width: 14px; height: 14px; color: var(--color-primary);"></i>
                                         ${escapeHTML(v.video_title)}
                                     </span>
-                                    <div style="display: flex; gap: 4px;">
-                                        <button onclick="openEditVideoModal(${res.id}, ${v.id}, '${escapeHTML(v.video_title)}', '${escapeHTML(v.video_url)}', '${escapeHTML(v.video_type)}')" class="btn btn-xs btn-ghost" title="Edit Video Reference" style="padding: 2px 4px; border: none; background: transparent;">
-                                            <i data-lucide="edit-2" style="width: 11px; height: 11px; color: var(--text-muted);"></i>
-                                        </button>
-                                        <button onclick="deleteChapterVideo(${v.id})" class="btn btn-xs btn-ghost" title="Delete Video Reference" style="padding: 2px 4px; border: none; background: transparent;">
-                                            <i data-lucide="trash-2" style="width: 11px; height: 11px; color: #ef4444;"></i>
-                                        </button>
-                                    </div>
+                                    ${videoActionsHtml}
                                 </div>
                             `;
                         });
@@ -5768,6 +7486,12 @@
                     const videosBadgeClass = videosCount > 0 ? 'status-available' : 'status-not-added';
                     const videosBadgeText = videosCount > 0 ? `${videosCount} Video${videosCount > 1 ? 's' : ''}` : 'Not Added';
 
+                    const addVideoBtnHtml = isAdminOrOwner ? `
+                        <button onclick="event.stopPropagation(); openAddVideoModal(${res.id})" class="btn btn-xs btn-ghost" title="Add Video Reference" style="padding: 2px 6px;">
+                            <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Add
+                        </button>
+                    ` : '';
+
                     const videoRowHtml = `
                         <div class="resource-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleVideosCollapsible(${res.id})">
@@ -5778,9 +7502,7 @@
                                     <span class="status-badge ${videosBadgeClass}">
                                         ${videosBadgeText}
                                     </span>
-                                    <button onclick="event.stopPropagation(); openAddVideoModal(${res.id})" class="btn btn-xs btn-ghost" title="Add Video Reference" style="padding: 2px 6px;">
-                                        <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Add
-                                    </button>
+                                    ${addVideoBtnHtml}
                                     <i data-lucide="chevron-down" id="video-chevron-${res.id}" style="width: 14px; height: 14px; transition: transform 0.2s;"></i>
                                 </div>
                             </div>
@@ -5811,6 +7533,7 @@
                                     <span class="mind-map-title">
                                         <i data-lucide="map" style="width: 14px; height: 14px; color: var(--color-primary);"></i> Mind Map
                                     </span>
+                                    ${isAdminOrOwner ? `
                                     <div style="display:flex; gap: 4px;">
                                         <button onclick="triggerInlineUpload(${res.id}, 'mind_map')" class="btn btn-xs btn-ghost" title="Replace Mind Map" style="padding: 2px 6px;">
                                             <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i> Replace
@@ -5819,6 +7542,7 @@
                                             <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i>
                                         </button>
                                     </div>
+                                    ` : ''}
                                 </div>
                                 <div class="mind-map-thumbnail-container has-map">
                                     ${thumbnailContentHtml}
@@ -5831,19 +7555,35 @@
                             </div>
                         `;
                     } else {
-                        mindMapBoxHtml = `
-                            <div class="mind-map-box">
-                                <div class="mind-map-header">
-                                    <span class="mind-map-title">
-                                        <i data-lucide="map" style="width: 14px; height: 14px; color: var(--text-muted);"></i> Mind Map
-                                    </span>
+                        if (isAdminOrOwner) {
+                            mindMapBoxHtml = `
+                                <div class="mind-map-box">
+                                    <div class="mind-map-header">
+                                        <span class="mind-map-title">
+                                            <i data-lucide="map" style="width: 14px; height: 14px; color: var(--text-muted);"></i> Mind Map
+                                        </span>
+                                    </div>
+                                    <div class="mind-map-thumbnail-container" onclick="triggerInlineUpload(${res.id}, 'mind_map')" style="cursor: pointer;">
+                                        <i data-lucide="plus-circle" style="width: 28px; height: 28px; color: var(--text-muted); margin-bottom: 6px;"></i>
+                                        <span style="font-size: 0.75rem; color: var(--text-secondary);">Upload Mind Map Image/PDF</span>
+                                    </div>
                                 </div>
-                                <div class="mind-map-thumbnail-container" onclick="triggerInlineUpload(${res.id}, 'mind_map')" style="cursor: pointer;">
-                                    <i data-lucide="plus-circle" style="width: 28px; height: 28px; color: var(--text-muted); margin-bottom: 6px;"></i>
-                                    <span style="font-size: 0.75rem; color: var(--text-secondary);">Upload Mind Map Image/PDF</span>
+                            `;
+                        } else {
+                            mindMapBoxHtml = `
+                                <div class="mind-map-box">
+                                    <div class="mind-map-header">
+                                        <span class="mind-map-title">
+                                            <i data-lucide="map" style="width: 14px; height: 14px; color: var(--text-muted);"></i> Mind Map
+                                        </span>
+                                    </div>
+                                    <div class="mind-map-thumbnail-container" style="cursor: default;">
+                                        <i data-lucide="map" style="width: 28px; height: 28px; color: var(--text-muted); margin-bottom: 6px;"></i>
+                                        <span style="font-size: 0.75rem; color: var(--text-secondary);">No Mind Map Uploaded</span>
+                                    </div>
                                 </div>
-                            </div>
-                        `;
+                            `;
+                        }
                     }
 
                     card.innerHTML = `
@@ -5968,6 +7708,12 @@
             e.preventDefault();
             soundEffects.playPop();
 
+            const isAdminOrOwner = currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner');
+            if (!isAdminOrOwner) {
+                alert("Access Denied: Only administrators and owners can modify video references.");
+                return;
+            }
+
             const chapterId = parseInt(document.getElementById('video-chapter-id').value);
             const videoId = document.getElementById('video-id').value;
             const title = document.getElementById('video-title-input').value.trim();
@@ -6041,6 +7787,11 @@
 
         async function deleteChapterVideo(videoId) {
             event.stopPropagation(); // Prevent card row toggling
+            const isAdminOrOwner = currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner');
+            if (!isAdminOrOwner) {
+                alert("Access Denied: Only administrators and owners can delete video references.");
+                return;
+            }
             if (!confirm("Are you sure you want to delete this video reference?")) return;
 
             if (useBackend) {
@@ -6093,6 +7844,12 @@
             const file = e.target.files[0];
             if (!file) return;
 
+            const isAdminOrOwner = currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner');
+            if (!isAdminOrOwner) {
+                alert("Access Denied: Only administrators and owners can upload resources.");
+                return;
+            }
+
             const chapterId = activeUploadChapterId;
             const resourceType = activeUploadResourceType;
 
@@ -6124,6 +7881,11 @@
         }
 
         async function deleteResource(chapterId, resourceType) {
+            const isAdminOrOwner = currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner');
+            if (!isAdminOrOwner) {
+                alert("Access Denied: Only administrators and owners can delete resources.");
+                return;
+            }
             if (!useBackend) {
                 alert("Collaboration sync is offline in standalone mode. Please run the Flask server via start.command and open http://127.0.0.1:5000/ to manage resources.");
                 return;
@@ -6174,6 +7936,930 @@
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
+        }
+
+        // --- SAMPLE PAPERS LOGIC ---
+        let samplePapers = [];
+        let selectedSampleFile = null;
+
+        function handleSampleFileSelection(e) {
+            const file = e.target.files[0];
+            if (file) {
+                selectedSampleFile = file;
+                document.getElementById('select-sample-file-label').innerText = file.name;
+                soundEffects.playPop();
+            }
+        }
+
+        async function loadSamplePapers() {
+            if (useBackend) {
+                try {
+                    const res = await fetch(`/api/sample-papers/${encodeURIComponent(selectedClass)}/${encodeURIComponent(selectedSubject)}`);
+                    if (res.ok) {
+                        samplePapers = await res.json();
+                        renderSamplePapers();
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch sample papers:", err);
+                }
+            } else {
+                samplePapers = localStore.getSamplePapers(selectedClass, selectedSubject);
+                renderSamplePapers();
+            }
+        }
+
+        function renderSamplePapers() {
+            const container = document.getElementById('sample-papers-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const query = chaptersSearchQuery.toLowerCase().trim();
+            const filteredPapers = samplePapers.filter(paper => 
+                paper.paper_title.toLowerCase().includes(query)
+            );
+
+            if (filteredPapers.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--glass-border); border-radius: var(--border-radius-lg);">
+                        <i data-lucide="file-x" style="width: 48px; height: 48px; color: var(--text-muted); margin-bottom: 12px;"></i>
+                        <h4 style="font-family: var(--font-playful); font-weight: 700; color: white;">No sample papers found</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Upload a paper above or search for another term.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            const isAdminOrOwner = currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner');
+
+            filteredPapers.forEach(paper => {
+                const card = document.createElement('div');
+                card.className = 'chapter-card glass';
+                card.style.display = 'flex';
+                card.style.flexDirection = 'column';
+                card.style.justifyContent = 'space-between';
+                card.style.gap = '16px';
+
+                // Format timestamp
+                let dateStr = 'Seeded';
+                if (paper.created_at) {
+                    try {
+                        const date = new Date(paper.created_at);
+                        dateStr = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                    } catch (e) {}
+                }
+
+                const deleteBtnHtml = isAdminOrOwner ? `
+                    <button onclick="deleteSamplePaper(${paper.id})" class="btn btn-sm btn-secondary" style="border-color: rgba(239, 68, 68, 0.2); color: #ef4444; background: rgba(239, 68, 68, 0.05); padding: 8px 12px;" title="Delete Paper">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                ` : '';
+
+                card.innerHTML = `
+                    <div style="display: flex; gap: 14px; align-items: flex-start;">
+                        <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); padding: 12px; border-radius: var(--border-radius-md); display: flex; align-items: center; justify-content: center; color: var(--color-primary);">
+                            <i data-lucide="file-text" style="width: 28px; height: 28px;"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Sample Paper</span>
+                            <h3 style="font-size: 1.05rem; font-weight: 700; color: white; margin-top: 2px; line-height: 1.4;">${escapeHTML(paper.paper_title)}</h3>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary); display: block; margin-top: 6px;">
+                                <i data-lucide="calendar" style="width:12px; height:12px; display:inline-block; vertical-align:middle; margin-right:4px;"></i> Added: ${dateStr}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; border-top: 1px dashed var(--glass-border); padding-top: 14px;">
+                        <button onclick="viewResource('${escapeHTML(paper.file_path)}', '${escapeHTML(paper.paper_title)}')" class="btn btn-sm btn-primary" style="flex: 1; justify-content: center; gap: 6px;">
+                            <i data-lucide="eye"></i> View Paper
+                        </button>
+                        ${deleteBtnHtml}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            lucide.createIcons();
+        }
+
+        async function handleSamplePaperSubmit(e) {
+            e.preventDefault();
+            soundEffects.playPop();
+
+            const isAdminOrOwner = currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner');
+            if (!isAdminOrOwner) {
+                alert("Access Denied: Only administrators and owners can upload sample papers.");
+                return;
+            }
+
+            const titleInput = document.getElementById('sample-paper-title-input');
+            const fileInput = document.getElementById('sample-paper-file-input');
+            const title = titleInput.value.trim();
+
+            if (!selectedSampleFile) {
+                alert("Please select a sample paper file first.");
+                return;
+            }
+
+            if (useBackend) {
+                try {
+                    const formData = new FormData();
+                    formData.append('file', selectedSampleFile);
+                    formData.append('paper_title', title);
+
+                    const res = await fetch(`/api/sample-papers/${encodeURIComponent(selectedClass)}/${encodeURIComponent(selectedSubject)}`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (res.ok) {
+                        soundEffects.playSuccess();
+                        triggerConfetti(0.2);
+                        titleInput.value = '';
+                        fileInput.value = '';
+                        selectedSampleFile = null;
+                        document.getElementById('select-sample-file-label').innerText = "Select PDF/Image";
+                        loadSamplePapers();
+                    } else {
+                        const err = await res.json();
+                        alert(err.error || "Failed to upload sample paper.");
+                    }
+                } catch (err) {
+                    console.error("Upload error:", err);
+                    alert("Network error uploading sample paper.");
+                }
+            } else {
+                // Standalone local storage upload fallback
+                const mockUrl = `/static/uploads/${selectedSampleFile.name}`;
+                const newPaper = {
+                    id: Date.now(),
+                    class_name: selectedClass,
+                    subject_name: selectedSubject,
+                    paper_title: title,
+                    file_path: mockUrl,
+                    created_at: new Date().toISOString()
+                };
+
+                const papers = localStore.getSamplePapers(selectedClass, selectedSubject);
+                papers.unshift(newPaper);
+                localStore.saveSamplePapers(selectedClass, selectedSubject, papers);
+
+                soundEffects.playSuccess();
+                triggerConfetti(0.2);
+                titleInput.value = '';
+                fileInput.value = '';
+                selectedSampleFile = null;
+                document.getElementById('select-sample-file-label').innerText = "Select PDF/Image";
+                loadSamplePapers();
+            }
+        }
+
+        async function deleteSamplePaper(paperId) {
+            const isAdminOrOwner = currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner');
+            if (!isAdminOrOwner) {
+                alert("Access Denied: Only administrators and owners can delete sample papers.");
+                return;
+            }
+            if (!confirm("Are you sure you want to delete this sample paper?")) return;
+            soundEffects.playPop();
+
+            if (useBackend) {
+                try {
+                    const res = await fetch(`/api/sample-papers/${paperId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (res.ok) {
+                        soundEffects.playSuccess();
+                        loadSamplePapers();
+                    } else {
+                        alert("Failed to delete sample paper.");
+                    }
+                } catch (err) {
+                    console.error("Delete error:", err);
+                    alert("Network error deleting sample paper.");
+                }
+            } else {
+                const papers = localStore.getSamplePapers(selectedClass, selectedSubject);
+                const idx = papers.findIndex(p => p.id === paperId);
+                if (idx !== -1) {
+                    papers.splice(idx, 1);
+                    localStore.saveSamplePapers(selectedClass, selectedSubject, papers);
+                    soundEffects.playSuccess();
+                    loadSamplePapers();
+                }
+            }
+        }
+
+        // --- AI CHATBOT LOGIC ---
+        let chatHistory = []; // Tracks messages: { role: 'user'|'model', text: string }
+
+        function formatBotReply(text) {
+            let escaped = escapeHTML(text);
+            escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            escaped = escaped.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            let lines = escaped.split('\n');
+            let inList = false;
+            let formattedLines = [];
+            
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+                    if (!inList) {
+                        formattedLines.push('<ul style="margin: 8px 0 8px 20px; list-style-type: disc; display: flex; flex-direction: column; gap: 4px;">');
+                        inList = true;
+                    }
+                    formattedLines.push(`<li>${trimmed.substring(2)}</li>`);
+                } else {
+                    if (inList) {
+                        formattedLines.push('</ul>');
+                        inList = false;
+                    }
+                    formattedLines.push(line);
+                }
+            });
+            if (inList) {
+                formattedLines.push('</ul>');
+            }
+            escaped = formattedLines.join('\n');
+            escaped = escaped.replace(/`(.*?)`/g, '<code style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; color: var(--color-pink);">$1</code>');
+            escaped = escaped.replace(/\n/g, '<br>');
+            return escaped;
+        }
+
+        function appendChatMessage(role, text) {
+            const container = document.getElementById('chat-messages-container');
+            if (!container) return;
+
+            const isUser = role === 'user';
+            const row = document.createElement('div');
+            row.className = `chat-message-row ${isUser ? 'user-msg' : 'bot-msg'}`;
+
+            const initial = isUser ? (currentUser ? currentUser.username.charAt(0).toUpperCase() : 'S') : 'B';
+            
+            let avatarHtml = '';
+            if (isUser) {
+                const avatarVal = currentUser ? currentUser.avatar : '';
+                if (avatarVal) {
+                    const isImage = avatarVal.startsWith('/') || avatarVal.startsWith('data:image/');
+                    avatarHtml = `<div class="chat-message-avatar">${isImage ? `<img src="${escapeHTML(avatarVal)}" alt="User" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">` : avatarVal}</div>`;
+                } else {
+                    avatarHtml = `<div class="chat-message-avatar">${initial}</div>`;
+                }
+            } else {
+                avatarHtml = `<div class="chat-message-avatar"><i data-lucide="bot" style="width: 14px; height: 14px;"></i></div>`;
+            }
+
+            const formattedText = isUser ? escapeHTML(text).replace(/\n/g, '<br>') : formatBotReply(text);
+
+            row.innerHTML = `
+                ${avatarHtml}
+                <div class="chat-message-bubble">${formattedText}</div>
+            `;
+
+            container.appendChild(row);
+            container.scrollTop = container.scrollHeight;
+            
+            if (!isUser) {
+                lucide.createIcons();
+            }
+        }
+
+        function appendTypingIndicator() {
+            const container = document.getElementById('chat-messages-container');
+            if (!container) return null;
+
+            const row = document.createElement('div');
+            row.className = 'chat-message-row bot-msg';
+            row.id = 'chat-typing-row';
+
+            row.innerHTML = `
+                <div class="chat-message-avatar"><i data-lucide="bot" style="width: 14px; height: 14px;"></i></div>
+                <div class="chat-message-bubble" style="padding: 10px 18px;">
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(row);
+            container.scrollTop = container.scrollHeight;
+            lucide.createIcons();
+            return row;
+        }
+
+        function sendQuickChatMessage(text) {
+            const input = document.getElementById('chat-message-input');
+            if (input) {
+                input.value = text;
+                const form = input.closest('form');
+                if (form) {
+                    form.dispatchEvent(new Event('submit', { cancelable: true }));
+                }
+            }
+        }
+
+        async function handleChatSubmit(e) {
+            e.preventDefault();
+            
+            const input = document.getElementById('chat-message-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            input.value = '';
+            input.disabled = true;
+            const submitBtn = input.closest('form').querySelector('button');
+            if (submitBtn) submitBtn.disabled = true;
+
+            soundEffects.playPop();
+            appendChatMessage('user', message);
+            const typingRow = appendTypingIndicator();
+
+            chatHistory.push({ role: 'user', text: message });
+            if (chatHistory.length > 10) {
+                chatHistory.shift();
+            }
+
+            setTimeout(async () => {
+                let reply = "";
+                let isLive = false;
+
+                if (useBackend) {
+                    try {
+                        const res = await fetch('/api/chat', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message: message, history: chatHistory })
+                        });
+
+                        if (res.ok) {
+                            const data = await res.json();
+                            reply = data.reply;
+                            isLive = data.live;
+                        } else {
+                            reply = "I had a tiny hiccup in my system. Please try again! ⚙️";
+                        }
+                    } catch (err) {
+                        console.error("Chat error:", err);
+                        reply = "I lost connection to my server. Make sure the backend is running and try again! 📡";
+                    }
+                } else {
+                    const msg_lower = message.toLowerCase();
+                    
+                    if (msg_lower.includes('tip') || msg_lower.includes('study') || msg_lower.includes('advice') || msg_lower.includes('learn') || msg_lower.includes('focus')) {
+                        const tips = [
+                            "Try the Pomodoro Technique! Study focused for 25 minutes, then take a 5-minute break to stretch and drink water. ⏱️",
+                            "Active Recall is key! Instead of just reading notes, close the book and write down everything you remember. Then check what you missed! 🧠",
+                            "Explain what you learned to someone else (or even a stuffed animal). If you can teach it simply, you understand it! 🧸",
+                            "Space out your revision. Reviewing a topic after 1 day, then 3 days, then 7 days helps seal it in your long-term memory! 🚀"
+                        ];
+                        reply = "Here is an offline study tip for you:\n\n" + tips[Math.floor(Math.random() * tips.length)];
+                    } else if (msg_lower.includes('joke') || msg_lower.includes('funny') || msg_lower.includes('laugh')) {
+                        const jokes = [
+                            "Why did the student eat their math homework? Because the teacher said it was a piece of cake! 🍰",
+                            "Why did the two ones get married? Because they were 1-derful together! 💍",
+                            "Why can't you trust atoms? Because they make up everything! ⚛️",
+                            "What did the triangle say to the circle? 'You're pointless!' 📐"
+                        ];
+                        reply = "Haha, here is one:\n\n" + jokes[Math.floor(Math.random() * jokes.length)];
+                    } else if (msg_lower.includes('math') || msg_lower.includes('algebra') || msg_lower.includes('equation') || msg_lower.includes('number') || msg_lower.includes('formula')) {
+                        reply = "Sure! Let's talk Math. 📐\n\nOne of the best ways to solve linear equations or quadratic expressions is by simplifying step-by-step. For example, in $2x + 5 = 15$, subtract 5 from both sides ($2x = 10$) and divide by 2 ($x = 5$).\n\nNeed a specific formula? Check the 'Formula Sheets' in the Learn Hub! 📁";
+                    } else if (msg_lower.includes('science') || msg_lower.includes('gravity') || msg_lower.includes('reaction') || msg_lower.includes('cell') || msg_lower.includes('atom')) {
+                        reply = "Awesome, Science is my favorite! ⚛️\n\n- **Biology**: Remember that cells are the basic unit of life! The Mitochondria is the powerhouse of the cell. 🔋\n- **Chemistry**: In chemical equations, reactants are on the left, and products are on the right. Make sure they balance!\n- **Physics**: Gravity is the invisible force that pulls masses together. On Earth, acceleration due to gravity ($g$) is about $9.8 \\text{ m/s}^2$.\n\nCheck out the video references in the Learn Hub for visual animations! 🎥";
+                    } else if (msg_lower.includes('hello') || msg_lower.includes('hi') || msg_lower.includes('hey') || msg_lower.includes('sup') || msg_lower.includes('how are you') || msg_lower.includes('buddy')) {
+                        reply = "Hello! I'm Buddy, your personal study assistant. 👋\n\nI can help you understand syllabus concepts, give you quick study tips, tell educational jokes, or help you structure your schedule. What subject are we diving into today? Maths, Science, or something else?";
+                    } else if (msg_lower.includes('motivation') || msg_lower.includes('tired') || msg_lower.includes('bored') || msg_lower.includes('lazy') || msg_lower.includes('hard')) {
+                        const quotes = [
+                            "Don't study to react, study to understand. The knowledge you build today will open doors tomorrow. 🌟",
+                            "Mistakes are proof that you are trying. Every wrong answer in the Quiz Arena is a step closer to understanding! 💪",
+                            "You don't have to be perfect. You just have to be 1% better than yesterday. Let's do a single 5-minute study block together! 🚀"
+                        ];
+                        reply = "Don't worry, you've got this! Here is a little boost:\n\n" + quotes[Math.floor(Math.random() * quotes.length)];
+                    } else {
+                        reply = "I'm here to support you! 🌟\n\nI can explain concepts in Math/Science, give you study tips, or tell you a joke to clear your mind. Try asking me 'Give me a study tip' or 'Tell me a science fact'!";
+                    }
+
+                    reply += "\n\n*(Note: Set the `GEMINI_API_KEY` environment variable in the backend and run on http://127.0.0.1:5000/ to enable live AI responses!)*";
+                }
+
+                if (typingRow) typingRow.remove();
+
+                appendChatMessage('model', reply);
+                soundEffects.playPop();
+
+                chatHistory.push({ role: 'model', text: reply });
+                if (chatHistory.length > 10) {
+                    chatHistory.shift();
+                }
+
+                input.disabled = false;
+                if (submitBtn) submitBtn.disabled = false;
+                input.focus();
+
+            }, 800);
+        }
+
+        function toggleChatbot(e) {
+            if (e) e.stopPropagation();
+            soundEffects.playPop();
+            const widget = document.getElementById('chatbot-widget');
+            if (widget) {
+                widget.classList.toggle('open');
+                if (widget.classList.contains('open')) {
+                    const input = document.getElementById('chat-message-input');
+                    if (input) input.focus();
+                }
+            }
+        }
+
+        // --- USER AVATAR SYSTEM CONTROLLERS ---
+        let selectedAvatarValue = '';
+        let activeAvatarFile = null;
+
+        function openAvatarModal(mandatory = false) {
+            const modal = document.getElementById('avatar-setup-modal');
+            if (!modal) return;
+            
+            modal.classList.remove('hidden');
+            
+            // Toggle cancel button display based on mandatory flag
+            const cancelBtn = modal.querySelector('.modal-buttons button:first-child');
+            if (cancelBtn) {
+                cancelBtn.style.display = mandatory ? 'none' : 'block';
+            }
+            
+            selectedAvatarValue = currentUser ? (currentUser.avatar || '') : '';
+            activeAvatarFile = null;
+            
+            const fileInput = document.getElementById('avatar-file-input');
+            if (fileInput) fileInput.value = '';
+            
+            const previewBox = document.getElementById('custom-avatar-preview-box');
+            const previewImg = document.getElementById('custom-avatar-preview-img');
+            if (previewBox && previewImg) {
+                if (selectedAvatarValue && (selectedAvatarValue.startsWith('/') || selectedAvatarValue.startsWith('data:image/'))) {
+                    previewBox.style.display = 'block';
+                    previewImg.src = selectedAvatarValue;
+                } else {
+                    previewBox.style.display = 'none';
+                    previewImg.src = '';
+                }
+            }
+            
+            const cards = modal.querySelectorAll('.avatar-option-card');
+            cards.forEach(card => {
+                const cardEmoji = card.getAttribute('data-emoji');
+                if (selectedAvatarValue === cardEmoji) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            });
+        }
+
+        function closeAvatarModal() {
+            const modal = document.getElementById('avatar-setup-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function selectEmojiAvatar(emoji) {
+            selectedAvatarValue = emoji;
+            activeAvatarFile = null;
+            
+            const modal = document.getElementById('avatar-setup-modal');
+            const cards = modal.querySelectorAll('.avatar-option-card');
+            cards.forEach(card => {
+                const cardEmoji = card.getAttribute('data-emoji');
+                if (cardEmoji === emoji) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            });
+            
+            const previewBox = document.getElementById('custom-avatar-preview-box');
+            if (previewBox) previewBox.style.display = 'none';
+        }
+
+        function handleAvatarFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (file.size > 2 * 1024 * 1024) {
+                alert("File size is too large. Maximum size is 2MB.");
+                e.target.value = '';
+                return;
+            }
+            
+            const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
+            if (!allowed.includes(file.type)) {
+                alert("Unsupported file format. Please upload PNG, JPG, JPEG or GIF.");
+                e.target.value = '';
+                return;
+            }
+            
+            activeAvatarFile = file;
+            selectedAvatarValue = '';
+            
+            const modal = document.getElementById('avatar-setup-modal');
+            const cards = modal.querySelectorAll('.avatar-option-card');
+            cards.forEach(card => card.classList.remove('selected'));
+            
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const previewBox = document.getElementById('custom-avatar-preview-box');
+                const previewImg = document.getElementById('custom-avatar-preview-img');
+                if (previewBox && previewImg) {
+                    previewBox.style.display = 'block';
+                    previewImg.src = evt.target.result;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function saveSelectedAvatar() {
+            if (!currentUser) return;
+            
+            if (!selectedAvatarValue && !activeAvatarFile) {
+                alert("Please select an emoji or upload a profile picture before saving.");
+                return;
+            }
+            
+            const btnSave = document.getElementById('btn-save-avatar');
+            const oldText = btnSave.innerHTML;
+            btnSave.disabled = true;
+            btnSave.innerText = "Saving...";
+            
+            try {
+                if (useBackend) {
+                    let res, data;
+                    if (activeAvatarFile) {
+                        const formData = new FormData();
+                        formData.append('file', activeAvatarFile);
+                        res = await fetch('/api/auth/avatar', {
+                            method: 'POST',
+                            body: formData
+                        });
+                    } else {
+                        res = await fetch('/api/auth/avatar', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ avatar: selectedAvatarValue })
+                        });
+                    }
+                    
+                    data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.error || "Failed to update avatar.");
+                    }
+                    
+                    currentUser.avatar = data.avatar;
+                } else {
+                    if (activeAvatarFile) {
+                        const base64 = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(activeAvatarFile);
+                        });
+                        currentUser.avatar = base64;
+                    } else {
+                        currentUser.avatar = selectedAvatarValue;
+                    }
+                    
+                    const users = localStore.getUsers();
+                    if (users[currentUser.username]) {
+                        users[currentUser.username].avatar = currentUser.avatar;
+                        localStore.saveUsers(users);
+                    }
+                    localStore.saveActiveUser(currentUser);
+                }
+                
+                updateAvatarUI();
+                soundEffects.playSuccess();
+                closeAvatarModal();
+            } catch (err) {
+                alert(err.message || "An error occurred while saving the avatar.");
+            } finally {
+                btnSave.disabled = false;
+                btnSave.innerHTML = oldText;
+            }
+        }
+
+        function updateAvatarUI() {
+            if (!currentUser) return;
+            
+            const avatarVal = currentUser.avatar || '🦁'; // default/initial display
+            const topbarAvatarEl = document.getElementById('topbar-user-avatar');
+            const sidebarAvatarEl = document.getElementById('sidebar-user-avatar');
+            const sidebarUsernameEl = document.getElementById('sidebar-username');
+            const sidebarRoleEl = document.getElementById('sidebar-user-role');
+            
+            if (sidebarUsernameEl) {
+                const fullName = currentUser.first_name && currentUser.last_name 
+                    ? `${currentUser.first_name} ${currentUser.last_name}` 
+                    : currentUser.username;
+                sidebarUsernameEl.innerText = fullName;
+            }
+            if (sidebarRoleEl) sidebarRoleEl.innerText = (currentUser.role || 'Student') + (currentUser.class_name ? ` (${currentUser.class_name})` : '');
+            
+            const isImage = avatarVal.startsWith('/') || avatarVal.startsWith('data:image/');
+            const htmlContent = isImage 
+                ? `<img src="${escapeHTML(avatarVal)}" alt="User Avatar">` 
+                : avatarVal;
+                
+            if (topbarAvatarEl) {
+                topbarAvatarEl.innerHTML = htmlContent;
+            }
+            if (sidebarAvatarEl) {
+                sidebarAvatarEl.innerHTML = htmlContent;
+            }
+            
+            // Update dropdown info dynamically if active
+            const fullnameEl = document.getElementById('dropdown-fullname');
+            if (fullnameEl) {
+                fullnameEl.innerText = currentUser.first_name && currentUser.last_name 
+                    ? `${currentUser.first_name} ${currentUser.last_name}` 
+                    : currentUser.username;
+            }
+            const classEl = document.getElementById('dropdown-class');
+            if (classEl) {
+                classEl.innerText = currentUser.class_name || 'Class 9';
+            }
+        }
+
+        function toggleProfileDropdown(e) {
+            if (e) e.stopPropagation();
+            const dropdown = document.getElementById('profile-dropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('hidden');
+                if (!dropdown.classList.contains('hidden')) {
+                    // Update dropdown info dynamically
+                    const fullnameEl = document.getElementById('dropdown-fullname');
+                    if (fullnameEl) {
+                        fullnameEl.innerText = currentUser.first_name && currentUser.last_name 
+                            ? `${currentUser.first_name} ${currentUser.last_name}` 
+                            : currentUser.username;
+                    }
+                    const classEl = document.getElementById('dropdown-class');
+                    if (classEl) {
+                        classEl.innerText = currentUser.class_name || 'Class 9';
+                    }
+                    
+                    // Style the active tab in dropdown
+                    const links = document.getElementById('profile-dropdown').querySelectorAll('a.dropdown-item');
+                    links.forEach(item => {
+                        const onclickAttr = item.getAttribute('onclick');
+                        if (onclickAttr && onclickAttr.includes('handleDropdownNav')) {
+                            const match = onclickAttr.match(/'([^']+)'/);
+                            if (match && match[1] === activeTab) {
+                                item.style.background = 'rgba(99, 102, 241, 0.15)';
+                                item.style.borderColor = 'rgba(99, 102, 241, 0.3)';
+                            } else {
+                                item.style.background = 'transparent';
+                                item.style.borderColor = 'transparent';
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        function handleDropdownNav(e, tabId) {
+            if (e) e.preventDefault();
+            switchTab(tabId);
+            const dropdown = document.getElementById('profile-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+        }
+
+        function handleDropdownEditProfile(e) {
+            if (e) e.preventDefault();
+            openAvatarModal();
+            const dropdown = document.getElementById('profile-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+        }
+
+        function handleDropdownChangePassword(e) {
+            if (e) e.preventDefault();
+            openChangePasswordModal();
+            const dropdown = document.getElementById('profile-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+        }
+
+        function openChangePasswordModal() {
+            const modal = document.getElementById('change-password-modal');
+            if (modal) {
+                document.getElementById('cp-current-password').value = '';
+                document.getElementById('cp-new-password').value = '';
+                document.getElementById('cp-confirm-password').value = '';
+                document.getElementById('change-password-error').classList.add('hidden');
+                document.getElementById('change-password-success').classList.add('hidden');
+                modal.classList.remove('hidden');
+            }
+        }
+
+        function closeChangePasswordModal() {
+            const modal = document.getElementById('change-password-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
+
+        async function submitChangePassword(e) {
+            if (e) e.preventDefault();
+            
+            const currentPassword = document.getElementById('cp-current-password').value;
+            const newPassword = document.getElementById('cp-new-password').value;
+            const confirmPassword = document.getElementById('cp-confirm-password').value;
+            
+            const errorEl = document.getElementById('change-password-error');
+            const errorTextEl = document.getElementById('change-password-error-text');
+            const successEl = document.getElementById('change-password-success');
+            
+            errorEl.classList.add('hidden');
+            successEl.classList.add('hidden');
+            
+            if (newPassword !== confirmPassword) {
+                errorTextEl.innerText = "New passwords do not match.";
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            
+            if (newPassword.length < 4) {
+                errorTextEl.innerText = "New password must be at least 4 characters.";
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            
+            // Standalone LocalStorage fallback
+            if (!useBackend) {
+                const users = localStore.getUsers();
+                const user = users[currentUser.username];
+                if (!user || user.password !== currentPassword) {
+                    errorTextEl.innerText = "Incorrect current password.";
+                    errorEl.classList.remove('hidden');
+                    return;
+                }
+                if (user.password === newPassword) {
+                    errorTextEl.innerText = "New password cannot be the same as your current password.";
+                    errorEl.classList.remove('hidden');
+                    return;
+                }
+                user.password = newPassword;
+                users[currentUser.username] = user;
+                localStore.saveUsers(users);
+                
+                currentUser.password = newPassword;
+                localStore.saveActiveUser(currentUser);
+                
+                successEl.classList.remove('hidden');
+                setTimeout(() => {
+                    closeChangePasswordModal();
+                }, 1500);
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/auth/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword,
+                        confirm_password: confirmPassword
+                    })
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    successEl.classList.remove('hidden');
+                    setTimeout(() => {
+                        closeChangePasswordModal();
+                    }, 1500);
+                } else {
+                    errorTextEl.innerText = data.error || "Failed to update password.";
+                    errorEl.classList.remove('hidden');
+                }
+            } catch (err) {
+                errorTextEl.innerText = "Connection error. Please try again.";
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        function handleDropdownLogout(e) {
+            if (e) e.preventDefault();
+            const dropdown = document.getElementById('profile-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+            handleLogout(e);
+        }
+
+        // --- OTP VERIFICATION SYSTEM ---
+        let localEmailOTP = '';
+        let localMobileOTP = '';
+        let localPendingUser = null;
+
+        function openOTPVerificationModal(emailOtp, mobileOtp) {
+            const modal = document.getElementById('otp-verification-modal');
+            if (!modal) return;
+            
+            document.getElementById('otp-email-input').value = '';
+            document.getElementById('otp-mobile-input').value = '';
+            document.getElementById('otp-error').classList.add('hidden');
+            
+            document.getElementById('toast-email-otp').innerText = emailOtp;
+            document.getElementById('toast-mobile-otp').innerText = mobileOtp;
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeOTPVerificationModal() {
+            const modal = document.getElementById('otp-verification-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+            localPendingUser = null;
+            localEmailOTP = '';
+            localMobileOTP = '';
+        }
+
+        async function submitOTPVerification(e) {
+            e.preventDefault();
+            const emailOtpInput = document.getElementById('otp-email-input').value.trim();
+            const mobileOtpInput = document.getElementById('otp-mobile-input').value.trim();
+            const errorEl = document.getElementById('otp-error');
+            const btnVerify = document.getElementById('btn-verify-otp');
+            
+            errorEl.classList.add('hidden');
+            
+            const oldText = btnVerify.innerHTML;
+            btnVerify.disabled = true;
+            btnVerify.innerText = "Verifying...";
+            
+            try {
+                if (useBackend) {
+                    const res = await fetch('/api/auth/verify-otp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email_otp: emailOtpInput, mobile_otp: mobileOtpInput })
+                    });
+                    
+                    const data = await res.json();
+                    
+                    if (!res.ok) {
+                        errorEl.innerText = data.error || 'Verification failed.';
+                        errorEl.classList.remove('hidden');
+                        soundEffects.playFail();
+                        return;
+                    }
+                    
+                    currentUser = data.user;
+                    soundEffects.playSuccess();
+                    closeOTPVerificationModal();
+                    
+                    triggerBadgeUnlock('Ignition Flame 🔥');
+                    checkAuthStatus();
+                } else {
+                    // Standalone Mode Offline
+                    if (emailOtpInput !== localEmailOTP || mobileOtpInput !== localMobileOTP) {
+                        errorEl.innerText = 'Invalid Email OTP or Mobile OTP. Please check and try again.';
+                        errorEl.classList.remove('hidden');
+                        soundEffects.playFail();
+                        return;
+                    }
+                    
+                    if (!localPendingUser) {
+                        errorEl.innerText = 'Registration session expired. Please register again.';
+                        errorEl.classList.remove('hidden');
+                        return;
+                    }
+                    
+                    // Add user locally
+                    const users = localStore.getUsers();
+                    users[localPendingUser.username] = localPendingUser;
+                    localStore.saveUsers(users);
+                    localStore.saveActiveUser(localPendingUser);
+                    currentUser = localPendingUser;
+                    
+                    soundEffects.playSuccess();
+                    closeOTPVerificationModal();
+                    
+                    triggerBadgeUnlock('Ignition Flame 🔥');
+                    showApp();
+                }
+            } catch (err) {
+                errorEl.innerText = 'Connection error. Please try again.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                btnVerify.disabled = false;
+                btnVerify.innerHTML = oldText;
+            }
         }
     </script>
 </body>

@@ -1,14 +1,18 @@
 from flask import Flask, jsonify, request, session, render_template, g
 import sqlite3
-import hashlib
 import os
 from datetime import datetime, timedelta
 import json
 from database import get_db_connection, DB_PATH
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__, template_folder='.')
-app.secret_key = 'super-secret-student-buddy-key-2026-enjoy-studying'
+app.secret_key = os.environ.get('SECRET_KEY', 'super-secret-student-buddy-key-2026-enjoy-studying')
 app.permanent_session_lifetime = timedelta(days=7)
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+)
 
 # Ensure database structure and content are synchronized on startup
 from database import init_db
@@ -28,9 +32,6 @@ def close_db(e):
         db.close()
 
 # --- HELPER FUNCTIONS ---
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
-
 def get_current_user():
     if 'user_id' not in session:
         return None
@@ -38,6 +39,12 @@ def get_current_user():
     cursor = db.cursor()
     cursor.execute('SELECT * FROM users WHERE id = ?', (session['user_id'],))
     return cursor.fetchone()
+
+def check_admin_permission():
+    user = get_current_user()
+    if not user or user['role'] not in ('admin', 'owner'):
+        return False
+    return True
 
 def update_user_stats(user_id, xp_gain=0, hours_gain=0.0):
     db = get_db()
@@ -136,14 +143,107 @@ def index():
     return render_template('index.html')
 
 # --- API: AUTHENTICATION ---
+@app.route('/api/auth/send-email-otp', methods=['POST'])
+def send_email_otp():
+    data = request.json or {}
+    email = data.get('email', '').strip()
+    if '@' not in email or '.' not in email:
+        return jsonify({'error': 'A valid email address is required.'}), 400
+    
+    import random
+    otp = str(random.randint(100000, 999999))
+    session['email_otp'] = otp
+    session['email_otp_target'] = email
+    
+    print(f"[OTP DEBUG] Email OTP sent to {email}: {otp}")
+    return jsonify({
+        'message': 'OTP code sent to email.',
+        'otp': otp
+    })
+
+@app.route('/api/auth/verify-email-otp', methods=['POST'])
+def verify_email_otp():
+    data = request.json or {}
+    email = data.get('email', '').strip()
+    otp = data.get('otp', '').strip()
+    
+    session_otp = session.get('email_otp')
+    session_target = session.get('email_otp_target')
+    
+    if not session_otp or not session_target:
+        return jsonify({'error': 'No OTP sent or OTP expired.'}), 400
+        
+    if email != session_target or otp != session_otp:
+        return jsonify({'error': 'Invalid email verification code.'}), 400
+        
+    session['email_verified'] = True
+    session['email_verified_target'] = email
+    return jsonify({'message': 'Email verified successfully!'})
+
+@app.route('/api/auth/send-mobile-otp', methods=['POST'])
+def send_mobile_otp():
+    data = request.json or {}
+    mobile = data.get('mobile', '').strip()
+    import re
+    if not re.match(r'^\d{10}$', mobile):
+        return jsonify({'error': 'A valid 10-digit mobile number is required.'}), 400
+        
+    import random
+    otp = str(random.randint(100000, 999999))
+    session['mobile_otp'] = otp
+    session['mobile_otp_target'] = mobile
+    
+    print(f"[OTP DEBUG] Mobile OTP sent to {mobile}: {otp}")
+    return jsonify({
+        'message': 'OTP code sent to mobile number.',
+        'otp': otp
+    })
+
+@app.route('/api/auth/verify-mobile-otp', methods=['POST'])
+def verify_mobile_otp():
+    data = request.json or {}
+    mobile = data.get('mobile', '').strip()
+    otp = data.get('otp', '').strip()
+    
+    session_otp = session.get('mobile_otp')
+    session_target = session.get('mobile_otp_target')
+    
+    if not session_otp or not session_target:
+        return jsonify({'error': 'No OTP sent or OTP expired.'}), 400
+        
+    if mobile != session_target or otp != session_otp:
+        return jsonify({'error': 'Invalid mobile verification code.'}), 400
+        
+    session['mobile_verified'] = True
+    session['mobile_verified_target'] = mobile
+    return jsonify({'message': 'Mobile number verified successfully!'})
+
 @app.route('/api/auth/register', methods=['POST'])
 def register():
     data = request.json or {}
     username = data.get('username', '').strip()
     password = data.get('password', '').strip()
+    first_name = data.get('first_name', '').strip()
+    last_name = data.get('last_name', '').strip()
+    email = data.get('email', '').strip()
+    mobile = data.get('mobile', '').strip()
+    class_name = data.get('class_name', 'Class 9').strip()
     
     if len(username) < 3 or len(password) < 4:
         return jsonify({'error': 'Username (min 3 chars) and password (min 4 chars) required.'}), 400
+        
+    if not first_name or not last_name:
+        return jsonify({'error': 'First name and last name are required.'}), 400
+        
+    if class_name not in ('Class 9', 'Class 10'):
+        return jsonify({'error': 'Invalid class selection.'}), 400
+        
+    # Ensure email and mobile have been verified in session
+    if not session.get('email_verified') or session.get('email_verified_target') != email:
+        return jsonify({'error': 'Email verification required.'}), 400
+        
+    if not session.get('mobile_verified') or session.get('mobile_verified_target') != mobile:
+        return jsonify({'error': 'Mobile number verification required.'}), 400
         
     db = get_db()
     cursor = db.cursor()
@@ -153,40 +253,78 @@ def register():
     if cursor.fetchone():
         return jsonify({'error': 'Username already taken.'}), 409
         
-    hashed_pw = hash_password(password)
+    hashed_pw = generate_password_hash(password)
     
     try:
         cursor.execute('''
-        INSERT INTO users (username, password, xp, level, streak, total_hours)
-        VALUES (?, ?, 0, 1, 0, 0.0)
-        ''', (username, hashed_pw))
+        INSERT INTO users (username, password, xp, level, streak, total_hours, role, first_name, last_name, email, mobile, class_name)
+        VALUES (?, ?, 0, 1, 0, 0.0, 'student', ?, ?, ?, ?, ?)
+        ''', (
+            username,
+            hashed_pw,
+            first_name,
+            last_name,
+            email,
+            mobile,
+            class_name
+        ))
         db.commit()
         
-        # Get new user ID
         user_id = cursor.lastrowid
+        
+        # Clear verification sessions
+        session.pop('email_otp', None)
+        session.pop('email_otp_target', None)
+        session.pop('email_verified', None)
+        session.pop('email_verified_target', None)
+        session.pop('mobile_otp', None)
+        session.pop('mobile_otp_target', None)
+        session.pop('mobile_verified', None)
+        session.pop('mobile_verified_target', None)
+        
+        # Log user in
         session.permanent = True
         session['user_id'] = user_id
         
         # Award welcome badge
         award_badge(user_id, 'Ignition Flame 🔥')
         
-        return jsonify({'message': 'Registration successful!', 'user': {'id': user_id, 'username': username}})
+        return jsonify({
+            'message': 'Registration successful!',
+            'user': {
+                'id': user_id,
+                'username': username,
+                'role': 'student',
+                'avatar': '',
+                'first_name': first_name,
+                'last_name': last_name,
+                'email': email,
+                'mobile': mobile,
+                'class_name': class_name
+            }
+        })
     except Exception as e:
         return jsonify({'error': f'Database error: {str(e)}'}), 500
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     data = request.json or {}
-    username = data.get('username', '').strip()
+    identifier = data.get('username', '').strip()
     password = data.get('password', '').strip()
     
+    if not identifier or not password:
+        return jsonify({'error': 'Username/Email/Mobile and Password are required.'}), 400
+        
     db = get_db()
     cursor = db.cursor()
-    cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
+    cursor.execute('''
+        SELECT * FROM users 
+        WHERE username = ? OR email = ? OR mobile = ?
+    ''', (identifier, identifier, identifier))
     user = cursor.fetchone()
     
-    if not user or user['password'] != hash_password(password):
-        return jsonify({'error': 'Invalid username or password.'}), 401
+    if not user or not check_password_hash(user['password'], password):
+        return jsonify({'error': 'Invalid credentials or password.'}), 401
         
     session.permanent = True
     session['user_id'] = user['id']
@@ -195,7 +333,14 @@ def login():
         'message': 'Login successful!',
         'user': {
             'id': user['id'],
-            'username': user['username']
+            'username': user['username'],
+            'role': user['role'],
+            'avatar': user['avatar'] or '',
+            'first_name': user['first_name'] or '',
+            'last_name': user['last_name'] or '',
+            'email': user['email'] or '',
+            'mobile': user['mobile'] or '',
+            'class_name': user['class_name'] or 'Class 9'
         }
     })
 
@@ -218,9 +363,107 @@ def auth_status():
             'xp': user['xp'],
             'level': user['level'],
             'streak': user['streak'],
-            'total_hours': round(user['total_hours'], 2)
+            'total_hours': round(user['total_hours'], 2),
+            'role': user['role'],
+            'avatar': user['avatar'] or '',
+            'first_name': user['first_name'] or '',
+            'last_name': user['last_name'] or '',
+            'email': user['email'] or '',
+            'mobile': user['mobile'] or '',
+            'class_name': user['class_name'] or 'Class 9'
         }
     })
+
+@app.route('/api/auth/avatar', methods=['POST'])
+def update_avatar():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorised.'}), 401
+        
+    db = get_db()
+    cursor = db.cursor()
+    
+    avatar_val = ""
+    
+    if 'file' in request.files:
+        file = request.files['file']
+        if file.filename != '':
+            allowed_extensions = {'.png', '.jpg', '.jpeg', '.gif'}
+            _, ext = os.path.splitext(file.filename.lower())
+            if ext not in allowed_extensions:
+                return jsonify({'error': 'Unsupported file type. Only images (.png, .jpg, .jpeg, .gif) are allowed.'}), 400
+                
+            uploads_dir = os.path.join(app.root_path, 'static', 'uploads')
+            os.makedirs(uploads_dir, exist_ok=True)
+            
+            filename = f"avatar_{user['id']}{ext}"
+            filepath = os.path.join(uploads_dir, filename)
+            
+            for existing_ext in allowed_extensions:
+                old_file = os.path.join(uploads_dir, f"avatar_{user['id']}{existing_ext}")
+                if os.path.exists(old_file):
+                    try:
+                        os.remove(old_file)
+                    except Exception:
+                        pass
+                        
+            file.save(filepath)
+            avatar_val = f"/static/uploads/{filename}"
+            
+    elif request.is_json:
+        data = request.json or {}
+        avatar_val = data.get('avatar', '').strip()
+        
+    if not avatar_val:
+        avatar_val = request.form.get('avatar', '').strip()
+        
+    if not avatar_val:
+        return jsonify({'error': 'No avatar image or emoji provided.'}), 400
+        
+    cursor.execute('UPDATE users SET avatar = ? WHERE id = ?', (avatar_val, user['id']))
+    db.commit()
+    
+    return jsonify({
+        'message': 'Avatar updated successfully!',
+        'avatar': avatar_val
+    })
+
+@app.route('/api/auth/change-password', methods=['POST'])
+def change_password():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorised.'}), 401
+        
+    data = request.json or {}
+    current_password = data.get('current_password', '').strip()
+    new_password = data.get('new_password', '').strip()
+    confirm_password = data.get('confirm_password', '').strip()
+    
+    if not current_password or not new_password or not confirm_password:
+        return jsonify({'error': 'All password fields are required.'}), 400
+        
+    if new_password != confirm_password:
+        return jsonify({'error': 'New password and confirm password do not match.'}), 400
+        
+    if len(new_password) < 4:
+        return jsonify({'error': 'New password must be at least 4 characters.'}), 400
+        
+    db = get_db()
+    cursor = db.cursor()
+    
+    # Verify current password
+    if not check_password_hash(user['password'], current_password):
+        return jsonify({'error': 'Incorrect current password.'}), 401
+        
+    # Check if new password is same as current password
+    if check_password_hash(user['password'], new_password):
+        return jsonify({'error': 'New password cannot be the same as your current password.'}), 400
+        
+    hashed_pw = generate_password_hash(new_password)
+    cursor.execute('UPDATE users SET password = ? WHERE id = ?', (hashed_pw, user['id']))
+    db.commit()
+    
+    return jsonify({'message': 'Password changed successfully!'})
 
 # --- API: STUDY STATS & BADGES ---
 @app.route('/api/stats', methods=['GET'])
@@ -252,7 +495,14 @@ def get_stats():
         'total_hours': round(user['total_hours'], 2),
         'quizzes_completed_count': quizzes_done,
         'tasks_completed_count': tasks_done,
-        'badges': badges
+        'badges': badges,
+        'role': user['role'],
+        'avatar': user['avatar'] or '',
+        'first_name': user['first_name'] or '',
+        'last_name': user['last_name'] or '',
+        'email': user['email'] or '',
+        'mobile': user['mobile'] or '',
+        'class_name': user['class_name'] or 'Class 9'
     })
 
 # --- API: STUDY PLANNER (TASKS) ---
@@ -667,6 +917,143 @@ def get_quiz_analytics():
         'weak': weak[:5]
     })
 
+# --- API: AI STUDY BUDDY CHATBOT ---
+@app.route('/api/chat', methods=['POST'])
+def handle_chat():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorised.'}), 401
+        
+    data = request.json or {}
+    message = data.get('message', '').strip()
+    history = data.get('history', [])
+    
+    if not message:
+        return jsonify({'error': 'Message cannot be empty.'}), 400
+        
+    api_key = os.environ.get('GEMINI_API_KEY')
+    
+    if api_key:
+        try:
+            import urllib.request
+            import urllib.error
+            import json
+            
+            contents = []
+            for h in history:
+                role = "user" if h.get('role') == 'user' else "model"
+                contents.append({
+                    "role": role,
+                    "parts": [{"text": h.get('text', '')}]
+                })
+            
+            contents.append({
+                "role": "user",
+                "parts": [{"text": message}]
+            })
+            
+            payload = {
+                "contents": contents,
+                "systemInstruction": {
+                    "parts": [{
+                        "text": "You are 'Buddy', a friendly, encouraging, and highly intelligent AI study companion for Class 9 and 10 students. "
+                               "Your goal is to help them learn with no pressure, using positive reinforcement. "
+                               "Explain complex math, science, and history concepts in simple, easy-to-understand language. "
+                               "Use bullet points, formatting, and emojis to keep things fun. Encourage active recall, notes taking, "
+                               "and regular breaks. Be friendly, lighthearted, and always supportive."
+                    }]
+                },
+                "generationConfig": {
+                    "temperature": 0.7,
+                    "maxOutputTokens": 800
+                }
+            }
+            
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode('utf-8'),
+                headers={'Content-Type': 'application/json'},
+                method='POST'
+            )
+            
+            with urllib.request.urlopen(req, timeout=10) as response:
+                res_data = json.loads(response.read().decode('utf-8'))
+                candidates = res_data.get('candidates', [])
+                if candidates:
+                    content = candidates[0].get('content', {})
+                    parts = content.get('parts', [])
+                    if parts:
+                        reply = parts[0].get('text', 'Oops, I got empty content back.')
+                        return jsonify({'reply': reply, 'live': True})
+                        
+                return jsonify({'reply': "I received your message, but the model response was empty.", 'live': True})
+                
+        except urllib.error.HTTPError as he:
+            error_msg = he.read().decode('utf-8')
+            print(f"Gemini API HTTP Error: {error_msg}")
+            return jsonify({'reply': "I had trouble connecting to my brain due to an API configuration error. Please check your GEMINI_API_KEY. (HTTP Error)", 'live': False})
+        except Exception as e:
+            print(f"Gemini API Error: {str(e)}")
+            pass
+            
+    msg_lower = message.lower()
+    
+    if any(x in msg_lower for x in ['tip', 'study', 'advice', 'learn', 'focus']):
+        tips = [
+            "Try the Pomodoro Technique! Study focused for 25 minutes, then take a 5-minute break to stretch and drink water. ⏱️",
+            "Active Recall is key! Instead of just reading notes, close the book and write down everything you remember. Then check what you missed! 🧠",
+            "Explain what you learned to someone else (or even a stuffed animal). If you can teach it simply, you understand it! 🧸",
+            "Space out your revision. Reviewing a topic after 1 day, then 3 days, then 7 days helps seal it in your long-term memory! 🚀"
+        ]
+        import random
+        reply = f"Here is a study tip for you:\n\n{random.choice(tips)}"
+        
+    elif any(x in msg_lower for x in ['joke', 'funny', 'laugh']):
+        jokes = [
+            "Why did the student eat their math homework? Because the teacher said it was a piece of cake! 🍰",
+            "Why did the two ones get married? Because they were 1-derful together! 💍",
+            "Why can't you trust atoms? Because they make up everything! ⚛️",
+            "What did the triangle say to the circle? 'You're pointless!' 📐"
+        ]
+        import random
+        reply = f"Haha, here is one:\n\n{random.choice(jokes)}"
+        
+    elif any(x in msg_lower for x in ['math', 'algebra', 'equation', 'number', 'formula']):
+        reply = ("Sure! Let's talk Math. 📐\n\n"
+                 "One of the best ways to solve linear equations or quadratic expressions is by simplifying step-by-step. "
+                 "For example, in $2x + 5 = 15$, subtract 5 from both sides ($2x = 10$) and divide by 2 ($x = 5$).\n\n"
+                 "Need a specific formula? Check the 'Formula Sheets' in the Learn Hub! 📁")
+                 
+    elif any(x in msg_lower for x in ['science', 'gravity', 'reaction', 'cell', 'atom']):
+        reply = ("Awesome, Science is my favorite! ⚛️\n\n"
+                 "- **Biology**: Remember that cells are the basic unit of life! The Mitochondria is the powerhouse of the cell. 🔋\n"
+                 "- **Chemistry**: In chemical equations, reactants are on the left, and products are on the right. Make sure they balance!\n"
+                 "- **Physics**: Gravity is the invisible force that pulls masses together. On Earth, acceleration due to gravity ($g$) is about $9.8 \\text{ m/s}^2$.\n\n"
+                 "Check out the video references in the Learn Hub for visual animations! 🎥")
+                 
+    elif any(x in msg_lower for x in ['hello', 'hi', 'hey', 'sup', 'how are you', 'buddy']):
+        reply = ("Hello! I'm Buddy, your personal study assistant. 👋\n\n"
+                 "I can help you understand syllabus concepts, give you quick study tips, tell educational jokes, or help you structure your schedule. "
+                 "What subject are we diving into today? Maths, Science, or something else?")
+                 
+    elif any(x in msg_lower for x in ['motivation', 'tired', 'bored', 'lazy', 'hard']):
+        quotes = [
+            "Don't study to react, study to understand. The knowledge you build today will open doors tomorrow. 🌟",
+            "Mistakes are proof that you are trying. Every wrong answer in the Quiz Arena is a step closer to understanding! 💪",
+            "You don't have to be perfect. You just have to be 1% better than yesterday. Let's do a single 5-minute study block together! 🚀"
+        ]
+        import random
+        reply = f"Don't worry, you've got this! Here is a little boost:\n\n{random.choice(quotes)}"
+        
+    else:
+        reply = ("I'm here to support you! 🌟\n\n"
+                 "I can explain concepts in Math/Science, give you study tips, or tell you a joke to clear your mind. "
+                 "Try asking me 'Give me a study tip' or 'Tell me a science fact'!")
+
+    reply += "\n\n*(Note: Set the `GEMINI_API_KEY` environment variable and restart the server to enable live AI responses from Gemini!)*"
+    return jsonify({'reply': reply, 'live': False})
+
 # --- API: COLLABORATION QUESTIONS MANAGEMENT ---
 @app.route('/api/chapters/<int:chapter_id>/questions', methods=['GET'])
 def get_chapter_questions(chapter_id):
@@ -693,9 +1080,8 @@ def get_chapter_questions(chapter_id):
 
 @app.route('/api/chapters/<int:chapter_id>/questions', methods=['POST'])
 def add_chapter_question(chapter_id):
-    user = get_current_user()
-    if not user:
-        return jsonify({'error': 'Unauthorised.'}), 401
+    if not check_admin_permission():
+        return jsonify({'error': 'Forbidden. Only administrators and owners can modify content.'}), 403
         
     data = request.json or {}
     difficulty = data.get('difficulty')
@@ -719,12 +1105,11 @@ def add_chapter_question(chapter_id):
     db.commit()
     
     return jsonify({'message': 'Question added successfully!'})
-
+ 
 @app.route('/api/questions/<int:question_id>', methods=['PUT'])
 def edit_question(question_id):
-    user = get_current_user()
-    if not user:
-        return jsonify({'error': 'Unauthorised.'}), 401
+    if not check_admin_permission():
+        return jsonify({'error': 'Forbidden. Only administrators and owners can modify content.'}), 403
         
     data = request.json or {}
     difficulty = data.get('difficulty')
@@ -753,12 +1138,11 @@ def edit_question(question_id):
     db.commit()
     
     return jsonify({'message': 'Question updated successfully!'})
-
+ 
 @app.route('/api/questions/<int:question_id>', methods=['DELETE'])
 def delete_question(question_id):
-    user = get_current_user()
-    if not user:
-        return jsonify({'error': 'Unauthorised.'}), 401
+    if not check_admin_permission():
+        return jsonify({'error': 'Forbidden. Only administrators and owners can modify content.'}), 403
         
     db = get_db()
     cursor = db.cursor()
@@ -874,9 +1258,8 @@ def get_resources(class_name, subject_name):
 
 @app.route('/api/chapters/<int:chapter_id>/resources/<resource_type>', methods=['POST'])
 def upload_chapter_resource(chapter_id, resource_type):
-    user = get_current_user()
-    if not user:
-        return jsonify({'error': 'Unauthorised.'}), 401
+    if not check_admin_permission():
+        return jsonify({'error': 'Forbidden. Only administrators and owners can modify content.'}), 403
         
     if 'file' not in request.files:
         return jsonify({'error': 'No file part in request.'}), 400
@@ -921,9 +1304,8 @@ def upload_chapter_resource(chapter_id, resource_type):
 
 @app.route('/api/chapters/<int:chapter_id>/resources/<resource_type>', methods=['DELETE'])
 def delete_chapter_resource(chapter_id, resource_type):
-    user = get_current_user()
-    if not user:
-        return jsonify({'error': 'Unauthorised.'}), 401
+    if not check_admin_permission():
+        return jsonify({'error': 'Forbidden. Only administrators and owners can modify content.'}), 403
         
     db = get_db()
     cursor = db.cursor()
@@ -947,11 +1329,102 @@ def delete_chapter_resource(chapter_id, resource_type):
     
     return jsonify({'message': 'Resource deleted successfully.'})
 
+# --- API: SAMPLE PAPERS ---
+@app.route('/api/sample-papers/<class_name>/<subject_name>', methods=['GET'])
+def get_sample_papers(class_name, subject_name):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('''
+    SELECT id, class_name, subject_name, paper_title, file_path, created_at
+    FROM sample_papers
+    WHERE class_name = ? AND subject_name = ?
+    ORDER BY created_at DESC
+    ''', (class_name, subject_name))
+    rows = cursor.fetchall()
+    return jsonify([dict(row) for row in rows])
+
+@app.route('/api/sample-papers/<class_name>/<subject_name>', methods=['POST'])
+def upload_sample_paper(class_name, subject_name):
+    if not check_admin_permission():
+        return jsonify({'error': 'Forbidden. Only administrators and owners can modify content.'}), 403
+        
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part in request.'}), 400
+        
+    file = request.files['file']
+    paper_title = request.form.get('paper_title', '').strip()
+    
+    if file.filename == '':
+        return jsonify({'error': 'No selected file.'}), 400
+        
+    if not paper_title:
+        return jsonify({'error': 'Paper title is required.'}), 400
+        
+    allowed_extensions = {'.pdf', '.png', '.jpg', '.jpeg'}
+    _, ext = os.path.splitext(file.filename.lower())
+    if ext not in allowed_extensions:
+        return jsonify({'error': 'Unsupported file type. Only PDF and images (.png, .jpg, .jpeg) are allowed.'}), 400
+        
+    uploads_dir = os.path.join(app.root_path, 'static', 'uploads')
+    os.makedirs(uploads_dir, exist_ok=True)
+    
+    import uuid
+    filename = f"sample_paper_{uuid.uuid4().hex}{ext}"
+    filepath = os.path.join(uploads_dir, filename)
+    file.save(filepath)
+    file_path = f"/static/uploads/{filename}"
+    
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('''
+    INSERT INTO sample_papers (class_name, subject_name, paper_title, file_path)
+    VALUES (?, ?, ?, ?)
+    ''', (class_name, subject_name, paper_title, file_path))
+    db.commit()
+    
+    new_id = cursor.lastrowid
+    return jsonify({
+        'message': 'Sample paper uploaded successfully.',
+        'sample_paper': {
+            'id': new_id,
+            'class_name': class_name,
+            'subject_name': subject_name,
+            'paper_title': paper_title,
+            'file_path': file_path
+        }
+    })
+
+@app.route('/api/sample-papers/<int:paper_id>', methods=['DELETE'])
+def delete_sample_paper(paper_id):
+    if not check_admin_permission():
+        return jsonify({'error': 'Forbidden. Only administrators and owners can modify content.'}), 403
+        
+    db = get_db()
+    cursor = db.cursor()
+    
+    cursor.execute('SELECT file_path FROM sample_papers WHERE id = ?', (paper_id,))
+    row = cursor.fetchone()
+    if not row:
+        return jsonify({'error': 'Sample paper not found.'}), 404
+        
+    file_path = row['file_path']
+    if file_path.startswith('/static/'):
+        disk_path = os.path.join(app.root_path, file_path.lstrip('/'))
+        if os.path.exists(disk_path):
+            try:
+                os.remove(disk_path)
+            except Exception as e:
+                print(f"Warning: Could not remove file {disk_path}: {e}")
+                
+    cursor.execute('DELETE FROM sample_papers WHERE id = ?', (paper_id,))
+    db.commit()
+    
+    return jsonify({'message': 'Sample paper deleted successfully.'})
+
 @app.route('/api/chapters/<int:chapter_id>/videos', methods=['POST'])
 def add_chapter_video(chapter_id):
-    user = get_current_user()
-    if not user:
-        return jsonify({'error': 'Unauthorised.'}), 401
+    if not check_admin_permission():
+        return jsonify({'error': 'Forbidden. Only administrators and owners can modify content.'}), 403
         
     data = request.json or {}
     video_title = data.get('video_title', '').strip()
@@ -988,9 +1461,8 @@ def add_chapter_video(chapter_id):
 
 @app.route('/api/videos/<int:video_id>', methods=['PUT'])
 def edit_chapter_video(video_id):
-    user = get_current_user()
-    if not user:
-        return jsonify({'error': 'Unauthorised.'}), 401
+    if not check_admin_permission():
+        return jsonify({'error': 'Forbidden. Only administrators and owners can modify content.'}), 403
         
     data = request.json or {}
     video_title = data.get('video_title', '').strip()
@@ -1028,9 +1500,8 @@ def edit_chapter_video(video_id):
 
 @app.route('/api/videos/<int:video_id>', methods=['DELETE'])
 def delete_chapter_video(video_id):
-    user = get_current_user()
-    if not user:
-        return jsonify({'error': 'Unauthorised.'}), 401
+    if not check_admin_permission():
+        return jsonify({'error': 'Forbidden. Only administrators and owners can modify content.'}), 403
         
     db = get_db()
     cursor = db.cursor()
