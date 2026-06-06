@@ -371,6 +371,91 @@ def auth_status():
         }
     })
 
+@app.route('/api/admin/stats', methods=['GET'])
+def get_admin_stats():
+    if not check_admin_permission():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    db = get_db()
+    cursor = db.cursor()
+    
+    try:
+        # 1. Total Registered Users
+        cursor.execute("SELECT COUNT(*) as count FROM users")
+        total_users = cursor.fetchone()['count']
+        
+        # 2. Total Study Time (hours)
+        cursor.execute("SELECT SUM(total_hours) as sum_hours FROM users")
+        sum_hours = cursor.fetchone()['sum_hours'] or 0.0
+        
+        # 3. Total XP
+        cursor.execute("SELECT SUM(xp) as sum_xp FROM users")
+        sum_xp = cursor.fetchone()['sum_xp'] or 0
+        
+        # 4. Class counts
+        cursor.execute("SELECT COUNT(*) as count FROM users WHERE class_name = 'Class 9'")
+        class9_count = cursor.fetchone()['count']
+        
+        cursor.execute("SELECT COUNT(*) as count FROM users WHERE class_name = 'Class 10'")
+        class10_count = cursor.fetchone()['count']
+        
+        # 5. List of all users
+        cursor.execute("SELECT id, username, first_name, last_name, email, mobile, class_name, xp, level, streak, total_hours FROM users ORDER BY id ASC")
+        users_rows = cursor.fetchall()
+        
+        users_list = []
+        for row in users_rows:
+            users_list.append({
+                'id': row['id'],
+                'username': row['username'],
+                'first_name': row['first_name'] or '',
+                'last_name': row['last_name'] or '',
+                'email': row['email'] or '',
+                'mobile': row['mobile'] or '',
+                'class_name': row['class_name'] or 'Class 9',
+                'xp': row['xp'] or 0,
+                'level': row['level'] or 1,
+                'streak': row['streak'] or 0,
+                'total_hours': row['total_hours'] or 0.0
+            })
+            
+        return jsonify({
+            'total_users': total_users,
+            'total_hours': round(sum_hours, 2),
+            'total_xp': sum_xp,
+            'class9_count': class9_count,
+            'class10_count': class10_count,
+            'users': users_list
+        })
+    except Exception as e:
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
+
+@app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    if not check_admin_permission():
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    db = get_db()
+    cursor = db.cursor()
+    
+    try:
+        # Check if user exists and is not deleting themselves
+        current_user = get_current_user()
+        if current_user and current_user['id'] == user_id:
+            return jsonify({'error': 'You cannot delete your own admin account!'}), 400
+            
+        # Delete from users and child tables
+        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        cursor.execute("DELETE FROM tasks WHERE user_id = ?", (user_id,))
+        cursor.execute("DELETE FROM notes WHERE user_id = ?", (user_id,))
+        cursor.execute("DELETE FROM quiz_attempts WHERE user_id = ?", (user_id,))
+        cursor.execute("DELETE FROM user_badges WHERE user_id = ?", (user_id,))
+        
+        db.commit()
+        return jsonify({'message': 'User deleted successfully!'})
+    except Exception as e:
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
+
 @app.route('/api/auth/avatar', methods=['POST'])
 def update_avatar():
     user = get_current_user()

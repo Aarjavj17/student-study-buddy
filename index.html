@@ -582,6 +582,11 @@
             animation: fire-pulse 2s infinite ease-in-out;
         }
 
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         /* --- MODULE CONTENT PANEL SYSTEM --- */
         .module-area {
             flex: 1;
@@ -2641,6 +2646,10 @@
                     <i data-lucide="line-chart"></i>
                     <span>Analytics</span>
                 </a>
+                <a href="#admin" id="sidebar-admin-link" class="nav-item" data-tab="admin" style="display: none;">
+                    <i data-lucide="shield"></i>
+                    <span>Admin Panel</span>
+                </a>
             </nav>
             
             <div class="sidebar-footer">
@@ -2707,6 +2716,10 @@
                                 <a href="#progress" class="dropdown-item" onclick="handleDropdownNav(event, 'progress')" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--border-radius-sm); color: var(--text-primary); text-decoration: none; font-size: 0.85rem; transition: background 0.2s;">
                                     <i data-lucide="line-chart" style="width: 15px; height: 15px; color: var(--color-warning);"></i>
                                     <span>Analytics</span>
+                                </a>
+                                <a href="#admin" id="dropdown-admin-link" class="dropdown-item" onclick="handleDropdownNav(event, 'admin')" style="display: none; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--border-radius-sm); color: var(--text-primary); text-decoration: none; font-size: 0.85rem; transition: background 0.2s;">
+                                    <i data-lucide="shield" style="width: 15px; height: 15px; color: #ef4444;"></i>
+                                    <span>Admin Panel</span>
                                 </a>
                             </div>
                             
@@ -3238,6 +3251,110 @@
                                     </table>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- --- SHEET: ADMIN PANEL --- -->
+                <div id="tab-admin" class="tab-content">
+                    <div class="admin-header glass" style="margin-bottom: 20px; padding: 20px; border-radius: var(--border-radius-lg); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                        <div>
+                            <h2 style="font-size: 1.6rem; font-weight: 800; font-family: var(--font-playful); background: linear-gradient(135deg, #f87171, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Admin Control Center 🛡️</h2>
+                            <p style="font-size: 0.88rem; color: var(--text-secondary); margin-top: 4px;">Monitor user statistics, study progress, and manage registered buddies.</p>
+                        </div>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="loadAdminStats()" style="display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i> Refresh Data
+                        </button>
+                    </div>
+
+                    <!-- ADMIN STATS GRID -->
+                    <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 24px;">
+                        <div class="glass" style="padding: 20px; border-radius: var(--border-radius-lg); display: flex; align-items: center; gap: 16px;">
+                            <div style="background: rgba(99, 102, 241, 0.15); padding: 12px; border-radius: 50%; color: var(--color-primary); display: flex; align-items: center; justify-content: center;">
+                                <i data-lucide="users" style="width: 28px; height: 28px;"></i>
+                            </div>
+                            <div>
+                                <h4 style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Total Users</h4>
+                                <p id="admin-total-users" style="font-size: 1.8rem; font-weight: 800; color: white; margin-top: 4px; margin-bottom: 0;">0</p>
+                            </div>
+                        </div>
+
+                        <div class="glass" style="padding: 20px; border-radius: var(--border-radius-lg); display: flex; align-items: center; gap: 16px;">
+                            <div style="background: rgba(245, 158, 11, 0.15); padding: 12px; border-radius: 50%; color: #f59e0b; display: flex; align-items: center; justify-content: center;">
+                                <i data-lucide="clock" style="width: 28px; height: 28px;"></i>
+                            </div>
+                            <div>
+                                <h4 style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Hours Studied</h4>
+                                <p id="admin-total-hours" style="font-size: 1.8rem; font-weight: 800; color: white; margin-top: 4px; margin-bottom: 0;">0.0</p>
+                            </div>
+                        </div>
+
+                        <div class="glass" style="padding: 20px; border-radius: var(--border-radius-lg); display: flex; align-items: center; gap: 16px;">
+                            <div style="background: rgba(168, 85, 247, 0.15); padding: 12px; border-radius: 50%; color: #a855f7; display: flex; align-items: center; justify-content: center;">
+                                <i data-lucide="sparkles" style="width: 28px; height: 28px;"></i>
+                            </div>
+                            <div>
+                                <h4 style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Total XP</h4>
+                                <p id="admin-total-xp" style="font-size: 1.8rem; font-weight: 800; color: white; margin-top: 4px; margin-bottom: 0;">0</p>
+                            </div>
+                        </div>
+
+                        <div class="glass" style="padding: 20px; border-radius: var(--border-radius-lg); display: flex; align-items: center; gap: 16px;">
+                            <div style="background: rgba(236, 72, 153, 0.15); padding: 12px; border-radius: 50%; color: #ec4899; display: flex; align-items: center; justify-content: center;">
+                                <i data-lucide="graduation-cap" style="width: 28px; height: 28px;"></i>
+                            </div>
+                            <div style="display: flex; gap: 16px; align-items: center;">
+                                <div>
+                                    <h4 style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Class 9</h4>
+                                    <p id="admin-class9-count" style="font-size: 1.4rem; font-weight: 800; color: white; margin-top: 2px; margin-bottom: 0;">0</p>
+                                </div>
+                                <div style="border-left: 1px solid var(--glass-border); padding-left: 16px;">
+                                    <h4 style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Class 10</h4>
+                                    <p id="admin-class10-count" style="font-size: 1.4rem; font-weight: 800; color: white; margin-top: 2px; margin-bottom: 0;">0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- USER LIST TABLE CONTAINER -->
+                    <div class="glass" style="padding: 24px; border-radius: var(--border-radius-lg); display: flex; flex-direction: column; gap: 20px; overflow: hidden;">
+                        <!-- Filters and Search -->
+                        <div style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center;">
+                            <h3 style="font-size: 1.2rem; font-weight: 700; color: white; margin: 0;">Registered Buddies</h3>
+                            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+                                <div style="position: relative; max-width: 260px;">
+                                    <i data-lucide="search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--text-muted);"></i>
+                                    <input type="text" id="admin-search-input" placeholder="Search buddies..." style="width: 100%; padding: 8px 12px 8px 34px; border-radius: var(--border-radius-md); background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); color: white; outline: none; font-size: 0.85rem;" onkeyup="filterAdminUserList()">
+                                </div>
+                                <select id="admin-class-filter" style="padding: 8px 12px; border-radius: var(--border-radius-md); background: rgba(0, 0, 0, 0.25); border: 1px solid var(--glass-border); color: white; outline: none; font-size: 0.85rem;" onchange="filterAdminUserList()">
+                                    <option value="All">All Classes</option>
+                                    <option value="Class 9">Class 9</option>
+                                    <option value="Class 10">Class 10</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- User List Table -->
+                        <div style="overflow-x: auto; width: 100%; border-radius: var(--border-radius-md); border: 1px solid var(--glass-border);">
+                            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; min-width: 800px;">
+                                <thead>
+                                    <tr style="background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid var(--glass-border);">
+                                        <th style="padding: 12px 16px; font-weight: 600; color: var(--text-secondary);">ID</th>
+                                        <th style="padding: 12px 16px; font-weight: 600; color: var(--text-secondary);">Username</th>
+                                        <th style="padding: 12px 16px; font-weight: 600; color: var(--text-secondary);">Name</th>
+                                        <th style="padding: 12px 16px; font-weight: 600; color: var(--text-secondary);">Mobile</th>
+                                        <th style="padding: 12px 16px; font-weight: 600; color: var(--text-secondary);">Email</th>
+                                        <th style="padding: 12px 16px; font-weight: 600; color: var(--text-secondary);">Class</th>
+                                        <th style="padding: 12px 16px; font-weight: 600; color: var(--text-secondary); text-align: center;">Lvl / XP</th>
+                                        <th style="padding: 12px 16px; font-weight: 600; color: var(--text-secondary); text-align: center;">Streak</th>
+                                        <th style="padding: 12px 16px; font-weight: 600; color: var(--text-secondary); text-align: center;">Hours</th>
+                                        <th style="padding: 12px 16px; font-weight: 600; color: var(--text-secondary); text-align: center;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-user-list-tbody">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -4474,6 +4591,8 @@ Click one of the suggestions below, or type your own question!</div>
             } else if (tabId === 'progress') {
                 loadStats();
                 renderAnalyticsData();
+            } else if (tabId === 'admin') {
+                loadAdminStats();
             }
         }
 
@@ -4788,6 +4907,16 @@ Click one of the suggestions below, or type your own question!</div>
             
             // Render user profile avatar in topbar and sidebar
             updateAvatarUI();
+
+            // Toggle Admin Panel link visibility
+            const adminLink = document.getElementById('dropdown-admin-link');
+            if (adminLink) {
+                adminLink.style.display = currentUser.role === 'admin' || currentUser.role === 'owner' ? 'flex' : 'none';
+            }
+            const sidebarAdminLink = document.getElementById('sidebar-admin-link');
+            if (sidebarAdminLink) {
+                sidebarAdminLink.style.display = currentUser.role === 'admin' || currentUser.role === 'owner' ? 'flex' : 'none';
+            }
 
             // Prompt user if avatar is not set
             if (!currentUser.avatar) {
@@ -6756,6 +6885,209 @@ Click one of the suggestions below, or type your own question!</div>
                 `;
                 tableBody.appendChild(tr);
             });
+        }
+
+        // --- ADMIN PANEL LOGIC ---
+        let adminUsersData = [];
+
+        async function loadAdminStats() {
+            if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'owner')) {
+                switchTab('dashboard');
+                return;
+            }
+            
+            const tbody = document.getElementById('admin-user-list-tbody');
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px; color: var(--text-secondary);"><i class="spin-icon" data-lucide="loader-2" style="width: 20px; height: 20px; display: inline-block; animation: spin 1s linear infinite;"></i> Loading buddies data...</td></tr>`;
+                lucide.createIcons();
+            }
+
+            if (useBackend) {
+                try {
+                    const res = await fetch('/api/admin/stats');
+                    if (res.ok) {
+                        const data = await res.json();
+                        
+                        document.getElementById('admin-total-users').innerText = data.total_users;
+                        document.getElementById('admin-total-hours').innerText = data.total_hours.toFixed(1);
+                        document.getElementById('admin-total-xp').innerText = data.total_xp;
+                        document.getElementById('admin-class9-count').innerText = data.class9_count;
+                        document.getElementById('admin-class10-count').innerText = data.class10_count;
+                        
+                        adminUsersData = data.users;
+                        renderAdminUserList(adminUsersData);
+                    } else {
+                        throw new Error("Failed to fetch admin stats");
+                    }
+                } catch (err) {
+                    console.error("Admin stats error:", err);
+                    if (tbody) {
+                        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px; color: var(--color-error);"><i data-lucide="alert-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 6px;"></i> Error loading data from backend.</td></tr>`;
+                    }
+                    lucide.createIcons();
+                }
+            } else {
+                const users = localStore.getUsers();
+                const usersList = [];
+                let totalHours = 0.0;
+                let totalXp = 0;
+                let class9Count = 0;
+                let class10Count = 0;
+                
+                Object.keys(users).forEach((username, index) => {
+                    const u = users[username];
+                    usersList.push({
+                        id: u.id || (index + 1),
+                        username: u.username,
+                        first_name: u.first_name || '',
+                        last_name: u.last_name || '',
+                        email: u.email || '',
+                        mobile: u.mobile || '',
+                        class_name: u.class_name || 'Class 9',
+                        xp: u.xp || 0,
+                        level: u.level || 1,
+                        streak: u.streak || 0,
+                        total_hours: u.total_hours || 0.0
+                    });
+                    
+                    totalHours += (u.total_hours || 0.0);
+                    totalXp += (u.xp || 0);
+                    if (u.class_name === 'Class 10') {
+                        class10Count++;
+                    } else {
+                        class9Count++;
+                    }
+                });
+                
+                document.getElementById('admin-total-users').innerText = usersList.length;
+                document.getElementById('admin-total-hours').innerText = totalHours.toFixed(1);
+                document.getElementById('admin-total-xp').innerText = totalXp;
+                document.getElementById('admin-class9-count').innerText = class9Count;
+                document.getElementById('admin-class10-count').innerText = class10Count;
+                
+                adminUsersData = usersList;
+                renderAdminUserList(adminUsersData);
+            }
+        }
+
+        function renderAdminUserList(users) {
+            const tbody = document.getElementById('admin-user-list-tbody');
+            if (!tbody) return;
+            
+            if (users.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px; color: var(--text-secondary);">No buddies match the criteria.</td></tr>`;
+                return;
+            }
+            
+            let html = '';
+            users.forEach(user => {
+                const fullName = user.first_name || user.last_name 
+                    ? `${user.first_name} ${user.last_name}`.trim() 
+                    : '<span style="color: var(--text-muted); font-style: italic;">Not set</span>';
+                
+                const emailVal = user.email 
+                    ? user.email 
+                    : '<span style="color: var(--text-muted); font-style: italic;">None</span>';
+                
+                const mobileVal = user.mobile 
+                    ? user.mobile 
+                    : '<span style="color: var(--text-muted); font-style: italic;">None</span>';
+                
+                const classBadgeStyle = user.class_name === 'Class 10'
+                    ? 'background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3);'
+                    : 'background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3);';
+
+                const isSelf = currentUser && currentUser.username === user.username;
+                const deleteBtnHtml = isSelf
+                    ? `<span style="font-size: 0.72rem; color: var(--text-muted); font-style: italic;">Self (Admin)</span>`
+                    : `<button type="button" class="btn btn-sm" onclick="adminDeleteUser(${user.id}, '${escapeHTML(user.username)}')" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #f87171; border-radius: var(--border-radius-sm); cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 4px;" onmouseover="this.style.background='rgba(239, 68, 68, 0.2)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'">
+                        <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i> Delete
+                       </button>`;
+
+                html += `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.015)'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 12px 16px; color: var(--text-secondary); font-weight: bold;">${user.id}</td>
+                    <td style="padding: 12px 16px; font-weight: 600; color: white;">@${escapeHTML(user.username)}</td>
+                    <td style="padding: 12px 16px; color: var(--text-primary);">${fullName}</td>
+                    <td style="padding: 12px 16px; color: var(--text-primary); font-family: monospace;">${mobileVal}</td>
+                    <td style="padding: 12px 16px; color: var(--text-primary);">${emailVal}</td>
+                    <td style="padding: 12px 16px;">
+                        <span style="padding: 2px 6px; font-size: 0.75rem; border-radius: var(--border-radius-sm); font-weight: 600; display: inline-block; ${classBadgeStyle}">
+                            ${user.class_name}
+                        </span>
+                    </td>
+                    <td style="padding: 12px 16px; text-align: center; color: white;">
+                        <span style="font-weight: bold; color: var(--color-primary-hover);">Lvl ${user.level}</span>
+                        <span style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 2px;">(${user.xp} XP)</span>
+                    </td>
+                    <td style="padding: 12px 16px; text-align: center; color: #f59e0b; font-weight: 700;">🔥 ${user.streak} days</td>
+                    <td style="padding: 12px 16px; text-align: center; color: #a5b4fc; font-weight: 600; font-family: monospace;">${user.total_hours.toFixed(1)} hrs</td>
+                    <td style="padding: 12px 16px; text-align: center;">
+                        ${deleteBtnHtml}
+                    </td>
+                </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function filterAdminUserList() {
+            const query = document.getElementById('admin-search-input').value.toLowerCase().trim();
+            const classFilter = document.getElementById('admin-class-filter').value;
+            
+            const filtered = adminUsersData.filter(user => {
+                const usernameMatches = user.username.toLowerCase().includes(query);
+                const firstNameMatches = (user.first_name || '').toLowerCase().includes(query);
+                const lastNameMatches = (user.last_name || '').toLowerCase().includes(query);
+                const mobileMatches = (user.mobile || '').includes(query);
+                const emailMatches = (user.email || '').toLowerCase().includes(query);
+                
+                const textMatches = usernameMatches || firstNameMatches || lastNameMatches || mobileMatches || emailMatches;
+                const classMatches = classFilter === 'All' || user.class_name === classFilter;
+                
+                return textMatches && classMatches;
+            });
+            
+            renderAdminUserList(filtered);
+        }
+
+        async function adminDeleteUser(userId, username) {
+            if (!confirm(`Are you sure you want to delete user @${username}? This will remove all their planner tasks, notes, and progress permanently!`)) {
+                return;
+            }
+            soundEffects.playPop();
+            
+            if (useBackend) {
+                try {
+                    const res = await fetch(`/api/admin/users/${userId}`, {
+                        method: 'DELETE'
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        soundEffects.playSuccess();
+                        alert(`User @${username} deleted successfully.`);
+                        loadAdminStats();
+                    } else {
+                        alert(data.error || "Failed to delete user.");
+                    }
+                } catch (err) {
+                    console.error("Delete error:", err);
+                    alert("Network error occurred while deleting user.");
+                }
+            } else {
+                const users = localStore.getUsers();
+                if (users[username]) {
+                    delete users[username];
+                    localStore.saveUsers(users);
+                    soundEffects.playSuccess();
+                    alert(`User @${username} deleted successfully (Offline).`);
+                    loadAdminStats();
+                } else {
+                    alert("User not found in localStorage.");
+                }
+            }
         }
 
         // --- GAMIFICATION SYSTEMS ---
