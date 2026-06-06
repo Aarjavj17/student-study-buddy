@@ -326,6 +326,12 @@ def login():
     session.permanent = True
     session['user_id'] = user['id']
     
+    try:
+        cursor.execute("UPDATE users SET last_active = CURRENT_TIMESTAMP WHERE id = ?", (user['id'],))
+        db.commit()
+    except Exception:
+        pass
+    
     return jsonify({
         'message': 'Login successful!',
         'user': {
@@ -371,6 +377,21 @@ def auth_status():
         }
     })
 
+@app.route('/api/auth/heartbeat', methods=['POST'])
+def heartbeat():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute("UPDATE users SET last_active = CURRENT_TIMESTAMP WHERE id = ?", (user['id'],))
+        db.commit()
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/admin/stats', methods=['GET'])
 def get_admin_stats():
     if not check_admin_permission():
@@ -399,12 +420,29 @@ def get_admin_stats():
         cursor.execute("SELECT COUNT(*) as count FROM users WHERE class_name = 'Class 10'")
         class10_count = cursor.fetchone()['count']
         
-        # 5. List of all users
-        cursor.execute("SELECT id, username, first_name, last_name, email, mobile, class_name, xp, level, streak, total_hours FROM users ORDER BY id ASC")
+        # 5. Online users count (active within 120 seconds)
+        cursor.execute("SELECT COUNT(*) as count FROM users WHERE last_active >= datetime('now', '-120 seconds')")
+        online_users = cursor.fetchone()['count']
+        
+        # 6. List of all users
+        cursor.execute("SELECT id, username, first_name, last_name, email, mobile, class_name, xp, level, streak, total_hours, last_active FROM users ORDER BY id ASC")
         users_rows = cursor.fetchall()
         
+        import datetime
+        now = datetime.datetime.utcnow()
         users_list = []
         for row in users_rows:
+            is_online = False
+            last_active_str = row['last_active']
+            if last_active_str:
+                try:
+                    last_active_dt = datetime.datetime.strptime(last_active_str, '%Y-%m-%d %H:%M:%S')
+                    diff = (now - last_active_dt).total_seconds()
+                    if diff < 120:
+                        is_online = True
+                except Exception:
+                    pass
+                    
             users_list.append({
                 'id': row['id'],
                 'username': row['username'],
@@ -416,7 +454,8 @@ def get_admin_stats():
                 'xp': row['xp'] or 0,
                 'level': row['level'] or 1,
                 'streak': row['streak'] or 0,
-                'total_hours': row['total_hours'] or 0.0
+                'total_hours': row['total_hours'] or 0.0,
+                'is_online': is_online
             })
             
         return jsonify({
@@ -425,6 +464,7 @@ def get_admin_stats():
             'total_xp': sum_xp,
             'class9_count': class9_count,
             'class10_count': class10_count,
+            'online_users': online_users,
             'users': users_list
         })
     except Exception as e:

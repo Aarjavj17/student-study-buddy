@@ -58,6 +58,10 @@ def init_db():
     if 'class_name' not in columns:
         cursor.execute("ALTER TABLE users ADD COLUMN class_name TEXT DEFAULT 'Class 9'")
         conn.commit()
+    if 'last_active' not in columns:
+        cursor.execute("ALTER TABLE users ADD COLUMN last_active TIMESTAMP")
+        conn.commit()
+
     
     # 2. Tasks Table
     cursor.execute('''

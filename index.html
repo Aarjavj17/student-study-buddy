@@ -587,6 +587,12 @@
             100% { transform: rotate(360deg); }
         }
 
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
         /* --- MODULE CONTENT PANEL SYSTEM --- */
         .module-area {
             flex: 1;
@@ -3268,7 +3274,7 @@
                     </div>
 
                     <!-- ADMIN STATS GRID -->
-                    <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 24px;">
+                    <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-bottom: 24px;">
                         <div class="glass" style="padding: 20px; border-radius: var(--border-radius-lg); display: flex; align-items: center; gap: 16px;">
                             <div style="background: rgba(99, 102, 241, 0.15); padding: 12px; border-radius: 50%; color: var(--color-primary); display: flex; align-items: center; justify-content: center;">
                                 <i data-lucide="users" style="width: 28px; height: 28px;"></i>
@@ -3276,6 +3282,17 @@
                             <div>
                                 <h4 style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Total Users</h4>
                                 <p id="admin-total-users" style="font-size: 1.8rem; font-weight: 800; color: white; margin-top: 4px; margin-bottom: 0;">0</p>
+                            </div>
+                        </div>
+
+                        <div class="glass" style="padding: 20px; border-radius: var(--border-radius-lg); display: flex; align-items: center; gap: 16px;">
+                            <div style="background: rgba(34, 197, 94, 0.15); padding: 12px; border-radius: 50%; color: #22c55e; display: flex; align-items: center; justify-content: center; position: relative;">
+                                <i data-lucide="radio" style="width: 28px; height: 28px;"></i>
+                                <span style="position: absolute; top: 10px; right: 10px; width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulse 2s infinite;"></span>
+                            </div>
+                            <div>
+                                <h4 style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Online Buddies</h4>
+                                <p id="admin-online-users" style="font-size: 1.8rem; font-weight: 800; color: white; margin-top: 4px; margin-bottom: 0;">0</p>
                             </div>
                         </div>
 
@@ -3848,6 +3865,9 @@ Click one of the suggestions below, or type your own question!</div>
         let isRegisterMode = false;
         let emailVerified = true;
         let mobileVerified = false;
+        
+        let heartbeatInterval = null;
+        let adminRefreshInterval = null;
         
         // Static Seeding Data for Offline Standalone Mode
         let localVideos = [
@@ -4594,6 +4614,18 @@ Click one of the suggestions below, or type your own question!</div>
             } else if (tabId === 'admin') {
                 loadAdminStats();
             }
+
+            // Handle admin auto-refresh loop
+            if (tabId === 'admin') {
+                if (!adminRefreshInterval) {
+                    adminRefreshInterval = setInterval(loadAdminStats, 10000);
+                }
+            } else {
+                if (adminRefreshInterval) {
+                    clearInterval(adminRefreshInterval);
+                    adminRefreshInterval = null;
+                }
+            }
         }
 
         // --- AUTHENTICATION FLOWS (DUAL MODE SUPPORT) ---
@@ -4861,6 +4893,7 @@ Click one of the suggestions below, or type your own question!</div>
         }
 
         function showLogin() {
+            stopHeartbeat();
             document.getElementById('auth-container').classList.add('active');
             document.getElementById('app-container').classList.add('hidden');
             currentUser = null;
@@ -4901,6 +4934,7 @@ Click one of the suggestions below, or type your own question!</div>
         }
 
         function showApp() {
+            startHeartbeat();
             document.getElementById('auth-container').classList.remove('active');
             document.getElementById('app-container').classList.remove('hidden');
             document.getElementById('user-greeting').innerText = `Hi, ${currentUser.first_name || currentUser.username}! 👋`;
@@ -5156,6 +5190,7 @@ Click one of the suggestions below, or type your own question!</div>
         }
 
         async function handleLogout() {
+            stopHeartbeat();
             if (timerRunning) {
                 if (!confirm("Your study timer is running. Logging out will cancel your session. Proceed?")) {
                     return;
@@ -6887,6 +6922,37 @@ Click one of the suggestions below, or type your own question!</div>
             });
         }
 
+        // --- REAL-TIME HEARTBEAT SYSTEM ---
+        function startHeartbeat() {
+            stopHeartbeat();
+            sendHeartbeatPing();
+            heartbeatInterval = setInterval(sendHeartbeatPing, 30000);
+        }
+
+        function stopHeartbeat() {
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+                heartbeatInterval = null;
+            }
+        }
+
+        async function sendHeartbeatPing() {
+            if (!currentUser) return;
+            if (useBackend) {
+                try {
+                    await fetch('/api/auth/heartbeat', { method: 'POST' });
+                } catch (err) {
+                    console.warn("Heartbeat ping failed:", err);
+                }
+            } else {
+                const users = localStore.getUsers();
+                if (users[currentUser.username]) {
+                    users[currentUser.username].last_active = new Date().toISOString();
+                    localStore.saveUsers(users);
+                }
+            }
+        }
+
         // --- ADMIN PANEL LOGIC ---
         let adminUsersData = [];
 
@@ -6914,6 +6980,9 @@ Click one of the suggestions below, or type your own question!</div>
                         document.getElementById('admin-class9-count').innerText = data.class9_count;
                         document.getElementById('admin-class10-count').innerText = data.class10_count;
                         
+                        const onlineEl = document.getElementById('admin-online-users');
+                        if (onlineEl) onlineEl.innerText = data.online_users || 0;
+                        
                         adminUsersData = data.users;
                         renderAdminUserList(adminUsersData);
                     } else {
@@ -6933,9 +7002,23 @@ Click one of the suggestions below, or type your own question!</div>
                 let totalXp = 0;
                 let class9Count = 0;
                 let class10Count = 0;
+                let onlineUsersCount = 0;
                 
                 Object.keys(users).forEach((username, index) => {
                     const u = users[username];
+                    
+                    let isOnline = false;
+                    if (currentUser && currentUser.username === u.username) {
+                        isOnline = true;
+                    } else if (u.last_active) {
+                        const diff = (new Date() - new Date(u.last_active)) / 1000;
+                        if (diff < 120) {
+                            isOnline = true;
+                        }
+                    }
+                    
+                    if (isOnline) onlineUsersCount++;
+                    
                     usersList.push({
                         id: u.id || (index + 1),
                         username: u.username,
@@ -6947,7 +7030,8 @@ Click one of the suggestions below, or type your own question!</div>
                         xp: u.xp || 0,
                         level: u.level || 1,
                         streak: u.streak || 0,
-                        total_hours: u.total_hours || 0.0
+                        total_hours: u.total_hours || 0.0,
+                        is_online: isOnline
                     });
                     
                     totalHours += (u.total_hours || 0.0);
@@ -6964,6 +7048,9 @@ Click one of the suggestions below, or type your own question!</div>
                 document.getElementById('admin-total-xp').innerText = totalXp;
                 document.getElementById('admin-class9-count').innerText = class9Count;
                 document.getElementById('admin-class10-count').innerText = class10Count;
+                
+                const onlineEl = document.getElementById('admin-online-users');
+                if (onlineEl) onlineEl.innerText = onlineUsersCount;
                 
                 adminUsersData = usersList;
                 renderAdminUserList(adminUsersData);
@@ -7004,10 +7091,19 @@ Click one of the suggestions below, or type your own question!</div>
                         <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i> Delete
                        </button>`;
 
+                const statusDot = user.is_online
+                    ? `<span style="display: inline-block; width: 8px; height: 8px; background: #22c55e; border-radius: 50%; margin-right: 6px; box-shadow: 0 0 6px #22c55e;"></span>`
+                    : `<span style="display: inline-block; width: 8px; height: 8px; background: #94a3b8; border-radius: 50%; margin-right: 6px;"></span>`;
+
                 html += `
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.015)'" onmouseout="this.style.background='transparent'">
                     <td style="padding: 12px 16px; color: var(--text-secondary); font-weight: bold;">${user.id}</td>
-                    <td style="padding: 12px 16px; font-weight: 600; color: white;">@${escapeHTML(user.username)}</td>
+                    <td style="padding: 12px 16px; font-weight: 600; color: white;">
+                        <span style="display: inline-flex; align-items: center; gap: 4px;">
+                            ${statusDot}
+                            @${escapeHTML(user.username)}
+                        </span>
+                    </td>
                     <td style="padding: 12px 16px; color: var(--text-primary);">${fullName}</td>
                     <td style="padding: 12px 16px; color: var(--text-primary); font-family: monospace;">${mobileVal}</td>
                     <td style="padding: 12px 16px; color: var(--text-primary);">${emailVal}</td>
