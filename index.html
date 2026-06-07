@@ -2603,7 +2603,10 @@
                     <input type="text" id="username" placeholder="Enter username, email or mobile" required autocomplete="username">
                 </div>
                 <div class="form-group">
-                    <label for="password"><i data-lucide="lock"></i> Password</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <label for="password" style="margin-bottom: 0;"><i data-lucide="lock"></i> Password</label>
+                        <a href="#" id="forgot-password-link" style="font-size: 0.8rem; color: var(--color-primary); text-decoration: underline; font-weight: 600;" onclick="showForgotPasswordForm(event)">Forgot Password?</a>
+                    </div>
                     <input type="password" id="password" placeholder="Enter password (min 4 chars)" required autocomplete="current-password">
                 </div>
                 
@@ -2616,6 +2619,52 @@
                 <div class="auth-toggle-footer" style="text-align: center; margin-top: 20px; font-size: 0.88rem; color: var(--text-secondary);">
                     <span id="auth-toggle-text">New to Student Buddy?</span>
                     <button type="button" id="auth-toggle-link" style="background: none; border: none; color: var(--color-primary); font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0 4px; font-family: inherit;">Register here</button>
+                </div>
+            </form>
+
+            <!-- --- FORGOT PASSWORD FORM --- -->
+            <form id="forgot-password-form" class="auth-form hidden" onsubmit="event.preventDefault();">
+                <!-- Step 1: Identifier -->
+                <div id="fp-step-1">
+                    <div class="form-group">
+                        <label for="fp-identifier"><i data-lucide="user"></i> Username or Mobile Number</label>
+                        <input type="text" id="fp-identifier" placeholder="Enter your username or mobile">
+                    </div>
+                    <div id="fp-step-1-error" style="color: var(--color-error); font-size: 0.8rem; margin-top: 6px; display: none;"></div>
+                    <button type="button" id="btn-fp-send-otp" class="btn btn-primary btn-block" onclick="handleFPSendOTP()">
+                        <span>Request OTP</span> <i data-lucide="arrow-right"></i>
+                    </button>
+                </div>
+
+                <!-- Step 2: OTP Verification -->
+                <div id="fp-step-2" style="display: none;">
+                    <div class="form-group">
+                        <label for="fp-otp" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <span><i data-lucide="lock"></i> Verification OTP Code</span>
+                            <span id="dev-fp-otp-toast" style="font-weight: bold; color: var(--color-warning); font-size: 0.85rem;"></span>
+                        </label>
+                        <input type="text" id="fp-otp" placeholder="Enter 6-digit OTP" maxlength="6" style="text-align: center; letter-spacing: 2px;">
+                    </div>
+                    <div id="fp-step-2-error" style="color: var(--color-error); font-size: 0.8rem; margin-top: 6px; display: none;"></div>
+                    <button type="button" id="btn-fp-verify-otp" class="btn btn-primary btn-block" onclick="handleFPVerifyOTP()">
+                        <span>Verify OTP</span> <i data-lucide="arrow-right"></i>
+                    </button>
+                </div>
+
+                <!-- Step 3: Reset Password -->
+                <div id="fp-step-3" style="display: none;">
+                    <div class="form-group">
+                        <label for="fp-new-password"><i data-lucide="key-round"></i> New Password</label>
+                        <input type="password" id="fp-new-password" placeholder="Enter new password (min 4 chars)">
+                    </div>
+                    <div id="fp-step-3-error" style="color: var(--color-error); font-size: 0.8rem; margin-top: 6px; display: none;"></div>
+                    <button type="button" id="btn-fp-reset-password" class="btn btn-primary btn-block" onclick="handleFPResetPassword()">
+                        <span>Reset Password</span> <i data-lucide="check"></i>
+                    </button>
+                </div>
+
+                <div class="auth-toggle-footer" style="text-align: center; margin-top: 20px; font-size: 0.88rem; color: var(--text-secondary);">
+                    <button type="button" style="background: none; border: none; color: var(--color-primary); font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0 4px; font-family: inherit;" onclick="showLoginForm(event)">Back to Login</button>
                 </div>
             </form>
         </div>
@@ -4270,6 +4319,7 @@ Click one of the suggestions below, or type your own question!</div>
                 
                 const regInputs = ['reg-firstname', 'reg-lastname', 'reg-mobile'];
                 
+                const forgotLink = document.getElementById('forgot-password-link');
                 if (isRegisterMode) {
                     formEl.classList.add('register-mode');
                     cardTitle.innerText = 'Create Account';
@@ -4277,6 +4327,7 @@ Click one of the suggestions below, or type your own question!</div>
                     submitBtn.innerHTML = '<span>Register Buddy</span> <i data-lucide="sparkles"></i>';
                     toggleText.innerText = 'Already have an account?';
                     toggleLink.innerText = 'Login here';
+                    if (forgotLink) forgotLink.style.display = 'none';
                     
                     const labelEl = document.querySelector('label[for="username"]');
                     if (labelEl) labelEl.innerHTML = '<i data-lucide="user"></i> Username';
@@ -4295,6 +4346,7 @@ Click one of the suggestions below, or type your own question!</div>
                     submitBtn.innerHTML = '<span>Let\'s Go!</span> <i data-lucide="arrow-right"></i>';
                     toggleText.innerText = 'New to Student Buddy?';
                     toggleLink.innerText = 'Register here';
+                    if (forgotLink) forgotLink.style.display = 'inline';
                     
                     const labelEl = document.querySelector('label[for="username"]');
                     if (labelEl) labelEl.innerHTML = '<i data-lucide="user"></i> Username, Email or Mobile Number';
@@ -4900,6 +4952,9 @@ Click one of the suggestions below, or type your own question!</div>
             
             // Reset to Login mode
             isRegisterMode = false;
+            const forgotLink = document.getElementById('forgot-password-link');
+            if (forgotLink) forgotLink.style.display = 'inline';
+            
             const formEl = document.getElementById('auth-form');
             if (formEl) formEl.classList.remove('register-mode');
             
@@ -4912,7 +4967,7 @@ Click one of the suggestions below, or type your own question!</div>
             if (cardTitle) cardTitle.innerText = 'Login to Student Buddy';
             if (cardSubtitle) cardSubtitle.innerText = 'Your friendly companion for playful study & growth!';
             if (submitBtn) submitBtn.innerHTML = '<span>Let\'s Go!</span> <i data-lucide="arrow-right"></i>';
-            if (toggleText) toggleText.innerText = 'New to Student Buddy?';
+if (toggleText) toggleText.innerText = 'New to Student Buddy?';
             if (toggleLink) toggleLink.innerText = 'Register here';
             
             // Reset fields & required flags
@@ -4931,6 +4986,233 @@ Click one of the suggestions below, or type your own question!</div>
             
             resetRegistrationOTPState();
             lucide.createIcons();
+        }
+
+        // --- PASSWORD RECOVERY (FORGOT PASSWORD) ENGINE ---
+        let localFPOTP = '';
+        let fpResetUser = null;
+
+        function showForgotPasswordForm(e) {
+            if (e) e.preventDefault();
+            
+            // Hide standard form
+            document.getElementById('auth-form').classList.add('hidden');
+            
+            // Show forgot password form
+            const fpForm = document.getElementById('forgot-password-form');
+            if (fpForm) fpForm.classList.remove('hidden');
+            
+            // Reset titles
+            document.getElementById('auth-card-title').innerText = 'Reset Password';
+            document.getElementById('auth-card-subtitle').innerText = 'Verify your account to set a new password.';
+            
+            // Show Step 1, hide others
+            document.getElementById('fp-step-1').style.display = 'block';
+            document.getElementById('fp-step-2').style.display = 'none';
+            document.getElementById('fp-step-3').style.display = 'none';
+            
+            // Clear inputs
+            document.getElementById('fp-identifier').value = '';
+            document.getElementById('fp-otp').value = '';
+            document.getElementById('fp-new-password').value = '';
+            
+            // Hide errors
+            document.getElementById('fp-step-1-error').style.display = 'none';
+            document.getElementById('fp-step-2-error').style.display = 'none';
+            document.getElementById('fp-step-3-error').style.display = 'none';
+            document.getElementById('dev-fp-otp-toast').innerText = '';
+            
+            localFPOTP = '';
+            fpResetUser = null;
+        }
+
+        function showLoginForm(e) {
+            if (e) e.preventDefault();
+            
+            // Show standard form
+            document.getElementById('auth-form').classList.remove('hidden');
+            
+            // Hide forgot password form
+            const fpForm = document.getElementById('forgot-password-form');
+            if (fpForm) fpForm.classList.add('hidden');
+            
+            // Reset values by running showLogin
+            showLogin();
+        }
+
+        async function handleFPSendOTP() {
+            const identifier = document.getElementById('fp-identifier').value.trim();
+            const errorEl = document.getElementById('fp-step-1-error');
+            const devToast = document.getElementById('dev-fp-otp-toast');
+            const btn = document.getElementById('btn-fp-send-otp');
+            
+            if (!identifier) {
+                errorEl.innerText = 'Please enter username or mobile number.';
+                errorEl.style.display = 'block';
+                return;
+            }
+            errorEl.style.display = 'none';
+            btn.disabled = true;
+            
+            try {
+                if (useBackend) {
+                    const res = await fetch('/api/auth/forgot-password/request', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ identifier })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        localFPOTP = data.otp;
+                        devToast.innerText = `(Dev code: ${data.otp})`;
+                        soundEffects.playPop();
+                        
+                        // Switch to Step 2
+                        document.getElementById('fp-step-1').style.display = 'none';
+                        document.getElementById('fp-step-2').style.display = 'block';
+                        document.getElementById('fp-otp').focus();
+                        
+                        // Show where OTP was sent
+                        document.getElementById('auth-card-subtitle').innerText = `Verification OTP sent to registered number: ${data.masked_mobile}`;
+                    } else {
+                        throw new Error(data.error || 'Failed to request password reset.');
+                    }
+                } else {
+                    // Standalone Mode (localStorage lookup)
+                    const users = localStore.getUsers();
+                    let matchedUser = users[identifier];
+                    
+                    if (!matchedUser) {
+                        // Find by mobile or email
+                        const foundUserKey = Object.keys(users).find(key => {
+                            const u = users[key];
+                            return u.email === identifier || u.mobile === identifier;
+                        });
+                        if (foundUserKey) matchedUser = users[foundUserKey];
+                    }
+                    
+                    if (matchedUser) {
+                        fpResetUser = matchedUser;
+                        localFPOTP = Math.floor(100000 + Math.random() * 900000).toString();
+                        devToast.innerText = `(Dev code: ${localFPOTP})`;
+                        soundEffects.playPop();
+                        
+                        // Switch to Step 2
+                        document.getElementById('fp-step-1').style.display = 'none';
+                        document.getElementById('fp-step-2').style.display = 'block';
+                        document.getElementById('fp-otp').focus();
+                        
+                        const mobile = matchedUser.mobile || '9999999999';
+                        const masked = "******" + mobile.slice(-4);
+                        document.getElementById('auth-card-subtitle').innerText = `Verification OTP sent to registered number: ${masked}`;
+                    } else {
+                        throw new Error('Account not found. Please verify details.');
+                    }
+                }
+            } catch (err) {
+                errorEl.innerText = err.message;
+                errorEl.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function handleFPVerifyOTP() {
+            const otp = document.getElementById('fp-otp').value.trim();
+            const errorEl = document.getElementById('fp-step-2-error');
+            const btn = document.getElementById('btn-fp-verify-otp');
+            
+            if (!otp || otp.length < 6) {
+                errorEl.innerText = 'Please enter a valid 6-digit OTP code.';
+                errorEl.style.display = 'block';
+                return;
+            }
+            errorEl.style.display = 'none';
+            btn.disabled = true;
+            
+            try {
+                if (useBackend) {
+                    const res = await fetch('/api/auth/forgot-password/verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ otp })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        soundEffects.playPop();
+                        document.getElementById('fp-step-2').style.display = 'none';
+                        document.getElementById('fp-step-3').style.display = 'block';
+                        document.getElementById('fp-new-password').focus();
+                        document.getElementById('auth-card-subtitle').innerText = 'Set a strong new password for your account.';
+                    } else {
+                        throw new Error(data.error || 'Invalid OTP code.');
+                    }
+                } else {
+                    if (otp === localFPOTP) {
+                        soundEffects.playPop();
+                        document.getElementById('fp-step-2').style.display = 'none';
+                        document.getElementById('fp-step-3').style.display = 'block';
+                        document.getElementById('fp-new-password').focus();
+                        document.getElementById('auth-card-subtitle').innerText = 'Set a strong new password for your account.';
+                    } else {
+                        throw new Error('Invalid OTP code.');
+                    }
+                }
+            } catch (err) {
+                errorEl.innerText = err.message;
+                errorEl.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function handleFPResetPassword() {
+            const newPassword = document.getElementById('fp-new-password').value.trim();
+            const errorEl = document.getElementById('fp-step-3-error');
+            const btn = document.getElementById('btn-fp-reset-password');
+            
+            if (!newPassword || newPassword.length < 4) {
+                errorEl.innerText = 'Password must be at least 4 characters long.';
+                errorEl.style.display = 'block';
+                return;
+            }
+            errorEl.style.display = 'none';
+            btn.disabled = true;
+            
+            try {
+                if (useBackend) {
+                    const res = await fetch('/api/auth/forgot-password/reset', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ new_password: newPassword })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        soundEffects.playSuccess();
+                        alert('Password reset successful! Please login with your new password.');
+                        showLoginForm();
+                    } else {
+                        throw new Error(data.error || 'Failed to reset password.');
+                    }
+                } else {
+                    if (fpResetUser) {
+                        const users = localStore.getUsers();
+                        users[fpResetUser.username].password = newPassword;
+                        localStore.saveUsers(users);
+                        
+                        soundEffects.playSuccess();
+                        alert('Password reset successful (Offline)! Please login with your new password.');
+                        showLoginForm();
+                    } else {
+                        throw new Error('Reset session expired.');
+                    }
+                }
+            } catch (err) {
+                errorEl.innerText = err.message;
+                errorEl.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+            }
         }
 
         function showApp() {

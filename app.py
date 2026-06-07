@@ -392,6 +392,91 @@ def heartbeat():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/auth/forgot-password/request', methods=['POST'])
+def forgot_password_request():
+    data = request.json or {}
+    identifier = data.get('identifier', '').strip()
+    
+    if not identifier:
+        return jsonify({'error': 'Username or mobile number is required.'}), 400
+        
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('''
+        SELECT id, username, mobile FROM users 
+        WHERE username = ? OR mobile = ? OR email = ?
+    ''', (identifier, identifier, identifier))
+    user = cursor.fetchone()
+    
+    if not user:
+        return jsonify({'error': 'Account not found. Please verify your details.'}), 404
+        
+    mobile = user['mobile']
+    if not mobile or len(mobile) < 10:
+        return jsonify({'error': 'No registered mobile number found for this account.'}), 400
+        
+    import random
+    otp = str(random.randint(100000, 999999))
+    session['reset_user_id'] = user['id']
+    session['reset_otp'] = otp
+    session['reset_otp_verified'] = False
+    
+    masked_mobile = "******" + mobile[-4:]
+    
+    print(f"[OTP DEBUG] Password Reset OTP for @{user['username']} ({mobile}): {otp}")
+    return jsonify({
+        'success': True,
+        'masked_mobile': masked_mobile,
+        'username': user['username'],
+        'otp': otp
+    })
+
+@app.route('/api/auth/forgot-password/verify', methods=['POST'])
+def forgot_password_verify():
+    data = request.json or {}
+    otp = data.get('otp', '').strip()
+    
+    session_otp = session.get('reset_otp')
+    if not session_otp:
+        return jsonify({'error': 'Reset session expired or not requested.'}), 400
+        
+    if otp != session_otp:
+        return jsonify({'error': 'Invalid verification code.'}), 400
+        
+    session['reset_otp_verified'] = True
+    return jsonify({'success': True, 'message': 'OTP verified successfully.'})
+
+@app.route('/api/auth/forgot-password/reset', methods=['POST'])
+def forgot_password_reset():
+    if not session.get('reset_otp_verified'):
+        return jsonify({'error': 'Unauthorized. OTP verification required.'}), 403
+        
+    data = request.json or {}
+    new_password = data.get('new_password', '').strip()
+    
+    if not new_password or len(new_password) < 4:
+        return jsonify({'error': 'Password must be at least 4 characters.'}), 400
+        
+    user_id = session.get('reset_user_id')
+    if not user_id:
+        return jsonify({'error': 'Reset session expired.'}), 400
+        
+    password_hash = generate_password_hash(new_password)
+    
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute("UPDATE users SET password = ? WHERE id = ?", (password_hash, user_id))
+        db.commit()
+        
+        session.pop('reset_otp', None)
+        session.pop('reset_user_id', None)
+        session.pop('reset_otp_verified', None)
+        
+        return jsonify({'success': True, 'message': 'Password reset successfully!'})
+    except Exception as e:
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
+
 @app.route('/api/admin/stats', methods=['GET'])
 def get_admin_stats():
     if not check_admin_permission():
