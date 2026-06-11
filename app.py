@@ -635,6 +635,34 @@ def update_avatar():
         'avatar': avatar_val
     })
 
+@app.route('/api/auth/class', methods=['POST'])
+def update_class():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized.'}), 401
+        
+    if user['role'] not in ('admin', 'owner'):
+        return jsonify({'error': 'Forbidden. Only administrators can switch classes.'}), 403
+        
+    data = request.json or {}
+    class_name = data.get('class_name', '').strip()
+    
+    if class_name not in ('Class 9', 'Class 10'):
+        return jsonify({'error': 'Invalid class selection.'}), 400
+        
+    db = get_db()
+    cursor = db.cursor()
+    
+    try:
+        cursor.execute('UPDATE users SET class_name = ? WHERE id = ?', (class_name, user['id']))
+        db.commit()
+        return jsonify({
+            'message': 'Class updated successfully!',
+            'class_name': class_name
+        })
+    except Exception as e:
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
+
 @app.route('/api/auth/change-password', methods=['POST'])
 def change_password():
     user = get_current_user()

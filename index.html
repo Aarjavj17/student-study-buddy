@@ -2947,7 +2947,15 @@
                                 style="padding: 8px 10px 10px 10px; border-bottom: 1px solid var(--glass-border); margin-bottom: 6px;">
                                 <div style="font-weight: 700; font-size: 0.88rem; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
                                     id="dropdown-fullname">Student</div>
-                                <div style="font-size: 0.72rem; color: var(--text-muted);" id="dropdown-class">Class 9
+                                <div style="font-size: 0.72rem; color: var(--text-muted);" id="dropdown-class">Class 9</div>
+                                <!-- Admin Class Selection Option -->
+                                <div id="admin-class-switch-container" style="display: none; margin-top: 8px; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 6px;">
+                                    <label for="admin-class-switch" style="font-size: 0.65rem; color: var(--text-secondary); display: block; margin-bottom: 3px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Switch Class:</label>
+                                    <select id="admin-class-switch" onchange="switchAdminClassContext(this.value)"
+                                        style="width: 100%; padding: 4px 8px; border-radius: var(--border-radius-sm); background: rgba(0, 0, 0, 0.4); border: 1px solid var(--glass-border); color: white; outline: none; font-size: 0.78rem; font-family: inherit; cursor: pointer;">
+                                        <option value="Class 9">Class 9</option>
+                                        <option value="Class 10">Class 10</option>
+                                    </select>
                                 </div>
                             </div>
 
@@ -3266,9 +3274,8 @@
                         <!-- Class Filter & Search Bar Row -->
                         <div
                             style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center;">
-                            <div style="display: none !important; align-items: center; gap: 12px;">
-                                <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">Select
-                                    Class:</span>
+                            <div id="learn-class-filter-container" style="display: none; align-items: center; gap: 12px;">
+                                <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">Select Class:</span>
                                 <div class="class-filter-buttons"
                                     style="display: flex; gap: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); padding: 4px; border-radius: var(--border-radius-md);">
                                     <button id="class-filter-9-btn" class="btn btn-sm btn-primary"
@@ -3380,7 +3387,7 @@
                                 <!-- Class Filter & Search Row -->
                                 <div
                                     style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center;">
-                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div id="quiz-class-filter-container" style="display: none; align-items: center; gap: 12px;">
                                         <span
                                             style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">Select
                                             Class:</span>
@@ -3666,10 +3673,20 @@
                             <p style="font-size: 0.88rem; color: var(--text-secondary); margin-top: 4px;">Monitor user
                                 statistics, study progress, and manage registered buddies.</p>
                         </div>
-                        <button type="button" class="btn btn-outline btn-sm" onclick="loadAdminStats()"
-                            style="display: flex; align-items: center; gap: 8px;">
-                            <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i> Refresh Data
-                        </button>
+                        <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 8px; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border); padding: 4px 12px; border-radius: var(--border-radius-md);">
+                                <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Active Class View:</span>
+                                <select id="admin-global-class-select" onchange="switchAdminClassContext(this.value)"
+                                    style="background: transparent; border: none; color: white; outline: none; font-size: 0.85rem; font-weight: 700; cursor: pointer; padding: 2px 4px; font-family: inherit;">
+                                    <option value="Class 9" style="background: #1e1b4b; color: white;">Class 9</option>
+                                    <option value="Class 10" style="background: #1e1b4b; color: white;">Class 10</option>
+                                </select>
+                            </div>
+                            <button type="button" class="btn btn-outline btn-sm" onclick="loadAdminStats()"
+                                style="display: flex; align-items: center; gap: 8px;">
+                                <i data-lucide="refresh-cw" style="width: 16px; height: 16px;"></i> Refresh Data
+                            </button>
+                        </div>
                     </div>
 
                     <!-- ADMIN STATS GRID -->
@@ -5446,6 +5463,7 @@
         }
 
         function setGuestUser() {
+            const savedGuestClass = localStorage.getItem('guest_class_name') || 'Class 9';
             currentUser = {
                 role: 'guest',
                 username: 'Guest',
@@ -5454,7 +5472,7 @@
                 avatar: '🦁',
                 xp: 45,
                 streak: 0,
-                class_name: 'Class 9'
+                class_name: savedGuestClass
             };
             showApp();
         }
@@ -5858,6 +5876,19 @@
             loadVideos();
 
             // Set class and subject filters based on url params or defaults
+            selectedQuizClass = initialClass;
+            const qBtn9 = document.getElementById('quiz-class-filter-9-btn');
+            const qBtn10 = document.getElementById('quiz-class-filter-10-btn');
+            if (qBtn9 && qBtn10) {
+                if (initialClass === 'Class 9') {
+                    qBtn9.className = 'btn btn-sm btn-primary';
+                    qBtn10.className = 'btn btn-sm btn-ghost';
+                } else {
+                    qBtn9.className = 'btn btn-sm btn-ghost';
+                    qBtn10.className = 'btn btn-sm btn-primary';
+                }
+            }
+
             filterClass(initialClass);
             filterSubject(initialSubject);
 
@@ -9663,7 +9694,7 @@ Click one of the suggestions below, or type your own question!</div>
                     : currentUser.username;
                 sidebarUsernameEl.innerText = fullName;
             }
-            if (sidebarRoleEl) sidebarRoleEl.innerText = (currentUser.role || 'Student') + (currentUser.class_name ? ` (${currentUser.class_name})` : '');
+            if (sidebarRoleEl) sidebarRoleEl.innerText = (currentUser.role === 'guest' ? 'Guest' : (currentUser.role || 'Student')) + (currentUser.class_name ? ` (${currentUser.class_name})` : '');
 
             const isImage = avatarVal.startsWith('/') || avatarVal.startsWith('data:image/');
             const htmlContent = isImage
@@ -9689,6 +9720,36 @@ Click one of the suggestions below, or type your own question!</div>
                 classEl.innerText = currentUser.class_name || 'Class 9';
             }
 
+            // Toggle admin class context selector elements
+            const canSwitchClass = currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner' || currentUser.role === 'guest');
+            const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner');
+            
+            const adminClassSwitchContainer = document.getElementById('admin-class-switch-container');
+            const adminClassSwitchSelect = document.getElementById('admin-class-switch');
+            if (adminClassSwitchContainer) {
+                adminClassSwitchContainer.style.display = canSwitchClass ? 'block' : 'none';
+                if (canSwitchClass && adminClassSwitchSelect) {
+                    adminClassSwitchSelect.value = currentUser.class_name || 'Class 9';
+                }
+            }
+
+            const adminGlobalClassSelect = document.getElementById('admin-global-class-select');
+            if (adminGlobalClassSelect) {
+                if (isAdmin) {
+                    adminGlobalClassSelect.value = currentUser.class_name || 'Class 9';
+                }
+            }
+
+            const learnClassContainer = document.getElementById('learn-class-filter-container');
+            if (learnClassContainer) {
+                learnClassContainer.style.setProperty('display', canSwitchClass ? 'flex' : 'none', canSwitchClass ? '' : 'important');
+            }
+
+            const quizClassContainer = document.getElementById('quiz-class-filter-container');
+            if (quizClassContainer) {
+                quizClassContainer.style.setProperty('display', canSwitchClass ? 'flex' : 'none', canSwitchClass ? '' : 'important');
+            }
+
             // Toggle dropdown login/logout options dynamically
             const logoutItem = document.getElementById('dropdown-logout-item');
             if (logoutItem) {
@@ -9710,6 +9771,71 @@ Click one of the suggestions below, or type your own question!</div>
                 if (window.lucide) {
                     lucide.createIcons();
                 }
+            }
+        }
+
+        async function switchAdminClassContext(className) {
+            if (!currentUser) return;
+            const isAllowed = currentUser.role === 'admin' || currentUser.role === 'owner' || currentUser.role === 'guest';
+            if (!isAllowed) return;
+
+            soundEffects.playClick();
+            
+            // Update active state in selects
+            const pDropdownSelect = document.getElementById('admin-class-switch');
+            if (pDropdownSelect) pDropdownSelect.value = className;
+            const globalSelect = document.getElementById('admin-global-class-select');
+            if (globalSelect) globalSelect.value = className;
+
+            try {
+                if (currentUser.role === 'guest') {
+                    currentUser.class_name = className;
+                    localStorage.setItem('guest_class_name', className);
+                } else if (useBackend) {
+                    const res = await fetch('/api/auth/class', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ class_name: className })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.error || "Failed to update class.");
+                    }
+                    currentUser.class_name = data.class_name;
+                } else {
+                    currentUser.class_name = className;
+                    const users = localStore.getUsers();
+                    if (users[currentUser.username]) {
+                        users[currentUser.username].class_name = className;
+                        localStore.saveUsers(users);
+                    }
+                    localStore.saveActiveUser(currentUser);
+                }
+
+                // Update UI elements displaying class
+                const classEl = document.getElementById('dropdown-class');
+                if (classEl) classEl.innerText = currentUser.class_name;
+                
+                const sidebarRoleEl = document.getElementById('sidebar-user-role');
+                if (sidebarRoleEl) {
+                    sidebarRoleEl.innerText = (currentUser.role === 'guest' ? 'Guest' : (currentUser.role || 'Student')) + (currentUser.class_name ? ` (${currentUser.class_name})` : '');
+                }
+
+                // Dynamically update the filtering for Learn Hub and Quiz Arena
+                filterClass(className);
+                if (typeof filterQuizClass === 'function') {
+                    filterQuizClass(className);
+                }
+
+                // Refresh specific sections if needed
+                if (activeTab === 'dashboard') {
+                    loadStats();
+                } else if (activeTab === 'progress') {
+                    loadStats();
+                    renderAnalyticsData();
+                }
+            } catch (err) {
+                alert(err.message || "Error switching class.");
             }
         }
 
