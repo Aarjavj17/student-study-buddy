@@ -3308,6 +3308,8 @@
                                     onclick="filterSubject('English')">📖 English</button>
                                 <button class="btn btn-sm btn-ghost subject-btn" data-subject="Hindi"
                                     onclick="filterSubject('Hindi')">✍️ Hindi</button>
+                                <button class="btn btn-sm btn-ghost subject-btn" data-subject="Sanskrit"
+                                    onclick="filterSubject('Sanskrit')">📜 Sanskrit</button>
                             </div>
                         </div>
                         <!-- Subsection Filter Row -->
@@ -3425,6 +3427,8 @@
                                             onclick="filterQuizSubject('English')">📖 English</button>
                                         <button class="btn btn-sm btn-ghost quiz-subject-btn" data-subject="Hindi"
                                             onclick="filterQuizSubject('Hindi')">✍️ Hindi</button>
+                                        <button class="btn btn-sm btn-ghost quiz-subject-btn" data-subject="Sanskrit"
+                                            onclick="filterQuizSubject('Sanskrit')">📜 Sanskrit</button>
                                     </div>
                                 </div>
                             </div>
@@ -4491,6 +4495,10 @@
             { id: 80, class_name: 'Class 9', subject_name: 'Hindi', sub_section: 'Gadya', chapter_no: 1, chapter_name: 'Do Bailon Ki Katha', resources: {} },
             { id: 81, class_name: 'Class 9', subject_name: 'Hindi', sub_section: 'Kavya', chapter_no: 8, chapter_name: 'Raidas Ke Pad', resources: {} },
 
+            // Class 9 Sanskrit
+            { id: 90, class_name: 'Class 9', subject_name: 'Sanskrit', sub_section: 'Shemushi', chapter_no: 1, chapter_name: 'Bhartiwasantgeeti (भारतीवसन्तगीतिः)', resources: {} },
+            { id: 91, class_name: 'Class 9', subject_name: 'Sanskrit', sub_section: 'Shemushi', chapter_no: 2, chapter_name: 'Swarnakakah (स्वर्णकाकः)', resources: {} },
+
             // Class 10 Mathematics
             { id: 101, class_name: 'Class 10', subject_name: 'Mathematics', sub_section: '', chapter_no: 1, chapter_name: 'Real Numbers', resources: {} },
             { id: 102, class_name: 'Class 10', subject_name: 'Mathematics', sub_section: '', chapter_no: 2, chapter_name: 'Polynomials', resources: {} },
@@ -4506,7 +4514,11 @@
             { id: 160, class_name: 'Class 10', subject_name: 'English', sub_section: 'First Flight', chapter_no: 1, chapter_name: 'A Letter to God', resources: {} },
 
             // Class 10 Hindi
-            { id: 180, class_name: 'Class 10', subject_name: 'Hindi', sub_section: 'Gadya', chapter_no: 1, chapter_name: 'Netaji Ka Chashma', resources: {} }
+            { id: 180, class_name: 'Class 10', subject_name: 'Hindi', sub_section: 'Gadya', chapter_no: 1, chapter_name: 'Netaji Ka Chashma', resources: {} },
+
+            // Class 10 Sanskrit
+            { id: 190, class_name: 'Class 10', subject_name: 'Sanskrit', sub_section: 'Shemushi', chapter_no: 1, chapter_name: 'Shuchiparyavaranam (शुचिपर्यावरणम्)', resources: {} },
+            { id: 191, class_name: 'Class 10', subject_name: 'Sanskrit', sub_section: 'Shemushi', chapter_no: 2, chapter_name: 'Buddhirbalavati Sada (बुद्धिर्बलवती सदा)', resources: {} }
         ];
 
         // Cache Arrays
@@ -8248,7 +8260,8 @@ Click one of the suggestions below, or type your own question!</div>
             'Science': 'core',
             'Social Science': 'core',
             'English': 'languages',
-            'Hindi': 'languages'
+            'Hindi': 'languages',
+            'Sanskrit': 'languages'
         };
 
         const CORE_RESOURCES = [

@@ -384,6 +384,10 @@ def init_db():
         ('Class 9', 'Hindi', 'Kavya', 11, 'Jhansi Ki Rani'),
         ('Class 9', 'Hindi', 'Kavya', 12, 'Ghar Ki Yaad'),
         
+        # Sanskrit - Shemushi
+        ('Class 9', 'Sanskrit', 'Shemushi', 1, 'Bhartiwasantgeeti (भारतीवसन्तगीतिः)'),
+        ('Class 9', 'Sanskrit', 'Shemushi', 2, 'Swarnakakah (स्वर्णकाकः)'),
+        
         # === CLASS 10 ===
         # Mathematics
         ('Class 10', 'Mathematics', '', 1, 'Real Numbers'),
@@ -492,7 +496,11 @@ def init_db():
         ('Class 10', 'Hindi', 'Kavya', 9, 'Dev - Sawaiya Aur Kavit'),
         ('Class 10', 'Hindi', 'Kavya', 10, 'Jayshankar Prasad - Aatmakathya'),
         ('Class 10', 'Hindi', 'Kavya', 11, 'Suryakant Tripathi Nirala - Utsah Aur Aat Nahi Rahi Hai'),
-        ('Class 10', 'Hindi', 'Kavya', 12, 'Nagarjun - Yahi Danturit Muskan Aur Fasal')
+        ('Class 10', 'Hindi', 'Kavya', 12, 'Nagarjun - Yahi Danturit Muskan Aur Fasal'),
+        
+        # Sanskrit - Shemushi
+        ('Class 10', 'Sanskrit', 'Shemushi', 1, 'Shuchiparyavaranam (शुचिपर्यावरणम्)'),
+        ('Class 10', 'Sanskrit', 'Shemushi', 2, 'Buddhirbalavati Sada (बुद्धिर्बलवती सदा)')
     ]
     
     # Seeding class_chapters
