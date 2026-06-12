@@ -387,6 +387,16 @@ def init_db():
         # Sanskrit - Shemushi
         ('Class 9', 'Sanskrit', 'Shemushi', 1, 'Bhartiwasantgeeti (भारतीवसन्तगीतिः)'),
         ('Class 9', 'Sanskrit', 'Shemushi', 2, 'Swarnakakah (स्वर्णकाकः)'),
+        ('Class 9', 'Sanskrit', 'Shemushi', 3, 'Godohanam (गोदोहनम्)'),
+        ('Class 9', 'Sanskrit', 'Shemushi', 4, 'Kalpataruh (कल्पतरुः)'),
+        ('Class 9', 'Sanskrit', 'Shemushi', 5, 'Suktimauktikam (सूक्तिमौक्तिकम्)'),
+        ('Class 9', 'Sanskrit', 'Shemushi', 6, 'Bhranto Balah (भ्रान्तो बालः)'),
+        ('Class 9', 'Sanskrit', 'Shemushi', 7, 'Pratyabhijnanam (प्रत्यभिज्ञानम्)'),
+        ('Class 9', 'Sanskrit', 'Shemushi', 8, 'Lauhatula (लौहतुला)'),
+        ('Class 9', 'Sanskrit', 'Shemushi', 9, 'Siktasetuh (सिकतासेतुः)'),
+        ('Class 9', 'Sanskrit', 'Shemushi', 10, 'Jatayoh Shauryam (जटायोः शौर्यम्)'),
+        ('Class 9', 'Sanskrit', 'Shemushi', 11, 'Paryavaranam (पर्यावरणम्)'),
+        ('Class 9', 'Sanskrit', 'Shemushi', 12, 'Vangmanahpranaswarupam (वाङ्मनःप्राणस्वरूपम्)'),
         
         # === CLASS 10 ===
         # Mathematics
@@ -500,7 +510,15 @@ def init_db():
         
         # Sanskrit - Shemushi
         ('Class 10', 'Sanskrit', 'Shemushi', 1, 'Shuchiparyavaranam (शुचिपर्यावरणम्)'),
-        ('Class 10', 'Sanskrit', 'Shemushi', 2, 'Buddhirbalavati Sada (बुद्धिर्बलवती सदा)')
+        ('Class 10', 'Sanskrit', 'Shemushi', 2, 'Buddhirbalavati Sada (बुद्धिर्बलवती सदा)'),
+        ('Class 10', 'Sanskrit', 'Shemushi', 3, 'Shishulalanam (शिशुलालनम्)'),
+        ('Class 10', 'Sanskrit', 'Shemushi', 4, 'Janani Tulyavatsala (जननी तुल्यवत्सला)'),
+        ('Class 10', 'Sanskrit', 'Shemushi', 5, 'Subhashitani (सुभाषितानि)'),
+        ('Class 10', 'Sanskrit', 'Shemushi', 6, 'Sauhardam Prakriteh Shobha (सौहार्दं प्रकृतेः शोभा)'),
+        ('Class 10', 'Sanskrit', 'Shemushi', 7, 'Vichitrah Sakshi (विचित्रः साक्षी)'),
+        ('Class 10', 'Sanskrit', 'Shemushi', 8, 'Suktayah (सूक्तयः)'),
+        ('Class 10', 'Sanskrit', 'Shemushi', 9, 'Bhukampavibhishika (भूकंपविभीषिका)'),
+        ('Class 10', 'Sanskrit', 'Shemushi', 10, 'Anyoktayah (अन्योक्तयः)')
     ]
     
     # Seeding class_chapters
