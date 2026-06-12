@@ -8567,41 +8567,55 @@ Click one of the suggestions below, or type your own question!</div>
                         </div>
                     `;
                 } else {
-                    const mindMapPath = res.resources ? res.resources['mind_map'] : null;
+                    const mindMapFile = res.resources && res.resources['mind_map'] ? (typeof res.resources['mind_map'] === 'string' ? { id: null, file_path: res.resources['mind_map'], resource_title: 'Mind Map' } : res.resources['mind_map'][0]) : null;
+                    const mindMapPath = mindMapFile ? mindMapFile.file_path : null;
+                    const mindMapId = mindMapFile ? mindMapFile.id : null;
 
                     let resourceItemsHtml = '';
                     resourceConfig.forEach(config => {
-                        const filePath = res.resources ? res.resources[config.key] : null;
-
-                        let actionHtml = '';
-                        let badgeHtml = '';
-
-                        if (filePath) {
-                            badgeHtml = `<span class="status-badge status-available"><i data-lucide="check" style="width:10px;height:10px;"></i> Available</span>`;
-                            actionHtml = `
-                                <button onclick="viewResource('${escapeHTML(filePath)}', '${escapeHTML(res.chapter_name)} - ${escapeHTML(config.label)}')" class="btn btn-xs btn-primary" title="View PDF/Image">
-                                    <i data-lucide="eye" style="width:12px;height:12px;"></i>
-                                </button>
-                            ` + (isAdminOrOwner ? `
-                                <button onclick="deleteResource(${res.id}, '${config.key}')" class="btn btn-xs btn-secondary" style="border-color: rgba(239, 68, 68, 0.2); color: #ef4444; background: rgba(239, 68, 68, 0.05);" title="Delete Resource">
-                                    <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
-                                </button>
-                            ` : '');
-                        } else {
-                            badgeHtml = `<span class="status-badge status-not-added"><i data-lucide="x" style="width:10px;height:10px;"></i> Not Uploaded</span>`;
-                            actionHtml = isAdminOrOwner ? `
-                                <button onclick="triggerInlineUpload(${res.id}, '${config.key}')" class="btn btn-xs btn-ghost" title="Upload PDF/Image">
-                                    <i data-lucide="upload-cloud" style="width:12px;height:12px;"></i> Upload
-                                </button>
-                            ` : '';
+                        const files = res.resources ? res.resources[config.key] : null;
+                        let normalizedFiles = [];
+                        if (typeof files === 'string' && files) {
+                            normalizedFiles = [{ id: null, file_path: files, resource_title: config.label }];
+                        } else if (Array.isArray(files)) {
+                            normalizedFiles = files;
                         }
 
+                        let filesHtml = '';
+                        if (normalizedFiles.length > 0) {
+                            normalizedFiles.forEach((file, index) => {
+                                const displayTitle = file.resource_title || `${config.label} File ${index + 1}`;
+                                const deleteAction = isAdminOrOwner ? `
+                                    <button onclick="event.stopPropagation(); deleteSpecificResource(${res.id}, '${config.key}', ${file.id}, '${escapeHTML(file.file_path)}')" class="btn btn-xs btn-ghost" title="Delete File" style="padding: 2px 4px; border:none; background:transparent;">
+                                        <i data-lucide="trash-2" style="width: 12px; height: 12px; color: #ef4444;"></i>
+                                    </button>
+                                ` : '';
+                                filesHtml += `
+                                    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding: 4px 6px; background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius: var(--border-radius-sm); margin-bottom: 4px;">
+                                        <span onclick="viewResource('${escapeHTML(file.file_path)}', '${escapeHTML(res.chapter_name)} - ${escapeHTML(displayTitle)}')" style="font-size:0.8rem; color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:4px;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
+                                            <i data-lucide="file-text" style="width:12px; height:12px; color:var(--color-primary);"></i>
+                                            ${escapeHTML(displayTitle)}
+                                        </span>
+                                        ${deleteAction}
+                                    </div>
+                                `;
+                            });
+                        } else {
+                            filesHtml = `<span class="status-badge status-not-added" style="margin-bottom:4px;"><i data-lucide="x" style="width:10px;height:10px;"></i> Not Uploaded</span>`;
+                        }
+
+                        const addMoreBtn = isAdminOrOwner ? `
+                            <button onclick="triggerInlineUpload(${res.id}, '${config.key}')" class="btn btn-xs btn-ghost" title="Add File" style="padding: 2px 6px; border:1px dashed var(--glass-border); background:rgba(255,255,255,0.01); display:inline-flex; align-items:center; gap:4px; font-size:0.75rem; margin-top:2px; color:var(--text-secondary);">
+                                <i data-lucide="plus" style="width:10px;height:10px;"></i> Add PDF
+                            </button>
+                        ` : '';
+
                         resourceItemsHtml += `
-                            <div class="resource-item">
-                                <span class="resource-label">${config.label}</span>
-                                <div class="resource-actions" style="display:flex; align-items:center; gap:8px;">
-                                    ${badgeHtml}
-                                    ${actionHtml}
+                            <div class="resource-item" style="display:block; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.03); padding-bottom:8px;">
+                                <div style="font-weight:600; font-size:0.85rem; color:white; margin-bottom:6px;">${config.label}</div>
+                                <div style="margin-left: 8px;">
+                                    ${filesHtml}
+                                    ${addMoreBtn}
                                 </div>
                             </div>
                         `;
@@ -8692,7 +8706,7 @@ Click one of the suggestions below, or type your own question!</div>
                                         <button onclick="triggerInlineUpload(${res.id}, 'mind_map')" class="btn btn-xs btn-ghost" title="Replace Mind Map" style="padding: 2px 6px;">
                                             <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i> Replace
                                         </button>
-                                        <button onclick="deleteResource(${res.id}, 'mind_map')" class="btn btn-xs btn-secondary" style="border-color: rgba(239, 68, 68, 0.2); color: #ef4444; background: rgba(239, 68, 68, 0.05); padding: 2px 6px;" title="Delete Mind Map">
+                                        <button onclick="event.stopPropagation(); deleteSpecificResource(${res.id}, 'mind_map', ${mindMapId}, '${escapeHTML(mindMapPath)}')" class="btn btn-xs btn-secondary" style="border-color: rgba(239, 68, 68, 0.2); color: #ef4444; background: rgba(239, 68, 68, 0.05); padding: 2px 6px;" title="Delete Mind Map">
                                             <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i>
                                         </button>
                                     </div>
@@ -9009,10 +9023,15 @@ Click one of the suggestions below, or type your own question!</div>
             const chapterId = activeUploadChapterId;
             const resourceType = activeUploadResourceType;
 
+            const defaultTitle = file.name.replace(/\.[^/.]+$/, "");
+            const title = prompt("Enter a title for this resource (e.g. Chapter Notes, Part 2, Assignment):", defaultTitle);
+            if (title === null) return; // Cancelled
+
             if (useBackend) {
                 try {
                     const formData = new FormData();
                     formData.append('file', file);
+                    formData.append('resource_title', title || defaultTitle);
 
                     const res = await fetch(`/api/chapters/${chapterId}/resources/${resourceType}`, {
                         method: 'POST',
@@ -9063,6 +9082,38 @@ Click one of the suggestions below, or type your own question!</div>
             } catch (err) {
                 console.error("Delete error:", err);
                 alert("Network error deleting resource.");
+            }
+        }
+
+        async function deleteSpecificResource(chapterId, resourceType, resourceId, filePath) {
+            const isAdminOrOwner = currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner');
+            if (!isAdminOrOwner) {
+                alert("Access Denied: Only administrators and owners can delete resources.");
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete this file reference?`)) return;
+
+            if (useBackend && resourceId) {
+                try {
+                    const res = await fetch(`/api/resources/${resourceId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (res.ok) {
+                        soundEffects.playSuccess();
+                        loadClassResources();
+                    } else {
+                        const errData = await res.json();
+                        alert(errData.error || "Failed to delete resource.");
+                    }
+                } catch (err) {
+                    console.error("Delete error:", err);
+                    alert("Network error deleting resource.");
+                }
+            } else {
+                // Offline mode or mock resource deletion
+                alert("Collaboration sync is offline in standalone mode. Cannot modify mock files.");
             }
         }
 

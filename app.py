@@ -1445,7 +1445,7 @@ def get_resources(class_name, subject_name):
     cursor.execute('''
     SELECT 
         cc.id, cc.class_name, cc.subject_name, cc.sub_section, cc.chapter_no, cc.chapter_name,
-        cr.resource_type, cr.file_path
+        cr.id as resource_id, cr.resource_type, cr.file_path, cr.resource_title
     FROM class_chapters cc
     LEFT JOIN chapter_resources cr ON cc.id = cr.chapter_id
     WHERE cc.class_name = ? AND cc.subject_name = ?
@@ -1468,7 +1468,12 @@ def get_resources(class_name, subject_name):
                 'videos': []
             }
         if row['resource_type'] and row['file_path']:
-            chapters_dict[ch_id]['resources'][row['resource_type']] = row['file_path']
+            res_list = chapters_dict[ch_id]['resources'].setdefault(row['resource_type'], [])
+            res_list.append({
+                'id': row['resource_id'],
+                'file_path': row['file_path'],
+                'resource_title': row['resource_title'] or ''
+            })
             
     # Fetch all video references for these chapters
     cursor.execute('''
@@ -1512,10 +1517,16 @@ def upload_chapter_resource(chapter_id, resource_type):
     uploads_dir = os.path.join(app.root_path, 'static', 'uploads')
     os.makedirs(uploads_dir, exist_ok=True)
     
-    filename = f"resource_{chapter_id}_{resource_type}{ext}"
+    import uuid
+    unique_suffix = uuid.uuid4().hex[:8]
+    filename = f"resource_{chapter_id}_{resource_type}_{unique_suffix}{ext}"
     filepath = os.path.join(uploads_dir, filename)
     file.save(filepath)
     file_path = f"/static/uploads/{filename}"
+    
+    resource_title = request.form.get('resource_title', '').strip()
+    if not resource_title:
+        resource_title, _ = os.path.splitext(file.filename)
     
     db = get_db()
     cursor = db.cursor()
@@ -1526,15 +1537,15 @@ def upload_chapter_resource(chapter_id, resource_type):
         return jsonify({'error': 'Chapter not found.'}), 404
         
     cursor.execute('''
-    INSERT INTO chapter_resources (chapter_id, resource_type, file_path)
-    VALUES (?, ?, ?)
-    ON CONFLICT(chapter_id, resource_type) DO UPDATE SET file_path=excluded.file_path
-    ''', (chapter_id, resource_type, file_path))
+    INSERT INTO chapter_resources (chapter_id, resource_type, file_path, resource_title)
+    VALUES (?, ?, ?, ?)
+    ''', (chapter_id, resource_type, file_path, resource_title))
     db.commit()
     
     return jsonify({
         'message': 'Resource uploaded successfully.',
-        'file_path': file_path
+        'file_path': file_path,
+        'resource_title': resource_title
     })
 
 @app.route('/api/chapters/<int:chapter_id>/resources/<resource_type>', methods=['DELETE'])
@@ -1560,6 +1571,33 @@ def delete_chapter_resource(chapter_id, resource_type):
                 print(f"Warning: Could not remove file {disk_path}: {e}")
                 
     cursor.execute('DELETE FROM chapter_resources WHERE chapter_id = ? AND resource_type = ?', (chapter_id, resource_type))
+    db.commit()
+    
+    return jsonify({'message': 'Resource deleted successfully.'})
+
+@app.route('/api/resources/<int:resource_id>', methods=['DELETE'])
+def delete_specific_resource(resource_id):
+    if not check_admin_permission():
+        return jsonify({'error': 'Forbidden. Only administrators and owners can modify content.'}), 403
+        
+    db = get_db()
+    cursor = db.cursor()
+    
+    cursor.execute('SELECT file_path FROM chapter_resources WHERE id = ?', (resource_id,))
+    row = cursor.fetchone()
+    if not row:
+        return jsonify({'error': 'Resource not found.'}), 404
+        
+    file_path = row['file_path']
+    if file_path.startswith('/static/'):
+        disk_path = os.path.join(app.root_path, file_path.lstrip('/'))
+        if os.path.exists(disk_path):
+            try:
+                os.remove(disk_path)
+            except Exception as e:
+                print(f"Warning: Could not remove file {disk_path}: {e}")
+                
+    cursor.execute('DELETE FROM chapter_resources WHERE id = ?', (resource_id,))
     db.commit()
     
     return jsonify({'message': 'Resource deleted successfully.'})

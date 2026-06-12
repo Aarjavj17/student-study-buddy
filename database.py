@@ -92,6 +92,7 @@ def init_db():
     # Drop outdated tables to upgrade schemas
     cursor.execute('DROP TABLE IF EXISTS quiz_attempts')
     cursor.execute('DROP TABLE IF EXISTS quiz_questions')
+    cursor.execute('DROP TABLE IF EXISTS chapter_resources')
     conn.commit()
     
     # 4. Quiz Attempts Table
@@ -217,8 +218,8 @@ def init_db():
         chapter_id INTEGER NOT NULL,
         resource_type TEXT NOT NULL,
         file_path TEXT NOT NULL,
-        FOREIGN KEY(chapter_id) REFERENCES class_chapters(id) ON DELETE CASCADE,
-        UNIQUE(chapter_id, resource_type)
+        resource_title TEXT DEFAULT '',
+        FOREIGN KEY(chapter_id) REFERENCES class_chapters(id) ON DELETE CASCADE
     )
     ''')
 
