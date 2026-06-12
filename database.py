@@ -388,15 +388,13 @@ def init_db():
         ('Class 9', 'Sanskrit', 'Shemushi', 1, 'Bhartiwasantgeeti (भारतीवसन्तगीतिः)'),
         ('Class 9', 'Sanskrit', 'Shemushi', 2, 'Swarnakakah (स्वर्णकाकः)'),
         ('Class 9', 'Sanskrit', 'Shemushi', 3, 'Godohanam (गोदोहनम्)'),
-        ('Class 9', 'Sanskrit', 'Shemushi', 4, 'Kalpataruh (कल्पतरुः)'),
-        ('Class 9', 'Sanskrit', 'Shemushi', 5, 'Suktimauktikam (सूक्तिमौक्तिकम्)'),
-        ('Class 9', 'Sanskrit', 'Shemushi', 6, 'Bhranto Balah (भ्रान्तो बालः)'),
-        ('Class 9', 'Sanskrit', 'Shemushi', 7, 'Pratyabhijnanam (प्रत्यभिज्ञानम्)'),
-        ('Class 9', 'Sanskrit', 'Shemushi', 8, 'Lauhatula (लौहतुला)'),
-        ('Class 9', 'Sanskrit', 'Shemushi', 9, 'Siktasetuh (सिकतासेतुः)'),
-        ('Class 9', 'Sanskrit', 'Shemushi', 10, 'Jatayoh Shauryam (जटायोः शौर्यम्)'),
-        ('Class 9', 'Sanskrit', 'Shemushi', 11, 'Paryavaranam (पर्यावरणम्)'),
-        ('Class 9', 'Sanskrit', 'Shemushi', 12, 'Vangmanahpranaswarupam (वाङ्मनःप्राणस्वरूपम्)'),
+        ('Class 9', 'Sanskrit', 'Shemushi', 4, 'Suktimauktikam (सूक्तिमौक्तिकम्)'),
+        ('Class 9', 'Sanskrit', 'Shemushi', 5, 'Bhranto Balah (भ्रान्तो बालः)'),
+        ('Class 9', 'Sanskrit', 'Shemushi', 6, 'Lauhatula (लौहतुला)'),
+        ('Class 9', 'Sanskrit', 'Shemushi', 7, 'Siktasetuh (सिकतासेतुः)'),
+        ('Class 9', 'Sanskrit', 'Shemushi', 8, 'Jatayoh Shauryam (जटायोः शौर्यम्)'),
+        ('Class 9', 'Sanskrit', 'Shemushi', 9, 'Paryavaranam (पर्यावरणम्)'),
+        ('Class 9', 'Sanskrit', 'Shemushi', 10, 'Vangmanahpranaswarupam (वाङ्मनःप्राणस्वरूपम्)'),
         
         # === CLASS 10 ===
         # Mathematics
@@ -522,6 +520,7 @@ def init_db():
     ]
     
     # Seeding class_chapters
+    cursor.execute("DELETE FROM class_chapters WHERE subject_name = 'Sanskrit'")
     for class_name, sub_name, sub_sec, ch_no, ch_name in class_chapters_data:
         cursor.execute('''
         SELECT id FROM class_chapters 
