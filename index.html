@@ -9365,19 +9365,36 @@ Click one of the suggestions below, or type your own question!</div>
             let escaped = escapeHTML(text);
             escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             escaped = escaped.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            // Format links [Text](URL)
+            escaped = escaped.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color: var(--color-primary); text-decoration: underline; font-weight: 600;">$1</a>');
+            
+            // Format inline math $...$
+            escaped = escaped.replace(/\$(.*?)\$/g, '<span style="font-family: monospace; font-style: italic; color: var(--color-primary); background: rgba(255,255,255,0.03); padding: 2px 5px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);">$1</span>');
 
             let lines = escaped.split('\n');
             let inList = false;
             let formattedLines = [];
 
             lines.forEach(line => {
-                const trimmed = line.trim();
-                if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+                let trimmed = line.trim();
+                
+                // Format headers
+                if (trimmed.startsWith('#### ')) {
+                    line = `<h5 style="margin: 8px 0 4px 0; font-size: 0.9rem; font-weight: 600; color: var(--color-primary);">${trimmed.substring(5)}</h5>`;
+                } else if (trimmed.startsWith('### ')) {
+                    line = `<h4 style="margin: 12px 0 6px 0; font-size: 1.05rem; font-weight: 700; color: white;">${trimmed.substring(4)}</h4>`;
+                } else if (trimmed.startsWith('## ')) {
+                    line = `<h3 style="margin: 16px 0 8px 0; font-size: 1.15rem; font-weight: 700; color: white; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">${trimmed.substring(3)}</h3>`;
+                }
+                
+                const cleanTrimmed = line.trim();
+                if (cleanTrimmed.startsWith('- ') || cleanTrimmed.startsWith('* ')) {
                     if (!inList) {
                         formattedLines.push('<ul style="margin: 8px 0 8px 20px; list-style-type: disc; display: flex; flex-direction: column; gap: 4px;">');
                         inList = true;
                     }
-                    formattedLines.push(`<li>${trimmed.substring(2)}</li>`);
+                    formattedLines.push(`<li>${cleanTrimmed.substring(2)}</li>`);
                 } else {
                     if (inList) {
                         formattedLines.push('</ul>');
@@ -9517,7 +9534,31 @@ Click one of the suggestions below, or type your own question!</div>
                 } else {
                     const msg_lower = message.toLowerCase();
 
-                    if (msg_lower.includes('tip') || msg_lower.includes('study') || msg_lower.includes('advice') || msg_lower.includes('learn') || msg_lower.includes('focus')) {
+                    // Standalone Mode NLP matching fallback over localResources
+                    let bestMatch = null;
+                    let bestScore = 0;
+                    const queryWords = msg_lower.split(/\s+/).filter(w => w.length > 2);
+                    
+                    if (queryWords.length > 0) {
+                        localResources.forEach(res => {
+                            let matchPoints = 0;
+                            const textToMatch = `${res.class_name} ${res.subject_name} ${res.sub_section} ${res.chapter_name}`.toLowerCase();
+                            queryWords.forEach(word => {
+                                if (textToMatch.includes(word)) {
+                                    matchPoints++;
+                                }
+                            });
+                            const score = matchPoints / queryWords.length;
+                            if (score > bestScore) {
+                                bestScore = score;
+                                bestMatch = res;
+                            }
+                        });
+                    }
+
+                    if (bestMatch && bestScore > 0.35) {
+                        reply = `I found some local syllabus info! 📚\n\n### 📘 ${bestMatch.class_name} - ${bestMatch.subject_name}\n**Chapter ${bestMatch.chapter_no}: ${bestMatch.chapter_name}**\n\nThis topic is part of your syllabus! Head over to the **Learn Hub** tab to view notes, formula sheets, and visual video references for this chapter! 🚀`;
+                    } else if (msg_lower.includes('tip') || msg_lower.includes('study') || msg_lower.includes('advice') || msg_lower.includes('learn') || msg_lower.includes('focus')) {
                         const tips = [
                             "Try the Pomodoro Technique! Study focused for 25 minutes, then take a 5-minute break to stretch and drink water. ⏱️",
                             "Active Recall is key! Instead of just reading notes, close the book and write down everything you remember. Then check what you missed! 🧠",

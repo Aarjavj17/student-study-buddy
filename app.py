@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import json
 from database import get_db_connection, DB_PATH
 from werkzeug.security import generate_password_hash, check_password_hash
+import chatbot_nlp
 
 app = Flask(__name__, template_folder='.')
 app.secret_key = os.environ.get('SECRET_KEY', 'super-secret-student-buddy-key-2026-enjoy-studying')
@@ -1166,6 +1167,12 @@ def handle_chat():
     if not message:
         return jsonify({'error': 'Message cannot be empty.'}), 400
         
+    # 1. Search syllabus context from DB
+    matched_context = chatbot_nlp.search_syllabus_context(message, DB_PATH)
+    
+    # 2. Check general intent
+    general_reply = chatbot_nlp.get_general_intent_reply(message)
+    
     api_key = os.environ.get('GEMINI_API_KEY')
     
     if api_key:
@@ -1187,16 +1194,32 @@ def handle_chat():
                 "parts": [{"text": message}]
             })
             
+            system_instruction_text = (
+                "You are 'Buddy', a friendly, encouraging, and highly intelligent AI study companion for Class 9 and 10 students. "
+                "Your goal is to help them learn with no pressure, using positive reinforcement. "
+                "Explain complex math, science, and history concepts in simple, easy-to-understand language. "
+                "Use bullet points, formatting, and emojis to keep things fun. Encourage active recall, notes taking, "
+                "and regular breaks. Be friendly, lighthearted, and always supportive."
+            )
+            
+            if matched_context:
+                ch = matched_context['chapter']
+                notes = matched_context['notes']
+                system_instruction_text += (
+                    f"\n\n[RAG Context: The student is asking about Chapter {ch['chapter_no']}: '{ch['chapter_name']}' "
+                    f"of '{ch['subject_name']}' (Class {ch['class_name']}). "
+                )
+                if notes:
+                    system_instruction_text += f"The student's written notes for this chapter are: '{notes}'. "
+                system_instruction_text += (
+                    "Incorporate this context naturally into your explanation, and reference their specific chapter "
+                    "or notes to help them study!]"
+                )
+            
             payload = {
                 "contents": contents,
                 "systemInstruction": {
-                    "parts": [{
-                        "text": "You are 'Buddy', a friendly, encouraging, and highly intelligent AI study companion for Class 9 and 10 students. "
-                               "Your goal is to help them learn with no pressure, using positive reinforcement. "
-                               "Explain complex math, science, and history concepts in simple, easy-to-understand language. "
-                               "Use bullet points, formatting, and emojis to keep things fun. Encourage active recall, notes taking, "
-                               "and regular breaks. Be friendly, lighthearted, and always supportive."
-                    }]
+                    "parts": [{"text": system_instruction_text}]
                 },
                 "generationConfig": {
                     "temperature": 0.7,
@@ -1227,65 +1250,20 @@ def handle_chat():
         except urllib.error.HTTPError as he:
             error_msg = he.read().decode('utf-8')
             print(f"Gemini API HTTP Error: {error_msg}")
-            return jsonify({'reply': "I had trouble connecting to my brain due to an API configuration error. Please check your GEMINI_API_KEY. (HTTP Error)", 'live': False})
         except Exception as e:
             print(f"Gemini API Error: {str(e)}")
-            pass
             
-    msg_lower = message.lower()
-    
-    if any(x in msg_lower for x in ['tip', 'study', 'advice', 'learn', 'focus']):
-        tips = [
-            "Try the Pomodoro Technique! Study focused for 25 minutes, then take a 5-minute break to stretch and drink water. ⏱️",
-            "Active Recall is key! Instead of just reading notes, close the book and write down everything you remember. Then check what you missed! 🧠",
-            "Explain what you learned to someone else (or even a stuffed animal). If you can teach it simply, you understand it! 🧸",
-            "Space out your revision. Reviewing a topic after 1 day, then 3 days, then 7 days helps seal it in your long-term memory! 🚀"
-        ]
-        import random
-        reply = f"Here is a study tip for you:\n\n{random.choice(tips)}"
-        
-    elif any(x in msg_lower for x in ['joke', 'funny', 'laugh']):
-        jokes = [
-            "Why did the student eat their math homework? Because the teacher said it was a piece of cake! 🍰",
-            "Why did the two ones get married? Because they were 1-derful together! 💍",
-            "Why can't you trust atoms? Because they make up everything! ⚛️",
-            "What did the triangle say to the circle? 'You're pointless!' 📐"
-        ]
-        import random
-        reply = f"Haha, here is one:\n\n{random.choice(jokes)}"
-        
-    elif any(x in msg_lower for x in ['math', 'algebra', 'equation', 'number', 'formula']):
-        reply = ("Sure! Let's talk Math. 📐\n\n"
-                 "One of the best ways to solve linear equations or quadratic expressions is by simplifying step-by-step. "
-                 "For example, in $2x + 5 = 15$, subtract 5 from both sides ($2x = 10$) and divide by 2 ($x = 5$).\n\n"
-                 "Need a specific formula? Check the 'Formula Sheets' in the Learn Hub! 📁")
-                 
-    elif any(x in msg_lower for x in ['science', 'gravity', 'reaction', 'cell', 'atom']):
-        reply = ("Awesome, Science is my favorite! ⚛️\n\n"
-                 "- **Biology**: Remember that cells are the basic unit of life! The Mitochondria is the powerhouse of the cell. 🔋\n"
-                 "- **Chemistry**: In chemical equations, reactants are on the left, and products are on the right. Make sure they balance!\n"
-                 "- **Physics**: Gravity is the invisible force that pulls masses together. On Earth, acceleration due to gravity ($g$) is about $9.8 \\text{ m/s}^2$.\n\n"
-                 "Check out the video references in the Learn Hub for visual animations! 🎥")
-                 
-    elif any(x in msg_lower for x in ['hello', 'hi', 'hey', 'sup', 'how are you', 'buddy']):
-        reply = ("Hello! I'm Buddy, your personal study assistant. 👋\n\n"
-                 "I can help you understand syllabus concepts, give you quick study tips, tell educational jokes, or help you structure your schedule. "
-                 "What subject are we diving into today? Maths, Science, or something else?")
-                 
-    elif any(x in msg_lower for x in ['motivation', 'tired', 'bored', 'lazy', 'hard']):
-        quotes = [
-            "Don't study to react, study to understand. The knowledge you build today will open doors tomorrow. 🌟",
-            "Mistakes are proof that you are trying. Every wrong answer in the Quiz Arena is a step closer to understanding! 💪",
-            "You don't have to be perfect. You just have to be 1% better than yesterday. Let's do a single 5-minute study block together! 🚀"
-        ]
-        import random
-        reply = f"Don't worry, you've got this! Here is a little boost:\n\n{random.choice(quotes)}"
-        
+    # --- Local NLP Fallback (When API Key is missing or failed) ---
+    if matched_context:
+        reply = chatbot_nlp.generate_local_nlp_response(matched_context)
+    elif general_reply:
+        reply = general_reply
     else:
         reply = ("I'm here to support you! 🌟\n\n"
-                 "I can explain concepts in Math/Science, give you study tips, or tell you a joke to clear your mind. "
-                 "Try asking me 'Give me a study tip' or 'Tell me a science fact'!")
-
+                 "I couldn't find a direct match in your syllabus for that query. "
+                 "Try asking me about specific topics like **'Explain Netaji Ka Chashma'** or **'Science Cell'**!\n\n"
+                 "Or type **'give me a study tip'** or **'tell me a joke'** to clear your mind!")
+                 
     reply += "\n\n*(Note: Set the `GEMINI_API_KEY` environment variable and restart the server to enable live AI responses from Gemini!)*"
     return jsonify({'reply': reply, 'live': False})
 
