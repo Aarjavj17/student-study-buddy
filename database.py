@@ -3,11 +3,120 @@ import json
 import os
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'database.db')
+DATABASE_URL = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
+
+if DATABASE_URL:
+    import psycopg2
+    import psycopg2.extras
+    
+    class PostgreSQLCursorWrapper:
+        def __init__(self, real_cursor):
+            self.real_cursor = real_cursor
+            self._lastrowid = None
+
+        def execute(self, query, params=None):
+            # Translate '?' placeholder to '%s'
+            query_translated = query.replace('?', '%s')
+
+            # Translate AUTOINCREMENT keyword for tables creation (specifically during init_db)
+            query_translated = query_translated.replace('INTEGER PRIMARY KEY AUTOINCREMENT', 'SERIAL PRIMARY KEY')
+            query_translated = query_translated.replace('REAL', 'DOUBLE PRECISION')
+            
+            # Translate sqlite_master table check to PostgreSQL equivalent
+            if 'sqlite_master' in query:
+                query_translated = """
+                    SELECT tablename as name 
+                    FROM pg_catalog.pg_tables 
+                    WHERE schemaname = 'public' AND tablename = 'class_resources'
+                """
+
+            # Translate SQLite migration queries (e.g. PRAGMA table_info)
+            if 'PRAGMA table_info(users)' in query or 'PRAGMA table_info("users")' in query or 'PRAGMA table_info' in query:
+                # Mock output format of sqlite3 PRAGMA table_info: (cid, name, type, notnull, dflt_value, pk)
+                query_translated = """
+                    SELECT 0 as cid, column_name as name, data_type as type, 
+                           case when is_nullable = 'NO' then 1 else 0 end as notnull, 
+                           column_default as dflt_value, 0 as pk
+                    FROM information_schema.columns
+                    WHERE table_name = 'users'
+                """
+
+            # Handle INSERT OR REPLACE upserts for SQLite compatibility
+            if 'INSERT OR REPLACE INTO videos' in query:
+                query_translated = """
+                    INSERT INTO videos (id, title, subject, youtube_id, description)
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON CONFLICT (id) DO UPDATE SET
+                        title = EXCLUDED.title,
+                        subject = EXCLUDED.subject,
+                        youtube_id = EXCLUDED.youtube_id,
+                        description = EXCLUDED.description
+                """
+            elif 'INSERT OR REPLACE' in query:
+                query_translated = query_translated.replace('INSERT OR REPLACE', 'INSERT')
+
+            # Handle lastrowid capture by appending RETURNING id to INSERTs
+            is_insert = query_translated.strip().upper().startswith('INSERT')
+            if is_insert and 'RETURNING' not in query_translated.upper():
+                query_translated = query_translated.rstrip('; \t\n') + ' RETURNING id'
+                if params is not None:
+                    self.real_cursor.execute(query_translated, params)
+                else:
+                    self.real_cursor.execute(query_translated)
+                try:
+                    row = self.real_cursor.fetchone()
+                    if row:
+                        self._lastrowid = row[0]
+                except Exception:
+                    pass
+            else:
+                if params is not None:
+                    self.real_cursor.execute(query_translated, params)
+                else:
+                    self.real_cursor.execute(query_translated)
+
+        def fetchone(self):
+            return self.real_cursor.fetchone()
+
+        def fetchall(self):
+            return self.real_cursor.fetchall()
+
+        @property
+        def lastrowid(self):
+            return self._lastrowid
+
+    class PostgreSQLConnectionWrapper:
+        def __init__(self, real_conn):
+            self.real_conn = real_conn
+            self.row_factory = None
+
+        def cursor(self):
+            # DictCursor provides dictionary-like access matching sqlite3.Row
+            cursor = self.real_conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            return PostgreSQLCursorWrapper(cursor)
+
+        def commit(self):
+            self.real_conn.commit()
+
+        def rollback(self):
+            self.real_conn.rollback()
+
+        def close(self):
+            self.real_conn.close()
 
 def get_db_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    if DATABASE_URL:
+        # PostgreSQL Mode
+        url = DATABASE_URL
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql://", 1)
+        conn = psycopg2.connect(url)
+        return PostgreSQLConnectionWrapper(conn)
+    else:
+        # SQLite Mode
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        return conn
 
 def init_db():
     conn = get_db_connection()

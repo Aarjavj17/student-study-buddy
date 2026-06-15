@@ -89,9 +89,12 @@ def award_badge(user_id, badge_name):
         ''', (user_id, badge_name))
         db.commit()
         return True
-    except sqlite3.IntegrityError:
-        # Already unlocked
-        return False
+    except Exception as e:
+        classname = e.__class__.__name__
+        if 'IntegrityError' in classname or 'UniqueViolation' in classname:
+            # Already unlocked
+            return False
+        raise e
 
 def update_streak(user_id):
     db = get_db()

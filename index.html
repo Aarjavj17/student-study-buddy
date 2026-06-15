@@ -4190,6 +4190,9 @@
                         <i data-lucide="timer" style="width: 16px; height: 16px;"></i>
                         <span id="pdf-mini-time">25:00</span>
                     </div>
+                    <button id="pdf-viewer-download" class="btn btn-primary btn-sm" style="padding: 8px 12px; display: inline-flex; align-items: center; gap: 6px;" onclick="downloadCurrentPDF()">
+                        <i data-lucide="download"></i> Download
+                    </button>
                     <button id="pdf-viewer-close" class="btn btn-secondary btn-sm" style="padding: 8px 12px;">
                         <i data-lucide="x"></i> Close
                     </button>
@@ -8797,14 +8800,39 @@ Click one of the suggestions below, or type your own question!</div>
             document.getElementById('pdf-viewer-modal').classList.remove('hidden');
         }
 
+        function downloadCurrentPDF() {
+            if (requireAuth('download study resources')) return;
+            const pdfFrame = document.getElementById('pdf-frame');
+            if (pdfFrame && pdfFrame.src) {
+                // Get the original URL by stripping #toolbar=0 or any other hash parameters
+                const cleanUrl = pdfFrame.src.split('#')[0];
+                const link = document.createElement('a');
+                link.href = cleanUrl;
+                link.download = cleanUrl.substring(cleanUrl.lastIndexOf('/') + 1) || 'document.pdf';
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
         function viewResource(url, title) {
-            if (requireAuth('read syllabus notes and mind maps')) return;
             soundEffects.playPop();
             const lower = url.toLowerCase();
             if (lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
                 openMindMapLightbox(url);
             } else {
-                openInlinePDF(url, title);
+                const downloadBtn = document.getElementById('pdf-viewer-download');
+                if (downloadBtn) {
+                    downloadBtn.style.display = 'inline-flex';
+                }
+                
+                // Hide print/download buttons inside the browser PDF toolbar
+                let viewerUrl = url;
+                if (lower.includes('.pdf') && !lower.includes('#toolbar=')) {
+                    viewerUrl = url + '#toolbar=0';
+                }
+                openInlinePDF(viewerUrl, title);
             }
         }
 
@@ -8827,6 +8855,12 @@ Click one of the suggestions below, or type your own question!</div>
                 if (videoId) {
                     embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
                 }
+            }
+
+            // Hide the download button when viewing a video
+            const downloadBtn = document.getElementById('pdf-viewer-download');
+            if (downloadBtn) {
+                downloadBtn.style.display = 'none';
             }
 
             document.getElementById('pdf-viewer-title').innerText = title;
