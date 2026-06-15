@@ -252,7 +252,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 1400;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
@@ -4199,9 +4199,11 @@
                 </div>
             </div>
             <div
-                style="flex: 1; border-radius: var(--border-radius-md); overflow: hidden; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border);">
+                style="flex: 1; border-radius: var(--border-radius-md); overflow: hidden; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border); position: relative;">
                 <iframe id="pdf-frame" src="" width="100%" height="100%" style="border: none;"
                     referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                <!-- Transparent overlay to prevent clicks on native PDF toolbar for guests -->
+                <div id="pdf-guest-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 60px; background: transparent; z-index: 10; display: none;"></div>
             </div>
         </div>
     </div>
@@ -5521,7 +5523,7 @@
         }
 
         function requireAuth(actionName) {
-            if (currentUser && currentUser.role === 'guest') {
+            if (!currentUser || currentUser.role === 'guest') {
                 openAuthModal(actionName);
                 return true;
             }
@@ -8827,6 +8829,13 @@ Click one of the suggestions below, or type your own question!</div>
                     downloadBtn.style.display = 'inline-flex';
                 }
                 
+                // Toggle transparent guest overlay on native toolbar
+                const guestOverlay = document.getElementById('pdf-guest-overlay');
+                if (guestOverlay) {
+                    const isGuest = !currentUser || currentUser.role === 'guest';
+                    guestOverlay.style.display = isGuest ? 'block' : 'none';
+                }
+
                 // Hide print/download buttons inside the browser PDF toolbar
                 let viewerUrl = url;
                 if (lower.includes('.pdf') && !lower.includes('#toolbar=')) {
@@ -8863,6 +8872,12 @@ Click one of the suggestions below, or type your own question!</div>
                 downloadBtn.style.display = 'none';
             }
 
+            // Hide guest overlay on video
+            const guestOverlay = document.getElementById('pdf-guest-overlay');
+            if (guestOverlay) {
+                guestOverlay.style.display = 'none';
+            }
+
             document.getElementById('pdf-viewer-title').innerText = title;
             document.getElementById('pdf-frame').src = embedUrl;
             document.getElementById('pdf-viewer-modal').classList.remove('hidden');
@@ -8877,6 +8892,12 @@ Click one of the suggestions below, or type your own question!</div>
             const frame = document.getElementById('pdf-frame');
             if (frame) {
                 frame.src = '';
+            }
+            
+            // Hide guest overlay on close
+            const guestOverlay = document.getElementById('pdf-guest-overlay');
+            if (guestOverlay) {
+                guestOverlay.style.display = 'none';
             }
         }
 
