@@ -1878,6 +1878,19 @@ def serve_secure_upload(filename):
 if __name__ == '__main__':
     import ssl_helper
     ssl_context = ssl_helper.get_ssl_context()
+
+    # Auto-open browser tab after 1.2 seconds to ensure the server is listening
+    def open_browser():
+        import webbrowser
+        import time
+        time.sleep(1.2)
+        url = "https://127.0.0.1:5000/" if ssl_context else "http://127.0.0.1:5000/"
+        print(f"\n[Auto Open] Opening browser to: {url}")
+        webbrowser.open(url)
+        
+    import threading
+    threading.Thread(target=open_browser, daemon=True).start()
+
     if ssl_context:
         print("[HTTPS] Starting secure Flask development server...")
         app.run(debug=True, use_reloader=False, host='0.0.0.0', port=5000, ssl_context=ssl_context)

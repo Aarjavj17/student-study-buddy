@@ -14,7 +14,8 @@ if exist .env (
 )
 rem Remove spaces
 set "USE_HTTPS=%USE_HTTPS: =%"
-echo Open this URL in your web browser:
+echo The app will open automatically in your browser.
+echo If it does not, you can manually open this URL:
 if /i "%USE_HTTPS%"=="true" (
     echo https://127.0.0.1:5000
 ) else (
