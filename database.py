@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'database.db')
-DATABASE_URL = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
+DATABASE_URL = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL') or 'postgresql://neondb_owner:npg_NU0pyKsj7rqh@ep-withered-unit-ajm7krwi-pooler.c-3.us-east-2.aws.neon.tech/neondb?channel_binding=require&sslmode=require'
 
 if DATABASE_URL:
     import psycopg2
@@ -25,6 +25,7 @@ if DATABASE_URL:
             # Translate AUTOINCREMENT keyword for tables creation (specifically during init_db)
             query_translated = query_translated.replace('INTEGER PRIMARY KEY AUTOINCREMENT', 'SERIAL PRIMARY KEY')
             query_translated = query_translated.replace('REAL', 'DOUBLE PRECISION')
+            query_translated = query_translated.replace('BLOB', 'BYTEA')
             
             # Translate sqlite_master table check to PostgreSQL equivalent
             if 'sqlite_master' in query:
@@ -61,7 +62,8 @@ if DATABASE_URL:
 
             # Handle lastrowid capture by appending RETURNING id to INSERTs
             is_insert = query_translated.strip().upper().startswith('INSERT')
-            if is_insert and 'RETURNING' not in query_translated.upper():
+            has_id_col = 'uploaded_files' not in query_translated.lower()
+            if is_insert and has_id_col and 'RETURNING' not in query_translated.upper():
                 query_translated = query_translated.rstrip('; \t\n') + ' RETURNING id'
                 if params is not None:
                     self.real_cursor.execute(query_translated, params)
@@ -114,8 +116,19 @@ def get_db_connection():
         url = DATABASE_URL
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
-        conn = psycopg2.connect(url)
-        return PostgreSQLConnectionWrapper(conn)
+        
+        import time
+        max_retries = 10
+        for i in range(max_retries):
+            try:
+                conn = psycopg2.connect(url)
+                return PostgreSQLConnectionWrapper(conn)
+            except Exception as e:
+                print(f"Database connection attempt {i+1} failed: {e}")
+                if i < max_retries - 1:
+                    time.sleep(3)
+                else:
+                    raise e
     else:
         # SQLite Mode
         conn = sqlite3.connect(DB_PATH)
@@ -268,31 +281,8 @@ def init_db():
     )
     ''')
     
-    # Check if schema upgrade is needed for class_resources
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='class_resources'")
-    if cursor.fetchone():
-        cursor.execute("PRAGMA table_info(class_resources)")
-        columns = [row[1] for row in cursor.fetchall()]
-        if 'book_pdf_url' not in columns or 'formula_sheet_url' not in columns:
-            cursor.execute("DROP TABLE class_resources")
-            conn.commit()
-
-    # 8. Class Resources Table
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS class_resources (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        class_name TEXT NOT NULL,
-        subject_name TEXT NOT NULL,
-        chapter_no INTEGER NOT NULL,
-        chapter_name TEXT NOT NULL,
-        ncert_url TEXT DEFAULT '',
-        notes_url TEXT DEFAULT '',
-        exemplar_url TEXT DEFAULT '',
-        book_pdf_url TEXT DEFAULT '',
-        formula_sheet_url TEXT DEFAULT ''
-    )
-    ''')
-    
+    # Clean up obsolete class_resources table if it exists
+    cursor.execute("DROP TABLE IF EXISTS class_resources")
     conn.commit()
     
     # --- SEED DEFAULT DATA ---
@@ -309,14 +299,7 @@ def init_db():
         INSERT OR REPLACE INTO videos (id, title, subject, youtube_id, description)
         VALUES (?, ?, ?, ?, ?)
         ''', (v_id, title, sub, yt_id, desc))
-        
-
-        
-    # Check if obsolete table class_resources exists, drop it
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='class_resources'")
-    if cursor.fetchone():
-        cursor.execute("DROP TABLE class_resources")
-        conn.commit()
+    conn.commit()
 
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS chapter_resources (
@@ -348,6 +331,13 @@ def init_db():
         paper_title TEXT NOT NULL,
         file_path TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    ''')
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS uploaded_files (
+        filename TEXT PRIMARY KEY,
+        file_data BLOB
     )
     ''')
     conn.commit()
@@ -627,17 +617,20 @@ def init_db():
     ]
     
     # Seeding class_chapters
-    cursor.execute("DELETE FROM class_chapters WHERE subject_name = 'Sanskrit'")
-    for class_name, sub_name, sub_sec, ch_no, ch_name in class_chapters_data:
-        cursor.execute('''
-        SELECT id FROM class_chapters 
-        WHERE class_name = ? AND subject_name = ? AND sub_section = ? AND chapter_name = ?
-        ''', (class_name, sub_name, sub_sec, ch_name))
-        if not cursor.fetchone():
+    cursor.execute("SELECT COUNT(*) FROM class_chapters")
+    chapters_exist = cursor.fetchone()[0] > 0
+    if not chapters_exist:
+        cursor.execute("DELETE FROM class_chapters WHERE subject_name = 'Sanskrit'")
+        for class_name, sub_name, sub_sec, ch_no, ch_name in class_chapters_data:
             cursor.execute('''
-            INSERT INTO class_chapters (class_name, subject_name, sub_section, chapter_no, chapter_name)
-            VALUES (?, ?, ?, ?, ?)
-            ''', (class_name, sub_name, sub_sec, ch_no, ch_name))
+            SELECT id FROM class_chapters 
+            WHERE class_name = ? AND subject_name = ? AND sub_section = ? AND chapter_name = ?
+            ''', (class_name, sub_name, sub_sec, ch_name))
+            if not cursor.fetchone():
+                cursor.execute('''
+                INSERT INTO class_chapters (class_name, subject_name, sub_section, chapter_no, chapter_name)
+                VALUES (?, ?, ?, ?, ?)
+                ''', (class_name, sub_name, sub_sec, ch_no, ch_name))
         
     # Seed default chapter videos
     default_videos = [
@@ -669,91 +662,89 @@ def init_db():
     ch_num_sys = cursor.fetchone()
     if ch_num_sys:
         ch_id = ch_num_sys['id']
-        cursor.execute("DELETE FROM quiz_questions WHERE chapter_id=?", (ch_id,))
-        
-        questions = [
-            # Easy - MCQ
-            (ch_id, 'Easy', 'MCQ', 'Which of the following is an irrational number?', 
-             json.dumps(['3.14', '22/7', '√2', '0.333...']), 2, None, None),
-            # Easy - True/False
-            (ch_id, 'Easy', 'True/False', 'Every rational number is a whole number.', 
-             json.dumps(['True', 'False']), 1, None, None),
-            # Medium - Assertion & Reason
-            (ch_id, 'Medium', 'Assertion & Reason', 
-             'Assertion (A): √2 is an irrational number.\nReason (R): The decimal expansion of √2 is non-terminating and non-recurring.', 
-             json.dumps([
-                 'Both A and R are true and R is the correct explanation of A.',
-                 'Both A and R are true but R is not the correct explanation of A.',
-                 'A is true but R is false.',
-                 'A is false but R is true.'
-             ]), 0, None, None),
-            # Medium - Match the Following
-            (ch_id, 'Medium', 'Match the Following', 'Match the number types with their respective examples.', 
-             json.dumps({
-                 'left': ['Natural Number', 'Integer', 'Irrational Number'],
-                 'right': ['-5', '√3', '7']
-             }), 0, json.dumps({'Natural Number': '7', 'Integer': '-5', 'Irrational Number': '√3'}), None),
-            # Hard - Case-Based
-            (ch_id, 'Hard', 'Case-Based', 'What is the rational number represented by the first mark after 1?', 
-             json.dumps(['7/6', '5/6', '8/6', '11/6']), 0, None, 
-             'A student represents rational numbers on a number line. They want to find five rational numbers between 1 and 2. They divide the segment between 1 and 2 into 6 equal parts.')
-        ]
-        
-        for ch, diff, q_type, q_text, opts, corr, matches, case in questions:
-            cursor.execute('''
-                INSERT INTO quiz_questions (chapter_id, difficulty, question_type, question, options, correct_index, match_answers, case_text)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (ch, diff, q_type, q_text, opts, corr, matches, case))
+        cursor.execute("SELECT COUNT(*) FROM quiz_questions WHERE chapter_id=?", (ch_id,))
+        if cursor.fetchone()[0] == 0:
+            questions = [
+                # Easy - MCQ
+                (ch_id, 'Easy', 'MCQ', 'Which of the following is an irrational number?', 
+                 json.dumps(['3.14', '22/7', '√2', '0.333...']), 2, None, None),
+                # Easy - True/False
+                (ch_id, 'Easy', 'True/False', 'Every rational number is a whole number.', 
+                 json.dumps(['True', 'False']), 1, None, None),
+                # Medium - Assertion & Reason
+                (ch_id, 'Medium', 'Assertion & Reason', 
+                 'Assertion (A): √2 is an irrational number.\nReason (R): The decimal expansion of √2 is non-terminating and non-recurring.', 
+                 json.dumps([
+                     'Both A and R are true and R is the correct explanation of A.',
+                     'Both A and R are true but R is not the correct explanation of A.',
+                     'A is true but R is false.',
+                     'A is false but R is true.'
+                 ]), 0, None, None),
+                # Medium - Match the Following
+                (ch_id, 'Medium', 'Match the Following', 'Match the number types with their respective examples.', 
+                 json.dumps({
+                     'left': ['Natural Number', 'Integer', 'Irrational Number'],
+                     'right': ['-5', '√3', '7']
+                 }), 0, json.dumps({'Natural Number': '7', 'Integer': '-5', 'Irrational Number': '√3'}), None),
+                # Hard - Case-Based
+                (ch_id, 'Hard', 'Case-Based', 'What is the rational number represented by the first mark after 1?', 
+                 json.dumps(['7/6', '5/6', '8/6', '11/6']), 0, None, 
+                 'A student represents rational numbers on a number line. They want to find five rational numbers between 1 and 2. They divide the segment between 1 and 2 into 6 equal parts.')
+            ]
+            for ch, diff, q_type, q_text, opts, corr, matches, case in questions:
+                cursor.execute('''
+                    INSERT INTO quiz_questions (chapter_id, difficulty, question_type, question, options, correct_index, match_answers, case_text)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (ch, diff, q_type, q_text, opts, corr, matches, case))
 
     # 2. Class 10 Science - Chemical Reactions and Equations
     cursor.execute("SELECT id FROM class_chapters WHERE class_name='Class 10' AND subject_name='Science' AND sub_section='Chemistry' AND chapter_name='Chemical Reactions and Equations'")
     ch_chem_rx = cursor.fetchone()
     if ch_chem_rx:
         ch_id = ch_chem_rx['id']
-        cursor.execute("DELETE FROM quiz_questions WHERE chapter_id=?", (ch_id,))
-        
-        questions = [
-            # Easy - MCQ
-            (ch_id, 'Easy', 'MCQ', 'What is the starting substance on the left side of a chemical equation called?', 
-             json.dumps(['Product', 'Reactant', 'Catalyst', 'Solute']), 1, None, None),
-            # Easy - True/False
-            (ch_id, 'Easy', 'True/False', 'Rusting of iron is an endothermic reaction.', 
-             json.dumps(['True', 'False']), 1, None, None),
-            # Medium - Assertion & Reason
-            (ch_id, 'Medium', 'Assertion & Reason', 
-             'Assertion (A): Respiration is an exothermic reaction.\nReason (R): Energy is released in the form of heat during respiration.', 
-             json.dumps([
-                 'Both A and R are true and R is the correct explanation of A.',
-                 'Both A and R are true but R is not the correct explanation of A.',
-                 'A is true but R is false.',
-                 'A is false but R is true.'
-             ]), 0, None, None),
-            # Medium - Match the Following
-            (ch_id, 'Medium', 'Match the Following', 'Match the chemical reaction type with its equation.', 
-             json.dumps({
-                 'left': ['Combination', 'Decomposition', 'Displacement'],
-                 'right': ['Fe + CuSO4 -> FeSO4 + Cu', 'C + O2 -> CO2', '2H2O -> 2H2 + O2']
-             }), 0, json.dumps({
-                 'Combination': 'C + O2 -> CO2',
-                 'Decomposition': '2H2O -> 2H2 + O2',
-                 'Displacement': 'Fe + CuSO4 -> FeSO4 + Cu'
-             }), None),
-            # Hard - Case-Based
-            (ch_id, 'Hard', 'Case-Based', 'Which gas is evolved and how can it be tested?', 
-             json.dumps([
-                 'Hydrogen gas, burns with a pop sound',
-                 'Oxygen gas, extinguishes a burning splinter',
-                 'Carbon dioxide, turns lime water milky with popping sound',
-                 'Nitrogen gas, has a rotten egg smell'
-             ]), 0, None, 
-             'A student takes 2g of lead nitrate powder in a boiling tube and heats it over a flame. In another test tube, they react granulated zinc with dilute hydrochloric acid.')
-        ]
-        
-        for ch, diff, q_type, q_text, opts, corr, matches, case in questions:
-            cursor.execute('''
-                INSERT INTO quiz_questions (chapter_id, difficulty, question_type, question, options, correct_index, match_answers, case_text)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (ch, diff, q_type, q_text, opts, corr, matches, case))
+        cursor.execute("SELECT COUNT(*) FROM quiz_questions WHERE chapter_id=?", (ch_id,))
+        if cursor.fetchone()[0] == 0:
+            questions = [
+                # Easy - MCQ
+                (ch_id, 'Easy', 'MCQ', 'What is the starting substance on the left side of a chemical equation called?', 
+                 json.dumps(['Product', 'Reactant', 'Catalyst', 'Solute']), 1, None, None),
+                # Easy - True/False
+                (ch_id, 'Easy', 'True/False', 'Rusting of iron is an endothermic reaction.', 
+                 json.dumps(['True', 'False']), 1, None, None),
+                # Medium - Assertion & Reason
+                (ch_id, 'Medium', 'Assertion & Reason', 
+                 'Assertion (A): Respiration is an exothermic reaction.\nReason (R): Energy is released in the form of heat during respiration.', 
+                 json.dumps([
+                     'Both A and R are true and R is the correct explanation of A.',
+                     'Both A and R are true but R is not the correct explanation of A.',
+                     'A is true but R is false.',
+                     'A is false but R is true.'
+                 ]), 0, None, None),
+                # Medium - Match the Following
+                (ch_id, 'Medium', 'Match the Following', 'Match the chemical reaction type with its equation.', 
+                 json.dumps({
+                     'left': ['Combination', 'Decomposition', 'Displacement'],
+                     'right': ['Fe + CuSO4 -> FeSO4 + Cu', 'C + O2 -> CO2', '2H2O -> 2H2 + O2']
+                 }), 0, json.dumps({
+                     'Combination': 'C + O2 -> CO2',
+                     'Decomposition': '2H2O -> 2H2 + O2',
+                     'Displacement': 'Fe + CuSO4 -> FeSO4 + Cu'
+                 }), None),
+                # Hard - Case-Based
+                (ch_id, 'Hard', 'Case-Based', 'Which gas is evolved and how can it be tested?', 
+                 json.dumps([
+                     'Hydrogen gas, burns with a pop sound',
+                     'Oxygen gas, extinguishes a burning splinter',
+                     'Carbon dioxide, turns lime water milky with popping sound',
+                     'Nitrogen gas, has a rotten egg smell'
+                 ]), 0, None, 
+                 'A student takes 2g of lead nitrate powder in a boiling tube and heats it over a flame. In another test tube, they react granulated zinc with dilute hydrochloric acid.')
+            ]
+            for ch, diff, q_type, q_text, opts, corr, matches, case in questions:
+                cursor.execute('''
+                    INSERT INTO quiz_questions (chapter_id, difficulty, question_type, question, options, correct_index, match_answers, case_text)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (ch, diff, q_type, q_text, opts, corr, matches, case))
 
     # Seed default sample papers
     default_sample_papers = [

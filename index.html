@@ -4107,7 +4107,7 @@
 
     <!-- --- OVERLAY: MIND MAP LIGHTBOX --- -->
     <div id="mind-map-lightbox" class="modal-overlay hidden"
-        style="z-index: 1300; background: rgba(0,0,0,0.92); backdrop-filter: blur(10px);">
+        style="z-index: 9999; background: rgba(0,0,0,0.92); backdrop-filter: blur(10px);">
         <button onclick="closeMindMapLightbox()"
             style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; z-index: 10;">
             <i data-lucide="x" style="width: 24px; height: 24px;"></i>
@@ -4170,7 +4170,7 @@
     </div>
 
     <!-- --- OVERLAY: INLINE PDF VIEWER --- -->
-    <div id="pdf-viewer-modal" class="modal-overlay hidden" style="z-index: 1200;">
+    <div id="pdf-viewer-modal" class="modal-overlay hidden" style="z-index: 9999;">
         <div class="modal-card glass pdf-viewer-card"
             style="width: 90vw; height: 90vh; max-width: 1200px; padding: 20px; align-items: stretch; gap: 12px;">
             <div class="pdf-viewer-header"
@@ -8819,6 +8819,7 @@ Click one of the suggestions below, or type your own question!</div>
         }
 
         function viewResource(url, title) {
+            if (requireAuth('view study resources')) return;
             soundEffects.playPop();
             const lower = url.toLowerCase();
             if (lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {

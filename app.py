@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
-from database import get_db_connection, DB_PATH
+from database import get_db_connection, DB_PATH, DATABASE_URL
 from werkzeug.security import generate_password_hash, check_password_hash
 import chatbot_nlp
 
@@ -144,6 +144,49 @@ def update_streak(user_id):
             award_badge(user_id, 'Daily Champ 👑')
             
     return new_streak, streak_updated
+
+def save_file_to_db(filename, filepath):
+    try:
+        with open(filepath, 'rb') as f:
+            data = f.read()
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("DELETE FROM uploaded_files WHERE filename = ?", (filename,))
+        
+        # Handle binary representation compatibly
+        if DATABASE_URL:
+            import psycopg2
+            binary_data = psycopg2.Binary(data)
+        else:
+            binary_data = data
+            
+        cursor.execute("INSERT INTO uploaded_files (filename, file_data) VALUES (?, ?)", (filename, binary_data))
+        db.commit()
+        print(f"Successfully saved file {filename} to database.")
+    except Exception as e:
+        print(f"Error saving file {filename} to database: {e}")
+
+def pull_file_from_db(filename, local_path):
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT file_data FROM uploaded_files WHERE filename = ?", (filename,))
+        row = cursor.fetchone()
+        if row and row['file_data']:
+            data = row['file_data']
+            if isinstance(data, memoryview):
+                data = data.tobytes()
+            elif hasattr(data, 'tobytes'):
+                data = data.tobytes()
+                
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            with open(local_path, 'wb') as f:
+                f.write(data)
+            print(f"Successfully pulled and cached file {filename} from database.")
+            return True
+    except Exception as e:
+        print(f"Error pulling file {filename} from database: {e}")
+    return False
 
 # --- PAGES ---
 @app.route('/')
@@ -623,6 +666,7 @@ def update_avatar():
                         pass
                         
             file.save(filepath)
+            save_file_to_db(filename, filepath)
             avatar_val = f"/static/uploads/{filename}"
             
     elif request.is_json:
@@ -1507,6 +1551,7 @@ def upload_chapter_resource(chapter_id, resource_type):
     filename = f"resource_{chapter_id}_{resource_type}_{unique_suffix}{ext}"
     filepath = os.path.join(uploads_dir, filename)
     file.save(filepath)
+    save_file_to_db(filename, filepath)
     file_path = f"/static/uploads/{filename}"
     
     resource_title = request.form.get('resource_title', '').strip()
@@ -1555,6 +1600,11 @@ def delete_chapter_resource(chapter_id, resource_type):
             except Exception as e:
                 print(f"Warning: Could not remove file {disk_path}: {e}")
                 
+    filename = os.path.basename(file_path)
+    try:
+        cursor.execute('DELETE FROM uploaded_files WHERE filename = ?', (filename,))
+    except Exception:
+        pass
     cursor.execute('DELETE FROM chapter_resources WHERE chapter_id = ? AND resource_type = ?', (chapter_id, resource_type))
     db.commit()
     
@@ -1582,6 +1632,11 @@ def delete_specific_resource(resource_id):
             except Exception as e:
                 print(f"Warning: Could not remove file {disk_path}: {e}")
                 
+    filename = os.path.basename(file_path)
+    try:
+        cursor.execute('DELETE FROM uploaded_files WHERE filename = ?', (filename,))
+    except Exception:
+        pass
     cursor.execute('DELETE FROM chapter_resources WHERE id = ?', (resource_id,))
     db.commit()
     
@@ -1630,6 +1685,7 @@ def upload_sample_paper(class_name, subject_name):
     filename = f"sample_paper_{uuid.uuid4().hex}{ext}"
     filepath = os.path.join(uploads_dir, filename)
     file.save(filepath)
+    save_file_to_db(filename, filepath)
     file_path = f"/static/uploads/{filename}"
     
     db = get_db()
@@ -1674,6 +1730,11 @@ def delete_sample_paper(paper_id):
             except Exception as e:
                 print(f"Warning: Could not remove file {disk_path}: {e}")
                 
+    filename = os.path.basename(file_path)
+    try:
+        cursor.execute('DELETE FROM uploaded_files WHERE filename = ?', (filename,))
+    except Exception:
+        pass
     cursor.execute('DELETE FROM sample_papers WHERE id = ?', (paper_id,))
     db.commit()
     
@@ -1773,5 +1834,30 @@ def delete_chapter_video(video_id):
     
     return jsonify({'message': 'Video deleted successfully.'})
 
+@app.route('/static/uploads/<path:filename>')
+def serve_secure_upload(filename):
+    from flask import send_from_directory
+    # Allow avatar images without login
+    if filename.startswith('avatar_'):
+        local_path = os.path.join(app.root_path, 'static', 'uploads', filename)
+        if not os.path.exists(local_path):
+            pull_file_from_db(filename, local_path)
+        return send_from_directory(os.path.join(app.root_path, 'static', 'uploads'), filename)
+        
+    # Check if user is logged in
+    if 'user_id' not in session:
+        return "Unauthorized: Please login to access study resources.", 401
+        
+    local_path = os.path.join(app.root_path, 'static', 'uploads', filename)
+    if not os.path.exists(local_path):
+        pull_file_from_db(filename, local_path)
+        
+    response = send_from_directory(os.path.join(app.root_path, 'static', 'uploads'), filename)
+    # Explicitly set headers for PDF to view inline in browser
+    if filename.lower().endswith('.pdf'):
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = 'inline'
+    return response
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, use_reloader=False, host='0.0.0.0', port=5000)
