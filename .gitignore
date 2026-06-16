@@ -20,3 +20,6 @@ database.db
 # Uploaded resources
 static/uploads/
 
+# Environment configurations
+.env
+

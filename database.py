@@ -175,7 +175,18 @@ def init_db():
         cursor.execute("ALTER TABLE users ADD COLUMN last_active TIMESTAMP")
         conn.commit()
 
-    
+    # Create class_chapters first for Foreign Key reference order in PostgreSQL
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS class_chapters (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        class_name TEXT NOT NULL,
+        subject_name TEXT NOT NULL,
+        sub_section TEXT DEFAULT '',
+        chapter_no INTEGER NOT NULL,
+        chapter_name TEXT NOT NULL
+    )
+    ''')
+
     # 2. Tasks Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS tasks (
@@ -306,18 +317,6 @@ def init_db():
     if cursor.fetchone():
         cursor.execute("DROP TABLE class_resources")
         conn.commit()
-
-    # Create new class_chapters and chapter_resources tables
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS class_chapters (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        class_name TEXT NOT NULL,
-        subject_name TEXT NOT NULL,
-        sub_section TEXT DEFAULT '',
-        chapter_no INTEGER NOT NULL,
-        chapter_name TEXT NOT NULL
-    )
-    ''')
 
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS chapter_resources (
