@@ -6,9 +6,20 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5000 ^| findstr LISTENING') 
     taskkill /F /PID %%a >nul 2>nul
 )
 echo Starting Student Buddy Flask Server...
-echo.
+set "USE_HTTPS=false"
+if exist .env (
+    for /f "usebackq tokens=1,2 delims==" %%i in (".env") do (
+        if "%%i"=="USE_HTTPS" set "USE_HTTPS=%%j"
+    )
+)
+rem Remove spaces
+set "USE_HTTPS=%USE_HTTPS: =%"
 echo Open this URL in your web browser:
-echo https://127.0.0.1:5000
+if /i "%USE_HTTPS%"=="true" (
+    echo https://127.0.0.1:5000
+) else (
+    echo http://127.0.0.1:5000
+)
 echo ===============================================
 python -u app.py
 if %errorlevel% neq 0 (

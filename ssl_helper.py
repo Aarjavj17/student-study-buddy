@@ -80,9 +80,13 @@ def generate_self_signed_cert(cert_path="cert.pem", key_path="key.pem"):
 
 def get_ssl_context(cert_filename="cert.pem", key_filename="key.pem"):
     """
-    Returns a valid tuple (cert_path, key_path) if certificates are found or generated successfully.
-    Returns None if certificates cannot be resolved, indicating HTTP fallback.
+    Returns a valid tuple (cert_path, key_path) if HTTPS is enabled and certificates are found/generated.
+    Returns None if HTTPS is disabled or if certificates cannot be resolved, indicating HTTP fallback.
     """
+    # Check if HTTPS is enabled in environment (default to false)
+    if os.environ.get('USE_HTTPS', 'false').lower() != 'true':
+        return None
+
     base_dir = os.path.dirname(os.path.abspath(__file__))
     cert_path = os.path.join(base_dir, cert_filename)
     key_path = os.path.join(base_dir, key_filename)
