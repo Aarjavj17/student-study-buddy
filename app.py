@@ -1864,10 +1864,6 @@ def serve_secure_upload(filename):
             pull_file_from_db(filename, local_path)
         return send_from_directory(os.path.join(app.root_path, 'static', 'uploads'), filename)
         
-    # Check if user is logged in
-    if 'user_id' not in session:
-        return "Unauthorized: Please login to access study resources.", 401
-        
     local_path = os.path.join(app.root_path, 'static', 'uploads', filename)
     if not os.path.exists(local_path):
         pull_file_from_db(filename, local_path)

@@ -2448,6 +2448,36 @@
                 align-items: stretch;
                 gap: 16px;
             }
+
+            /* PDF Viewer Responsive Styles */
+            .pdf-viewer-card {
+                width: 96vw !important;
+                height: 96vh !important;
+                padding: 12px !important;
+                gap: 8px !important;
+            }
+            .pdf-viewer-header {
+                flex-wrap: wrap !important;
+                gap: 8px !important;
+                padding-bottom: 8px !important;
+            }
+            .pdf-viewer-header .modal-emoji {
+                display: none !important;
+            }
+            .pdf-viewer-header h3 {
+                font-size: 1rem !important;
+            }
+            .pdf-viewer-header p.card-subtitle {
+                display: none !important;
+            }
+            #pdf-viewer-mini-timer {
+                padding: 4px 8px !important;
+                font-size: 0.8rem !important;
+            }
+            .pdf-viewer-header button {
+                padding: 6px 10px !important;
+                font-size: 0.8rem !important;
+            }
         }
 
         /* --- CLASS 9TH SECTION STYLING --- */
@@ -8835,9 +8865,16 @@ Click one of the suggestions below, or type your own question!</div>
         }
 
         function viewResource(url, title) {
-            if (requireAuth('view study resources')) return;
             soundEffects.playPop();
             const lower = url.toLowerCase();
+            
+            // Mobile and tablet compatibility: open PDFs in a new tab to avoid iframe rendering/scrolling issues
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (isMobile && lower.endsWith('.pdf')) {
+                window.open(url, '_blank');
+                return;
+            }
+
             if (lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
                 openMindMapLightbox(url);
             } else {
