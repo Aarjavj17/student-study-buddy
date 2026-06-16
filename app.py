@@ -3,6 +3,10 @@ import sqlite3
 import os
 from datetime import datetime, timedelta
 import json
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 from database import get_db_connection, DB_PATH
 from werkzeug.security import generate_password_hash, check_password_hash
 import chatbot_nlp

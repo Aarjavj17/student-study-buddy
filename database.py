@@ -1,6 +1,10 @@
 import sqlite3
 import json
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'database.db')
 DATABASE_URL = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL')
