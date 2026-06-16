@@ -2,9 +2,11 @@
 cd /d "%~dp0"
 echo ===============================================
 echo Starting Student Buddy Flask Server...
-echo Please keep this command prompt open while using the app.
+echo.
+echo Open this URL in your web browser:
+echo http://127.0.0.1:5000
 echo ===============================================
-python app.py
+python -u app.py
 if %errorlevel% neq 0 (
     echo.
     echo Press any key to exit...
