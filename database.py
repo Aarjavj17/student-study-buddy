@@ -198,12 +198,6 @@ def init_db():
     )
     ''')
     
-    # Drop outdated tables to upgrade schemas
-    cursor.execute('DROP TABLE IF EXISTS quiz_attempts')
-    cursor.execute('DROP TABLE IF EXISTS quiz_questions')
-    cursor.execute('DROP TABLE IF EXISTS chapter_resources')
-    conn.commit()
-    
     # 4. Quiz Attempts Table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS quiz_attempts (
