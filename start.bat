@@ -1,6 +1,10 @@
 @echo off
 cd /d "%~dp0"
 echo ===============================================
+echo Cleaning up port 5000...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5000 ^| findstr LISTENING') do (
+    taskkill /F /PID %%a >nul 2>nul
+)
 echo Starting Student Buddy Flask Server...
 echo.
 echo Open this URL in your web browser:
