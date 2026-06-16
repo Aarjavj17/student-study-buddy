@@ -159,8 +159,8 @@ def search_syllabus_context(query, db_path):
     and finds the best context matching the query using TF-IDF.
     """
     try:
-        conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
+        from database import get_db_connection
+        conn = get_db_connection()
         cursor = conn.cursor()
         
         # 1. Fetch all chapters

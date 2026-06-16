@@ -4544,6 +4544,13 @@
 
         // Cache Arrays
         let classResources = [];
+        const resourcesMemoryCache = {};
+        const samplePapersMemoryCache = {};
+
+        function clearMemoryCaches() {
+            for (let key in resourcesMemoryCache) delete resourcesMemoryCache[key];
+            for (let key in samplePapersMemoryCache) delete samplePapersMemoryCache[key];
+        }
         let videos = [];
         let quizzes = {};
         let tasks = [];
@@ -5822,6 +5829,7 @@
         }
 
         function showApp() {
+            clearMemoryCaches();
             if (currentUser && currentUser.role !== 'guest') {
                 startHeartbeat();
             }
@@ -8460,11 +8468,19 @@ Click one of the suggestions below, or type your own question!</div>
         }
 
         async function loadClassResources() {
+            const cacheKey = `${selectedClass}:${selectedSubject}`;
             if (useBackend) {
                 try {
+                    if (resourcesMemoryCache[cacheKey]) {
+                        classResources = resourcesMemoryCache[cacheKey];
+                        renderSubsections();
+                        renderClassResources();
+                        return;
+                    }
                     const res = await fetch(`/api/resources/${encodeURIComponent(selectedClass)}/${encodeURIComponent(selectedSubject)}`);
                     if (res.ok) {
                         classResources = await res.json();
+                        resourcesMemoryCache[cacheKey] = classResources;
                         renderSubsections();
                         renderClassResources();
                     }
@@ -8966,6 +8982,7 @@ Click one of the suggestions below, or type your own question!</div>
                         soundEffects.playSuccess();
                         triggerConfetti(0.15);
                         closeVideoManageModal();
+                        delete resourcesMemoryCache[`${selectedClass}:${selectedSubject}`];
                         loadClassResources();
                     } else {
                         const err = await res.json();
@@ -9028,6 +9045,7 @@ Click one of the suggestions below, or type your own question!</div>
 
                     if (res.ok) {
                         soundEffects.playSuccess();
+                        delete resourcesMemoryCache[`${selectedClass}:${selectedSubject}`];
                         loadClassResources();
                     } else {
                         alert("Failed to delete video reference.");
@@ -9097,6 +9115,7 @@ Click one of the suggestions below, or type your own question!</div>
                     if (res.ok) {
                         soundEffects.playSuccess();
                         triggerConfetti(0.2);
+                        delete resourcesMemoryCache[`${selectedClass}:${selectedSubject}`];
                         loadClassResources();
                     } else {
                         const errData = await res.json();
@@ -9131,6 +9150,7 @@ Click one of the suggestions below, or type your own question!</div>
 
                 if (res.ok) {
                     soundEffects.playSuccess();
+                    delete resourcesMemoryCache[`${selectedClass}:${selectedSubject}`];
                     loadClassResources();
                 } else {
                     alert("Failed to delete resource.");
@@ -9158,6 +9178,7 @@ Click one of the suggestions below, or type your own question!</div>
 
                     if (res.ok) {
                         soundEffects.playSuccess();
+                        delete resourcesMemoryCache[`${selectedClass}:${selectedSubject}`];
                         loadClassResources();
                     } else {
                         const errData = await res.json();
@@ -9215,11 +9236,18 @@ Click one of the suggestions below, or type your own question!</div>
         }
 
         async function loadSamplePapers() {
+            const cacheKey = `${selectedClass}:${selectedSubject}`;
             if (useBackend) {
                 try {
+                    if (samplePapersMemoryCache[cacheKey]) {
+                        samplePapers = samplePapersMemoryCache[cacheKey];
+                        renderSamplePapers();
+                        return;
+                    }
                     const res = await fetch(`/api/sample-papers/${encodeURIComponent(selectedClass)}/${encodeURIComponent(selectedSubject)}`);
                     if (res.ok) {
                         samplePapers = await res.json();
+                        samplePapersMemoryCache[cacheKey] = samplePapers;
                         renderSamplePapers();
                     }
                 } catch (err) {
@@ -9342,6 +9370,7 @@ Click one of the suggestions below, or type your own question!</div>
                         fileInput.value = '';
                         selectedSampleFile = null;
                         document.getElementById('select-sample-file-label').innerText = "Select PDF/Image";
+                        delete samplePapersMemoryCache[`${selectedClass}:${selectedSubject}`];
                         loadSamplePapers();
                     } else {
                         const err = await res.json();
@@ -9394,6 +9423,7 @@ Click one of the suggestions below, or type your own question!</div>
 
                     if (res.ok) {
                         soundEffects.playSuccess();
+                        delete samplePapersMemoryCache[`${selectedClass}:${selectedSubject}`];
                         loadSamplePapers();
                     } else {
                         alert("Failed to delete sample paper.");

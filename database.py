@@ -12,6 +12,25 @@ DATABASE_URL = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL') 
 if DATABASE_URL:
     import psycopg2
     import psycopg2.extras
+    import psycopg2.pool
+    
+    # Global Threaded Connection Pool
+    db_pool = None
+    
+    def init_pool():
+        global db_pool
+        if db_pool is None:
+            url = DATABASE_URL
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql://", 1)
+            try:
+                # Pool size: min 5, max 20 connections
+                db_pool = psycopg2.pool.ThreadedConnectionPool(5, 20, url)
+                print("Database connection pool initialized successfully!")
+            except Exception as e:
+                print(f"Failed to initialize connection pool: {e}")
+                
+    init_pool()
     
     class PostgreSQLCursorWrapper:
         def __init__(self, real_cursor):
@@ -92,9 +111,10 @@ if DATABASE_URL:
             return self._lastrowid
 
     class PostgreSQLConnectionWrapper:
-        def __init__(self, real_conn):
+        def __init__(self, real_conn, pool=None):
             self.real_conn = real_conn
             self.row_factory = None
+            self.pool = pool
 
         def cursor(self):
             # DictCursor provides dictionary-like access matching sqlite3.Row
@@ -108,17 +128,32 @@ if DATABASE_URL:
             self.real_conn.rollback()
 
         def close(self):
-            self.real_conn.close()
+            if self.pool:
+                try:
+                    self.pool.putconn(self.real_conn)
+                except Exception as e:
+                    print(f"Error returning connection to pool: {e}")
+            else:
+                self.real_conn.close()
 
 def get_db_connection():
     if DATABASE_URL:
-        # PostgreSQL Mode
+        global db_pool
+        if db_pool is None:
+            init_pool()
+        if db_pool:
+            try:
+                conn = db_pool.getconn()
+                return PostgreSQLConnectionWrapper(conn, pool=db_pool)
+            except Exception as e:
+                print(f"Failed to get connection from pool: {e}. Retrying direct connect...")
+                
+        # Direct connection fallback
         url = DATABASE_URL
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
-        
         import time
-        max_retries = 10
+        max_retries = 5
         for i in range(max_retries):
             try:
                 conn = psycopg2.connect(url)
@@ -126,7 +161,7 @@ def get_db_connection():
             except Exception as e:
                 print(f"Database connection attempt {i+1} failed: {e}")
                 if i < max_retries - 1:
-                    time.sleep(3)
+                    time.sleep(2)
                 else:
                     raise e
     else:
@@ -138,6 +173,24 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
+    
+    # Fast initialization check to skip redundant queries if db already set up
+    try:
+        if DATABASE_URL:
+            cursor.execute("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public' AND tablename = 'users'")
+            has_users = cursor.fetchone() is not None
+        else:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+            has_users = cursor.fetchone() is not None
+            
+        if has_users:
+            cursor.execute("SELECT id FROM users WHERE username = 'admin'")
+            if cursor.fetchone():
+                print("Database is already initialized. Skipping init_db setup.")
+                conn.close()
+                return
+    except Exception as e:
+        print(f"Error checking initialization status: {e}. Proceeding with full setup.")
     
     # 1. Users Table
     cursor.execute('''
@@ -759,6 +812,18 @@ def init_db():
                 INSERT INTO sample_papers (class_name, subject_name, paper_title, file_path)
                 VALUES (?, ?, ?, ?)
             ''', (cls, sub, title, path))
+
+    # Create indexes for optimized lookup speeds
+    try:
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_class_chapters_lookup ON class_chapters(class_name, subject_name)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_chapter_resources_chapter ON chapter_resources(chapter_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_chapter_videos_chapter ON chapter_videos(chapter_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_sample_papers_lookup ON sample_papers(class_name, subject_name)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_quiz_questions_lookup ON quiz_questions(chapter_id, difficulty)")
+        conn.commit()
+        print("Database indexes created successfully.")
+    except Exception as e:
+        print(f"Error creating database indexes: {e}")
 
     conn.commit()
     conn.close()

@@ -28,13 +28,29 @@ init_db()
 def get_db():
     if 'db' not in g:
         g.db = get_db_connection()
+    else:
+        # Verify connection is still alive (if PostgreSQL)
+        if DATABASE_URL:
+            try:
+                cursor = g.db.real_conn.cursor()
+                cursor.execute("SELECT 1")
+                cursor.close()
+            except Exception:
+                try:
+                    g.db.close()
+                except Exception:
+                    pass
+                g.db = get_db_connection()
     return g.db
 
 @app.teardown_appcontext
 def close_db(e):
     db = g.pop('db', None)
     if db is not None:
-        db.close()
+        try:
+            db.close()
+        except Exception:
+            pass
 
 # --- HELPER FUNCTIONS ---
 def get_current_user():
@@ -150,34 +166,25 @@ def save_file_to_db(filename, filepath):
         with open(filepath, 'rb') as f:
             data = f.read()
             
-        import threading
-        def run(file_data):
-            try:
-                from database import get_db_connection
-                db = get_db_connection()
-                cursor = db.cursor()
-                cursor.execute("DELETE FROM uploaded_files WHERE filename = ?", (filename,))
-                
-                # Handle binary representation compatibly
-                if DATABASE_URL:
-                    import psycopg2
-                    binary_data = psycopg2.Binary(file_data)
-                else:
-                    binary_data = file_data
-                    
-                cursor.execute("INSERT INTO uploaded_files (filename, file_data) VALUES (?, ?)", (filename, binary_data))
-                db.commit()
-                db.close()
-                print(f"Successfully saved file {filename} to database in background.")
-            except Exception as e:
-                print(f"Error saving file {filename} to database in background: {e}")
-                
-        thread = threading.Thread(target=run, args=(data,))
-        thread.daemon = True
-        thread.start()
-        print(f"Started background upload for file {filename}.")
+        from database import get_db_connection
+        db = get_db_connection()
+        cursor = db.cursor()
+        cursor.execute("DELETE FROM uploaded_files WHERE filename = ?", (filename,))
+        
+        # Handle binary representation compatibly
+        if DATABASE_URL:
+            import psycopg2
+            binary_data = psycopg2.Binary(data)
+        else:
+            binary_data = data
+            
+        cursor.execute("INSERT INTO uploaded_files (filename, file_data) VALUES (?, ?)", (filename, binary_data))
+        db.commit()
+        db.close()
+        print(f"Successfully saved file {filename} to database.")
     except Exception as e:
-        print(f"Error starting background upload for file {filename}: {e}")
+        print(f"Error saving file {filename} to database: {e}")
+        raise e
 
 def pull_file_from_db(filename, local_path):
     try:
