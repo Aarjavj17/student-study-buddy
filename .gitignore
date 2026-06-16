@@ -23,3 +23,9 @@ static/uploads/
 # Environment configurations
 .env
 
+# SSL certificates and keys
+*.pem
+
+# Run logs
+server_run.log
+

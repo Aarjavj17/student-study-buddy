@@ -1880,4 +1880,11 @@ def serve_secure_upload(filename):
     return response
 
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=False, host='0.0.0.0', port=5000)
+    import ssl_helper
+    ssl_context = ssl_helper.get_ssl_context()
+    if ssl_context:
+        print("[HTTPS] Starting secure Flask development server...")
+        app.run(debug=True, use_reloader=False, host='0.0.0.0', port=5000, ssl_context=ssl_context)
+    else:
+        print("[HTTP Warning] Starting standard insecure Flask development server...")
+        app.run(debug=True, use_reloader=False, host='0.0.0.0', port=5000)
