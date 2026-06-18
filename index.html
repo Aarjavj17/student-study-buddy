@@ -2437,6 +2437,12 @@
                 -webkit-backdrop-filter: blur(20px);
                 box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
                 border-right: 1px solid var(--glass-border);
+                overflow-y: auto;
+                scrollbar-width: none; /* Firefox */
+            }
+
+            .sidebar::-webkit-scrollbar {
+                display: none; /* Chrome, Safari, Opera */
             }
 
             .sidebar.active {
@@ -2481,11 +2487,72 @@
             }
 
             .topbar {
-                flex-direction: row !important; /* Keep items side-by-side */
-                align-items: center !important;
-                flex-wrap: wrap;
-                gap: 12px;
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 16px !important;
                 padding: 16px 20px !important;
+            }
+
+            .topbar-stats {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                width: 100% !important;
+                gap: 10px !important;
+            }
+
+            .xp-tracker {
+                width: 100% !important;
+            }
+
+            .welcome-hero {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 16px !important;
+                padding: 20px !important;
+            }
+
+            .welcome-hero .hero-text {
+                padding-right: 0 !important;
+                width: 100% !important;
+            }
+
+            .welcome-hero .hero-graphic {
+                display: none !important;
+            }
+
+            .hero-actions {
+                flex-wrap: wrap;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .hero-actions .btn {
+                flex: 1 1 auto;
+                min-width: 120px;
+            }
+
+            .form-inline-group {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 12px !important;
+            }
+
+            .form-inline-group select {
+                width: 100% !important;
+            }
+
+            .form-inline-group button {
+                width: 100% !important;
+            }
+
+            .task-left {
+                min-width: 0;
+                flex: 1;
+            }
+
+            .task-title-text {
+                word-break: break-word;
+                white-space: normal;
             }
 
             /* PDF Viewer Responsive Styles */
@@ -8695,13 +8762,7 @@ Click one of the suggestions below, or type your own question!</div>
                                         <i data-lucide="download" style="width: 12px; height: 12px; color: var(--color-primary-hover);"></i>
                                     </button>
                                 ` : '';
-                                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                                const clickActionHtml = isMobile && file.file_path.toLowerCase().endsWith('.pdf') ? `
-                                    <a href="${escapeHTML(file.file_path)}" target="_blank" style="font-size:0.8rem; color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:4px; text-decoration:none; flex:1;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
-                                        <i data-lucide="file-text" style="width:12px; height:12px; color:var(--color-primary);"></i>
-                                        ${escapeHTML(displayTitle)}
-                                    </a>
-                                ` : `
+                                const clickActionHtml = `
                                     <span onclick="viewResource('${escapeHTML(file.file_path)}', '${escapeHTML(res.chapter_name)} - ${escapeHTML(displayTitle)}')" style="font-size:0.8rem; color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex:1;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
                                         <i data-lucide="file-text" style="width:12px; height:12px; color:var(--color-primary);"></i>
                                         ${escapeHTML(displayTitle)}
@@ -9467,18 +9528,9 @@ Click one of the suggestions below, or type your own question!</div>
                     </div>
                     
                     <div style="display: flex; gap: 10px; border-top: 1px dashed var(--glass-border); padding-top: 14px; flex-wrap: wrap;">
-                        ${(() => {
-                            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                            return isMobile ? `
-                                <a href="${escapeHTML(paper.file_path)}" target="_blank" class="btn btn-sm btn-primary" style="flex: 1; justify-content: center; gap: 6px; min-width: 100px; text-decoration: none; display: inline-flex; align-items: center;">
-                                    <i data-lucide="eye"></i> View
-                                </a>
-                            ` : `
-                                <button onclick="viewResource('${escapeHTML(paper.file_path)}', '${escapeHTML(paper.paper_title)}')" class="btn btn-sm btn-primary" style="flex: 1; justify-content: center; gap: 6px; min-width: 100px;">
-                                    <i data-lucide="eye"></i> View
-                                </button>
-                            `;
-                        })()}
+                        <button onclick="viewResource('${escapeHTML(paper.file_path)}', '${escapeHTML(paper.paper_title)}')" class="btn btn-sm btn-primary" style="flex: 1; justify-content: center; gap: 6px; min-width: 100px;">
+                            <i data-lucide="eye"></i> View
+                        </button>
                         <button onclick="downloadDirect('${escapeHTML(paper.file_path)}')" class="btn btn-sm btn-secondary" style="flex: 1; justify-content: center; gap: 6px; min-width: 100px;">
                             <i data-lucide="download"></i> Download
                         </button>
