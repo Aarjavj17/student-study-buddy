@@ -192,20 +192,25 @@ def pull_file_from_db(filename, local_path):
         cursor = db.cursor()
         cursor.execute("SELECT file_data FROM uploaded_files WHERE filename = ?", (filename,))
         row = cursor.fetchone()
-        if row and row['file_data']:
-            data = row['file_data']
-            if isinstance(data, memoryview):
-                data = data.tobytes()
-            elif hasattr(data, 'tobytes'):
-                data = data.tobytes()
-                
-            os.makedirs(os.path.dirname(local_path), exist_ok=True)
-            with open(local_path, 'wb') as f:
-                f.write(data)
-            print(f"Successfully pulled and cached file {filename} from database.")
-            return True
+        if row:
+            if row['file_data']:
+                data = row['file_data']
+                if isinstance(data, memoryview):
+                    data = data.tobytes()
+                elif hasattr(data, 'tobytes'):
+                    data = data.tobytes()
+                    
+                os.makedirs(os.path.dirname(local_path), exist_ok=True)
+                with open(local_path, 'wb') as f:
+                    f.write(data)
+                print(f"[Database] Successfully pulled and cached file {filename} ({len(data)} bytes) from database.")
+                return True
+            else:
+                print(f"[Database Warning] File '{filename}' found in database but 'file_data' is empty.")
+        else:
+            print(f"[Database Warning] File '{filename}' was not found in 'uploaded_files' table.")
     except Exception as e:
-        print(f"Error pulling file {filename} from database: {e}")
+        print(f"[Database Error] Exception while pulling file {filename}: {e}")
     return False
 
 # --- PAGES ---
@@ -1857,22 +1862,31 @@ def delete_chapter_video(video_id):
 @app.route('/static/uploads/<path:filename>')
 def serve_secure_upload(filename):
     from flask import send_from_directory
-    # Allow avatar images without login
-    if filename.startswith('avatar_'):
-        local_path = os.path.join(app.root_path, 'static', 'uploads', filename)
-        if not os.path.exists(local_path):
-            pull_file_from_db(filename, local_path)
-        return send_from_directory(os.path.join(app.root_path, 'static', 'uploads'), filename)
-        
+    
     local_path = os.path.join(app.root_path, 'static', 'uploads', filename)
+    
+    # Check and pull from database if not exists locally
     if not os.path.exists(local_path):
-        pull_file_from_db(filename, local_path)
+        print(f"[Uploads] File '{filename}' not found locally. Pulling from database...")
+        success = pull_file_from_db(filename, local_path)
+        if not success:
+            print(f"[Uploads Error] Failed to retrieve '{filename}' from database.")
+            if filename.lower().endswith('.pdf'):
+                return f"Error: Could not retrieve file '{filename}' from database. Please check if the file was uploaded correctly or check server logs.", 404
+            return f"File not found: {filename}", 404
         
     response = send_from_directory(os.path.join(app.root_path, 'static', 'uploads'), filename)
-    # Explicitly set headers for PDF to view inline in browser
+    
+    # Explicitly set headers for PDF inline viewing
     if filename.lower().endswith('.pdf'):
         response.headers['Content-Type'] = 'application/pdf'
         response.headers['Content-Disposition'] = 'inline'
+        
+    # Disable cache control for secure resources to prevent stale 404 pages
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    
     return response
 
 if __name__ == '__main__':
