@@ -1865,9 +1865,9 @@ def serve_secure_upload(filename):
     
     local_path = os.path.join(app.root_path, 'static', 'uploads', filename)
     
-    # Check and pull from database if not exists locally
-    if not os.path.exists(local_path):
-        print(f"[Uploads] File '{filename}' not found locally. Pulling from database...")
+    # Check and pull from database if not exists locally or is empty (0 bytes)
+    if not os.path.exists(local_path) or os.path.getsize(local_path) == 0:
+        print(f"[Uploads] File '{filename}' not found locally or is empty. Pulling from database...")
         success = pull_file_from_db(filename, local_path)
         if not success:
             print(f"[Uploads Error] Failed to retrieve '{filename}' from database.")
