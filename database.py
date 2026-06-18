@@ -10,9 +10,16 @@ DB_PATH = os.path.join(os.path.dirname(__file__), 'database.db')
 DATABASE_URL = os.environ.get('DATABASE_URL') or os.environ.get('POSTGRES_URL') or 'postgresql://neondb_owner:npg_NU0pyKsj7rqh@ep-withered-unit-ajm7krwi-pooler.c-3.us-east-2.aws.neon.tech/neondb?channel_binding=require&sslmode=require'
 
 if DATABASE_URL:
-    import psycopg2
-    import psycopg2.extras
-    import psycopg2.pool
+    try:
+        import psycopg2
+        import psycopg2.extras
+        import psycopg2.pool
+    except ImportError:
+        print("\n[Database Warning] 'psycopg2-binary' is not installed. Falling back to local SQLite mode.")
+        print("To connect to the shared database with your partner, run: pip install psycopg2-binary\n")
+        DATABASE_URL = None
+
+if DATABASE_URL:
     
     # Global Threaded Connection Pool
     db_pool = None
