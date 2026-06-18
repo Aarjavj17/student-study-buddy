@@ -4229,11 +4229,31 @@
                 </div>
             </div>
             <div
-                style="flex: 1; border-radius: var(--border-radius-md); overflow: hidden; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border); position: relative;">
+                style="flex: 1; border-radius: var(--border-radius-md); overflow: hidden; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border); position: relative; display: flex; flex-direction: column;">
+                <!-- Desktop View: Standard Iframe -->
                 <iframe id="pdf-frame" src="" width="100%" height="100%" style="border: none;"
                     referrerpolicy="strict-origin-when-cross-origin"></iframe>
                 <!-- Transparent overlay to prevent clicks on native PDF toolbar for guests -->
                 <div id="pdf-guest-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 60px; background: transparent; z-index: 10; display: none;"></div>
+
+                <!-- Mobile View Fallback Actions -->
+                <div id="pdf-mobile-fallback" style="display: none; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 24px; text-align: center; gap: 20px;">
+                    <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); padding: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--color-primary);">
+                        <i data-lucide="file-text" style="width: 48px; height: 48px;"></i>
+                    </div>
+                    <div>
+                        <h4 id="pdf-mobile-filename" style="color: white; font-family: var(--font-playful); font-weight: 700; font-size: 1.1rem; margin-bottom: 6px;">Study Document</h4>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; max-width: 280px; margin: 0 auto;">Mobile browsers do not support inline PDF viewing. Select an action below:</p>
+                    </div>
+                    <div style="display: flex; flex-direction: column; width: 100%; max-width: 280px; gap: 12px; margin-top: 8px;">
+                        <a id="pdf-mobile-open-link" href="#" target="_blank" class="btn btn-primary" style="justify-content: center; gap: 8px; text-decoration: none; display: inline-flex; align-items: center; padding: 12px;">
+                            <i data-lucide="external-link" style="width: 16px; height: 16px;"></i> Open & Read PDF
+                        </a>
+                        <button onclick="downloadCurrentPDF()" class="btn btn-secondary" style="justify-content: center; gap: 8px; padding: 12px;">
+                            <i data-lucide="download" style="width: 16px; height: 16px;"></i> Download PDF
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -8646,21 +8666,12 @@ Click one of the suggestions below, or type your own question!</div>
                                         <i data-lucide="download" style="width: 12px; height: 12px; color: var(--color-primary-hover);"></i>
                                     </button>
                                 ` : '';
-                                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                                const clickActionHtml = isMobile && file.file_path.toLowerCase().endsWith('.pdf') ? `
-                                    <a href="${escapeHTML(file.file_path)}" target="_blank" style="font-size:0.8rem; color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:4px; text-decoration:none; flex:1;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
-                                        <i data-lucide="file-text" style="width:12px; height:12px; color:var(--color-primary);"></i>
-                                        ${escapeHTML(displayTitle)}
-                                    </a>
-                                ` : `
-                                    <span onclick="viewResource('${escapeHTML(file.file_path)}', '${escapeHTML(res.chapter_name)} - ${escapeHTML(displayTitle)}')" style="font-size:0.8rem; color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex:1;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
-                                        <i data-lucide="file-text" style="width:12px; height:12px; color:var(--color-primary);"></i>
-                                        ${escapeHTML(displayTitle)}
-                                    </span>
-                                `;
                                 filesHtml += `
                                     <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding: 4px 6px; background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius: var(--border-radius-sm); margin-bottom: 4px;">
-                                        ${clickActionHtml}
+                                        <span onclick="viewResource('${escapeHTML(file.file_path)}', '${escapeHTML(res.chapter_name)} - ${escapeHTML(displayTitle)}')" style="font-size:0.8rem; color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex:1;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
+                                            <i data-lucide="file-text" style="width:12px; height:12px; color:var(--color-primary);"></i>
+                                            ${escapeHTML(displayTitle)}
+                                        </span>
                                         <div style="display:flex; align-items:center; gap:4px;">
                                             ${downloadAction}
                                             ${deleteAction}
@@ -8858,6 +8869,8 @@ Click one of the suggestions below, or type your own question!</div>
             }
         }
 
+        let activePdfUrl = '';
+
         function openInlinePDF(url, title) {
             soundEffects.playPop();
             document.getElementById('pdf-viewer-title').innerText = title;
@@ -8876,16 +8889,41 @@ Click one of the suggestions below, or type your own question!</div>
                 urlWithBuster = `${url}${connector}${cacheBuster}`;
             }
             
-            document.getElementById('pdf-frame').src = urlWithBuster;
+            activePdfUrl = urlWithBuster;
+            
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+            const iframe = document.getElementById('pdf-frame');
+            const fallback = document.getElementById('pdf-mobile-fallback');
+            
+            if (isMobile) {
+                if (iframe) iframe.style.display = 'none';
+                if (fallback) {
+                    fallback.style.display = 'flex';
+                    const filenameEl = document.getElementById('pdf-mobile-filename');
+                    if (filenameEl) filenameEl.innerText = title;
+                    const openLink = document.getElementById('pdf-mobile-open-link');
+                    if (openLink) openLink.href = urlWithBuster;
+                }
+                if (window.lucide) {
+                    lucide.createIcons();
+                }
+            } else {
+                if (fallback) fallback.style.display = 'none';
+                if (iframe) {
+                    iframe.style.display = 'block';
+                    iframe.src = urlWithBuster;
+                }
+            }
+            
             document.getElementById('pdf-viewer-modal').classList.remove('hidden');
         }
 
         function downloadCurrentPDF() {
             if (requireAuth('download study resources')) return;
-            const pdfFrame = document.getElementById('pdf-frame');
-            if (pdfFrame && pdfFrame.src) {
+            const pdfUrl = activePdfUrl || (document.getElementById('pdf-frame') ? document.getElementById('pdf-frame').src : '');
+            if (pdfUrl) {
                 // Get the original URL by stripping toolbar configuration, hash, and cache buster query parameters
-                const cleanUrl = pdfFrame.src.split('#')[0].split('?')[0];
+                const cleanUrl = pdfUrl.split('#')[0].split('?')[0];
                 const link = document.createElement('a');
                 link.href = cleanUrl;
                 link.download = cleanUrl.substring(cleanUrl.lastIndexOf('/') + 1) || 'document.pdf';
@@ -8979,6 +9017,13 @@ Click one of the suggestions below, or type your own question!</div>
                 }
             }
 
+            activePdfUrl = ''; // Clear active PDF URL since this is a video
+
+            const iframe = document.getElementById('pdf-frame');
+            const fallback = document.getElementById('pdf-mobile-fallback');
+            if (iframe) iframe.style.display = 'block';
+            if (fallback) fallback.style.display = 'none';
+
             // Hide the download button when viewing a video
             const downloadBtn = document.getElementById('pdf-viewer-download');
             if (downloadBtn) {
@@ -9005,7 +9050,13 @@ Click one of the suggestions below, or type your own question!</div>
             const frame = document.getElementById('pdf-frame');
             if (frame) {
                 frame.src = '';
+                frame.style.display = 'block';
             }
+            const fallback = document.getElementById('pdf-mobile-fallback');
+            if (fallback) {
+                fallback.style.display = 'none';
+            }
+            activePdfUrl = ''; // Clear active PDF URL
             
             // Hide guest overlay on close
             const guestOverlay = document.getElementById('pdf-guest-overlay');
@@ -9417,18 +9468,9 @@ Click one of the suggestions below, or type your own question!</div>
                     </div>
                     
                     <div style="display: flex; gap: 10px; border-top: 1px dashed var(--glass-border); padding-top: 14px; flex-wrap: wrap;">
-                        ${(() => {
-                            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                            return isMobile ? `
-                                <a href="${escapeHTML(paper.file_path)}" target="_blank" class="btn btn-sm btn-primary" style="flex: 1; justify-content: center; gap: 6px; min-width: 100px; text-decoration: none; display: inline-flex; align-items: center;">
-                                    <i data-lucide="eye"></i> View
-                                </a>
-                            ` : `
-                                <button onclick="viewResource('${escapeHTML(paper.file_path)}', '${escapeHTML(paper.paper_title)}')" class="btn btn-sm btn-primary" style="flex: 1; justify-content: center; gap: 6px; min-width: 100px;">
-                                    <i data-lucide="eye"></i> View
-                                </button>
-                            `;
-                        })()}
+                        <button onclick="viewResource('${escapeHTML(paper.file_path)}', '${escapeHTML(paper.paper_title)}')" class="btn btn-sm btn-primary" style="flex: 1; justify-content: center; gap: 6px; min-width: 100px;">
+                            <i data-lucide="eye"></i> View
+                        </button>
                         <button onclick="downloadDirect('${escapeHTML(paper.file_path)}')" class="btn btn-sm btn-secondary" style="flex: 1; justify-content: center; gap: 6px; min-width: 100px;">
                             <i data-lucide="download"></i> Download
                         </button>
