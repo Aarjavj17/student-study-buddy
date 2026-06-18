@@ -430,7 +430,7 @@
             gap: 8px;
         }
 
-        .nav-item {
+        .nav-item, .nav-item-settings {
             display: flex;
             align-items: center;
             gap: 12px;
@@ -441,14 +441,15 @@
             font-size: 0.95rem;
             border-radius: var(--border-radius-md);
             transition: all 0.2s ease;
+            cursor: pointer;
         }
 
-        .nav-item i {
+        .nav-item i, .nav-item-settings i {
             width: 18px;
             height: 18px;
         }
 
-        .nav-item:hover {
+        .nav-item:hover, .nav-item-settings:hover {
             background: rgba(255, 255, 255, 0.04);
             color: var(--text-primary);
         }
@@ -2481,7 +2482,7 @@
                 gap: 8px;
             }
 
-            .nav-item span {
+            .nav-item span, .nav-item-settings span {
                 display: inline !important; /* Always show text labels on vertical sidebar */
                 font-size: 0.9rem;
             }
@@ -3007,25 +3008,40 @@
                     <i data-lucide="layout-dashboard"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="#planner" class="nav-item" data-tab="planner" style="display: none;">
+                <a href="#planner" class="nav-item" data-tab="planner">
                     <i data-lucide="calendar-todo"></i>
                     <span>Study Planner</span>
                 </a>
-                <a href="#learn" class="nav-item" data-tab="learn" style="display: none;">
+                <a href="#learn" class="nav-item" data-tab="learn">
                     <i data-lucide="book-open-check"></i>
                     <span>Learn Hub</span>
                 </a>
-                <a href="#quiz" class="nav-item" data-tab="quiz" style="display: none;">
+                <a href="#quiz" class="nav-item" data-tab="quiz">
                     <i data-lucide="brain-circuit"></i>
                     <span>Quiz Arena</span>
                 </a>
-                <a href="#progress" class="nav-item" data-tab="progress" style="display: none;">
+                <a href="#progress" class="nav-item" data-tab="progress">
                     <i data-lucide="line-chart"></i>
                     <span>Analytics</span>
                 </a>
                 <a href="#admin" id="sidebar-admin-link" class="nav-item" data-tab="admin" style="display: none;">
                     <i data-lucide="shield"></i>
                     <span>Admin Panel</span>
+                </a>
+                
+                <!-- Profile Settings & Action Menu (mimicking option dropdown) -->
+                <div style="border-top: 1px solid var(--glass-border); margin: 8px 0; padding-top: 8px;"></div>
+                <a href="#" class="nav-item-settings" onclick="closeMobileSidebar(); openAvatarModal();" style="padding: 10px 16px;">
+                    <i data-lucide="edit-3" style="color: var(--text-secondary);"></i>
+                    <span>Change Avatar</span>
+                </a>
+                <a href="#" class="nav-item-settings" onclick="closeMobileSidebar(); openChangePasswordModal();" style="padding: 10px 16px;">
+                    <i data-lucide="key-round" style="color: var(--text-secondary);"></i>
+                    <span>Change Password</span>
+                </a>
+                <a href="#" class="nav-item-settings" onclick="closeMobileSidebar(); handleLogout(event);" style="padding: 10px 16px; color: var(--color-error); font-weight: 600;">
+                    <i data-lucide="log-out" style="color: var(--color-error);"></i>
+                    <span>Logout</span>
                 </a>
             </nav>
 
