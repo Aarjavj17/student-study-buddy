@@ -8879,10 +8879,32 @@ Click one of the suggestions below, or type your own question!</div>
             }
         }
 
-        function viewResource(url, title) {
+        async function viewResource(url, title) {
             soundEffects.playPop();
             const lower = url.toLowerCase();
             
+            // Check file availability first if using backend to prevent black screen on 404
+            if (useBackend && (lower.endsWith('.pdf') || lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg'))) {
+                document.body.style.cursor = 'wait';
+                try {
+                    const checkRes = await fetch(url, { method: 'HEAD' });
+                    document.body.style.cursor = 'default';
+                    if (!checkRes.ok) {
+                        alert(`⚠️ Study Buddy File Sync Warning\n\n` +
+                              `The resource "${title}" is registered in the database, but the actual file binary could not be retrieved from the server.\n\n` +
+                              `Possible Reasons:\n` +
+                              `• Your partner may have uploaded this resource in local offline mode (SQLite) on their computer.\n` +
+                              `• The physical file exists on their local disk but was not synced to the PostgreSQL database.\n\n` +
+                              `How to Fix:\n` +
+                              `Please ask your partner to log in and re-upload the resource while connected to the shared PostgreSQL database!`);
+                        return;
+                    }
+                } catch (err) {
+                    document.body.style.cursor = 'default';
+                    console.error("Failed to verify file existence on server:", err);
+                }
+            }
+
             // Mobile and tablet compatibility: open PDFs in a new tab to avoid iframe rendering/scrolling issues
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             if (isMobile && lower.endsWith('.pdf')) {
