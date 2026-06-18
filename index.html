@@ -8781,16 +8781,7 @@ Click one of the suggestions below, or type your own question!</div>
                                     <button onclick="event.stopPropagation(); downloadDirect('${escapeHTML(file.file_path)}')" class="btn btn-xs btn-ghost" title="Download Resource" style="padding: 2px 4px; border:none; background:transparent; display:inline-flex; align-items:center;">
                                         <i data-lucide="download" style="width: 12px; height: 12px; color: var(--color-primary-hover);"></i>
                                     </button>
-                                ` : '';
-<<<<<<< HEAD
-                                const clickActionHtml = `
-                                    <span onclick="viewResource('${escapeHTML(file.file_path)}', '${escapeHTML(res.chapter_name)} - ${escapeHTML(displayTitle)}')" style="font-size:0.8rem; color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex:1;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
-                                        <i data-lucide="file-text" style="width:12px; height:12px; color:var(--color-primary);"></i>
-                                        ${escapeHTML(displayTitle)}
-                                    </span>
-                                `;
-=======
->>>>>>> da5aee2cb9b9bab0b61b5583e3678eca076274f5
+                                 ` : '';
                                 filesHtml += `
                                     <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding: 4px 6px; background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius: var(--border-radius-sm); margin-bottom: 4px;">
                                         <span onclick="viewResource('${escapeHTML(file.file_path)}', '${escapeHTML(res.chapter_name)} - ${escapeHTML(displayTitle)}')" style="font-size:0.8rem; color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex:1;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
