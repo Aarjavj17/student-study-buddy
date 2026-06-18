@@ -8882,6 +8882,13 @@ Click one of the suggestions below, or type your own question!</div>
         async function viewResource(url, title) {
             soundEffects.playPop();
             const lower = url.toLowerCase();
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            // Pre-open a blank tab synchronously on mobile to bypass browser pop-up blockers
+            let mobileTab = null;
+            if (isMobile && lower.endsWith('.pdf')) {
+                mobileTab = window.open('about:blank', '_blank');
+            }
             
             // Check file availability first if using backend to prevent black screen on 404
             if (useBackend && (lower.endsWith('.pdf') || lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg'))) {
@@ -8890,6 +8897,7 @@ Click one of the suggestions below, or type your own question!</div>
                     const checkRes = await fetch(url, { method: 'HEAD' });
                     document.body.style.cursor = 'default';
                     if (!checkRes.ok) {
+                        if (mobileTab) mobileTab.close();
                         alert(`⚠️ Study Buddy File Sync Warning\n\n` +
                               `The resource "${title}" is registered in the database, but the actual file binary could not be retrieved from the server.\n\n` +
                               `Possible Reasons:\n` +
@@ -8906,9 +8914,12 @@ Click one of the suggestions below, or type your own question!</div>
             }
 
             // Mobile and tablet compatibility: open PDFs in a new tab to avoid iframe rendering/scrolling issues
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             if (isMobile && lower.endsWith('.pdf')) {
-                window.open(url, '_blank');
+                if (mobileTab) {
+                    mobileTab.location.href = url;
+                } else {
+                    window.open(url, '_blank');
+                }
                 return;
             }
 
