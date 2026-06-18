@@ -8844,7 +8844,22 @@ Click one of the suggestions below, or type your own question!</div>
         function openInlinePDF(url, title) {
             soundEffects.playPop();
             document.getElementById('pdf-viewer-title').innerText = title;
-            document.getElementById('pdf-frame').src = url;
+            
+            // Add cache buster to bypass browser cached 404 or corrupted PDF pages
+            const cacheBuster = 't=' + new Date().getTime();
+            let urlWithBuster = url;
+            if (url.includes('#')) {
+                const parts = url.split('#');
+                const pathAndQuery = parts[0];
+                const hash = parts[1];
+                const connector = pathAndQuery.includes('?') ? '&' : '?';
+                urlWithBuster = `${pathAndQuery}${connector}${cacheBuster}#${hash}`;
+            } else {
+                const connector = url.includes('?') ? '&' : '?';
+                urlWithBuster = `${url}${connector}${cacheBuster}`;
+            }
+            
+            document.getElementById('pdf-frame').src = urlWithBuster;
             document.getElementById('pdf-viewer-modal').classList.remove('hidden');
         }
 
@@ -8852,8 +8867,8 @@ Click one of the suggestions below, or type your own question!</div>
             if (requireAuth('download study resources')) return;
             const pdfFrame = document.getElementById('pdf-frame');
             if (pdfFrame && pdfFrame.src) {
-                // Get the original URL by stripping #toolbar=0 or any other hash parameters
-                const cleanUrl = pdfFrame.src.split('#')[0];
+                // Get the original URL by stripping toolbar configuration, hash, and cache buster query parameters
+                const cleanUrl = pdfFrame.src.split('#')[0].split('?')[0];
                 const link = document.createElement('a');
                 link.href = cleanUrl;
                 link.download = cleanUrl.substring(cleanUrl.lastIndexOf('/') + 1) || 'document.pdf';
