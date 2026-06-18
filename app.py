@@ -216,7 +216,12 @@ def pull_file_from_db(filename, local_path):
 # --- PAGES ---
 @app.route('/')
 def index():
-    return render_template('index.html')
+    from flask import make_response
+    response = make_response(render_template('index.html'))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 # --- API: AUTHENTICATION ---
 @app.route('/api/auth/send-email-otp', methods=['POST'])

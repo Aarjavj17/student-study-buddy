@@ -8641,13 +8641,30 @@ Click one of the suggestions below, or type your own question!</div>
                                         <i data-lucide="trash-2" style="width: 12px; height: 12px; color: #ef4444;"></i>
                                     </button>
                                 ` : '';
+                                const downloadAction = config.key !== 'mind_map' && file.file_path.toLowerCase().endsWith('.pdf') ? `
+                                    <button onclick="event.stopPropagation(); downloadDirect('${escapeHTML(file.file_path)}')" class="btn btn-xs btn-ghost" title="Download Resource" style="padding: 2px 4px; border:none; background:transparent; display:inline-flex; align-items:center;">
+                                        <i data-lucide="download" style="width: 12px; height: 12px; color: var(--color-primary-hover);"></i>
+                                    </button>
+                                ` : '';
+                                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                                const clickActionHtml = isMobile && file.file_path.toLowerCase().endsWith('.pdf') ? `
+                                    <a href="${escapeHTML(file.file_path)}" target="_blank" style="font-size:0.8rem; color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:4px; text-decoration:none; flex:1;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
+                                        <i data-lucide="file-text" style="width:12px; height:12px; color:var(--color-primary);"></i>
+                                        ${escapeHTML(displayTitle)}
+                                    </a>
+                                ` : `
+                                    <span onclick="viewResource('${escapeHTML(file.file_path)}', '${escapeHTML(res.chapter_name)} - ${escapeHTML(displayTitle)}')" style="font-size:0.8rem; color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex:1;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
+                                        <i data-lucide="file-text" style="width:12px; height:12px; color:var(--color-primary);"></i>
+                                        ${escapeHTML(displayTitle)}
+                                    </span>
+                                `;
                                 filesHtml += `
                                     <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding: 4px 6px; background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius: var(--border-radius-sm); margin-bottom: 4px;">
-                                        <span onclick="viewResource('${escapeHTML(file.file_path)}', '${escapeHTML(res.chapter_name)} - ${escapeHTML(displayTitle)}')" style="font-size:0.8rem; color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:4px;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
-                                            <i data-lucide="file-text" style="width:12px; height:12px; color:var(--color-primary);"></i>
-                                            ${escapeHTML(displayTitle)}
-                                        </span>
-                                        ${deleteAction}
+                                        ${clickActionHtml}
+                                        <div style="display:flex; align-items:center; gap:4px;">
+                                            ${downloadAction}
+                                            ${deleteAction}
+                                        </div>
                                     </div>
                                 `;
                             });
@@ -8877,6 +8894,18 @@ Click one of the suggestions below, or type your own question!</div>
                 link.click();
                 document.body.removeChild(link);
             }
+        }
+
+        function downloadDirect(url) {
+            if (requireAuth('download study resources')) return;
+            const cleanUrl = url.split('#')[0].split('?')[0];
+            const link = document.createElement('a');
+            link.href = cleanUrl;
+            link.download = cleanUrl.substring(cleanUrl.lastIndexOf('/') + 1) || 'document.pdf';
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         async function viewResource(url, title) {
@@ -9396,9 +9425,21 @@ Click one of the suggestions below, or type your own question!</div>
                         </div>
                     </div>
                     
-                    <div style="display: flex; gap: 10px; border-top: 1px dashed var(--glass-border); padding-top: 14px;">
-                        <button onclick="viewResource('${escapeHTML(paper.file_path)}', '${escapeHTML(paper.paper_title)}')" class="btn btn-sm btn-primary" style="flex: 1; justify-content: center; gap: 6px;">
-                            <i data-lucide="eye"></i> View Paper
+                    <div style="display: flex; gap: 10px; border-top: 1px dashed var(--glass-border); padding-top: 14px; flex-wrap: wrap;">
+                        ${(() => {
+                            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                            return isMobile ? `
+                                <a href="${escapeHTML(paper.file_path)}" target="_blank" class="btn btn-sm btn-primary" style="flex: 1; justify-content: center; gap: 6px; min-width: 100px; text-decoration: none; display: inline-flex; align-items: center;">
+                                    <i data-lucide="eye"></i> View
+                                </a>
+                            ` : `
+                                <button onclick="viewResource('${escapeHTML(paper.file_path)}', '${escapeHTML(paper.paper_title)}')" class="btn btn-sm btn-primary" style="flex: 1; justify-content: center; gap: 6px; min-width: 100px;">
+                                    <i data-lucide="eye"></i> View
+                                </button>
+                            `;
+                        })()}
+                        <button onclick="downloadDirect('${escapeHTML(paper.file_path)}')" class="btn btn-sm btn-secondary" style="flex: 1; justify-content: center; gap: 6px; min-width: 100px;">
+                            <i data-lucide="download"></i> Download
                         </button>
                         ${deleteBtnHtml}
                     </div>
