@@ -8950,8 +8950,17 @@ Click one of the suggestions below, or type your own question!</div>
             soundEffects.playPop();
             const lower = url.toLowerCase();
             
+            // Mobile and tablet compatibility: open PDFs in a new tab to avoid iframe rendering/scrolling issues
+            // This must run synchronously before any async operations to prevent mobile popup blockers from blocking window.open
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isPdf = lower.includes('.pdf') || lower.split('?')[0].split('#')[0].endsWith('.pdf');
+            if (isMobile && isPdf) {
+                window.open(url, '_blank');
+                return;
+            }
+
             // Check file availability first if using backend to prevent black screen on 404
-            if (useBackend && (lower.endsWith('.pdf') || lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg'))) {
+            if (useBackend && (isPdf || lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg'))) {
                 document.body.style.cursor = 'wait';
                 try {
                     const checkRes = await fetch(url, { method: 'HEAD' });
