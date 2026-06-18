@@ -2420,33 +2420,72 @@
 
         @media (max-width: 768px) {
             .app-layout {
-                flex-direction: column;
+                flex-direction: row; /* Keep side-by-side flex layout flow */
             }
 
             .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
+                display: flex !important;
+                position: fixed !important;
+                top: 0;
+                left: -280px; /* Hide offscreen */
+                width: 260px;
+                height: 100vh;
+                z-index: 99999; /* Higher than everything else */
+                transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                background: rgba(15, 23, 42, 0.98) !important;
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+                border-right: 1px solid var(--glass-border);
+            }
+
+            .sidebar.active {
+                left: 0 !important; /* Slide in */
+            }
+
+            #sidebar-backdrop {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: rgba(0, 0, 0, 0.6);
+                z-index: 99998;
+                backdrop-filter: blur(4px);
+                -webkit-backdrop-filter: blur(4px);
+            }
+
+            #sidebar-backdrop.active {
+                display: block;
+            }
+
+            #mobile-sidebar-toggle {
+                display: inline-flex !important; /* Show hamburger button on mobile */
             }
 
             .sidebar-logo {
-                padding: 16px 20px;
+                padding: 24px 20px;
             }
 
             .sidebar-nav {
-                flex-direction: row;
-                overflow-x: auto;
-                padding: 12px;
+                flex-direction: column !important;
+                overflow-x: visible;
+                padding: 20px 12px;
+                gap: 8px;
             }
 
             .nav-item span {
-                display: none;
+                display: inline !important; /* Always show text labels on vertical sidebar */
+                font-size: 0.9rem;
             }
 
             .topbar {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 16px;
+                flex-direction: row !important; /* Keep items side-by-side */
+                align-items: center !important;
+                flex-wrap: wrap;
+                gap: 12px;
+                padding: 16px 20px !important;
             }
 
             /* PDF Viewer Responsive Styles */
@@ -2886,6 +2925,8 @@
 
     <!-- --- MAIN APP CONTAINER --- -->
     <div id="app-container" class="app-layout hidden">
+        <!-- Sidebar Backdrop (for Mobile drawer) -->
+        <div id="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
 
         <!-- SIDEBAR NAVIGATION -->
         <aside class="sidebar glass">
@@ -2959,6 +3000,13 @@
             <!-- TOP BAR (STATS & OVERVIEWS) -->
             <header class="topbar glass">
                 <div style="display: flex; align-items: center; gap: 16px;">
+                    <!-- Mobile Hamburger Menu Toggle Button -->
+                    <button id="mobile-sidebar-toggle" onclick="toggleMobileSidebar(event)" 
+                        style="display: none; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); color: white; cursor: pointer; padding: 8px; border-radius: var(--border-radius-md); align-items: center; justify-content: center; outline: none; transition: all 0.2s;"
+                        onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'"
+                        onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'">
+                        <i data-lucide="menu" style="width: 20px; height: 20px;"></i>
+                    </button>
                     <!-- USER PROFILE CARD WITH DROPDOWN -->
                     <div style="position: relative; display: inline-flex;">
                         <div class="topbar-user-profile" id="topbar-profile-trigger"
@@ -4881,6 +4929,7 @@
             navItems.forEach(item => {
                 item.addEventListener('click', (e) => {
                     e.preventDefault();
+                    closeMobileSidebar();
                     const tabId = item.getAttribute('data-tab');
                     switchTab(tabId);
                 });
@@ -10153,6 +10202,21 @@ Click one of the suggestions below, or type your own question!</div>
             } catch (err) {
                 alert(err.message || "Error switching class.");
             }
+        }
+
+        function toggleMobileSidebar(e) {
+            if (e) e.stopPropagation();
+            const sidebar = document.querySelector('.sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (sidebar) sidebar.classList.toggle('active');
+            if (backdrop) backdrop.classList.toggle('active');
+        }
+
+        function closeMobileSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (sidebar) sidebar.classList.remove('active');
+            if (backdrop) backdrop.classList.remove('active');
         }
 
         function toggleProfileDropdown(e) {
