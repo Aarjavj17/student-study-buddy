@@ -453,10 +453,6 @@ def register():
     if class_name not in ('Class 9', 'Class 10'):
         return jsonify({'error': 'Invalid class selection.'}), 400
         
-    # Ensure mobile has been verified in session
-    if not session.get('mobile_verified') or session.get('mobile_verified_target') != mobile:
-        return jsonify({'error': 'Mobile number verification required.'}), 400
-        
     db = get_db()
     cursor = db.cursor()
     

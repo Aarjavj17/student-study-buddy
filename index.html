@@ -4615,7 +4615,7 @@
         let activeTab = 'dashboard';
         let isRegisterMode = false;
         let emailVerified = true;
-        let mobileVerified = false;
+        let mobileVerified = true;
 
         let heartbeatInterval = null;
         let adminRefreshInterval = null;
@@ -5472,7 +5472,7 @@
 
         function resetRegistrationOTPState() {
             emailVerified = true;
-            mobileVerified = false;
+            mobileVerified = true;
             localEmailOTP = '';
             localMobileOTP = '';
 
@@ -5669,7 +5669,7 @@
             const devToast = document.getElementById('dev-mobile-otp-toast');
             const sendBtn = document.getElementById('btn-send-mobile-otp');
 
-            mobileVerified = false;
+            mobileVerified = true;
             if (mobileInput) {
                 mobileInput.value = '';
             }
