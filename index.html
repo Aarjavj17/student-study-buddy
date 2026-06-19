@@ -430,7 +430,7 @@
             gap: 8px;
         }
 
-        .nav-item {
+        .nav-item, .nav-item-settings {
             display: flex;
             align-items: center;
             gap: 12px;
@@ -441,14 +441,15 @@
             font-size: 0.95rem;
             border-radius: var(--border-radius-md);
             transition: all 0.2s ease;
+            cursor: pointer;
         }
 
-        .nav-item i {
+        .nav-item i, .nav-item-settings i {
             width: 18px;
             height: 18px;
         }
 
-        .nav-item:hover {
+        .nav-item:hover, .nav-item-settings:hover {
             background: rgba(255, 255, 255, 0.04);
             color: var(--text-primary);
         }
@@ -2437,6 +2438,12 @@
                 -webkit-backdrop-filter: blur(20px);
                 box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
                 border-right: 1px solid var(--glass-border);
+                overflow-y: auto;
+                scrollbar-width: none; /* Firefox */
+            }
+
+            .sidebar::-webkit-scrollbar {
+                display: none; /* Chrome, Safari, Opera */
             }
 
             .sidebar.active {
@@ -2475,17 +2482,78 @@
                 gap: 8px;
             }
 
-            .nav-item span {
+            .nav-item span, .nav-item-settings span {
                 display: inline !important; /* Always show text labels on vertical sidebar */
                 font-size: 0.9rem;
             }
 
             .topbar {
-                flex-direction: row !important; /* Keep items side-by-side */
-                align-items: center !important;
-                flex-wrap: wrap;
-                gap: 12px;
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 16px !important;
                 padding: 16px 20px !important;
+            }
+
+            .topbar-stats {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                width: 100% !important;
+                gap: 10px !important;
+            }
+
+            .xp-tracker {
+                width: 100% !important;
+            }
+
+            .welcome-hero {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 16px !important;
+                padding: 20px !important;
+            }
+
+            .welcome-hero .hero-text {
+                padding-right: 0 !important;
+                width: 100% !important;
+            }
+
+            .welcome-hero .hero-graphic {
+                display: none !important;
+            }
+
+            .hero-actions {
+                flex-wrap: wrap;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .hero-actions .btn {
+                flex: 1 1 auto;
+                min-width: 120px;
+            }
+
+            .form-inline-group {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 12px !important;
+            }
+
+            .form-inline-group select {
+                width: 100% !important;
+            }
+
+            .form-inline-group button {
+                width: 100% !important;
+            }
+
+            .task-left {
+                min-width: 0;
+                flex: 1;
+            }
+
+            .task-title-text {
+                word-break: break-word;
+                white-space: normal;
             }
 
             /* PDF Viewer Responsive Styles */
@@ -2940,25 +3008,40 @@
                     <i data-lucide="layout-dashboard"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="#planner" class="nav-item" data-tab="planner" style="display: none;">
+                <a href="#planner" class="nav-item" data-tab="planner">
                     <i data-lucide="calendar-todo"></i>
                     <span>Study Planner</span>
                 </a>
-                <a href="#learn" class="nav-item" data-tab="learn" style="display: none;">
+                <a href="#learn" class="nav-item" data-tab="learn">
                     <i data-lucide="book-open-check"></i>
                     <span>Learn Hub</span>
                 </a>
-                <a href="#quiz" class="nav-item" data-tab="quiz" style="display: none;">
+                <a href="#quiz" class="nav-item" data-tab="quiz">
                     <i data-lucide="brain-circuit"></i>
                     <span>Quiz Arena</span>
                 </a>
-                <a href="#progress" class="nav-item" data-tab="progress" style="display: none;">
+                <a href="#progress" class="nav-item" data-tab="progress">
                     <i data-lucide="line-chart"></i>
                     <span>Analytics</span>
                 </a>
                 <a href="#admin" id="sidebar-admin-link" class="nav-item" data-tab="admin" style="display: none;">
                     <i data-lucide="shield"></i>
                     <span>Admin Panel</span>
+                </a>
+                
+                <!-- Profile Settings & Action Menu (mimicking option dropdown) -->
+                <div style="border-top: 1px solid var(--glass-border); margin: 8px 0; padding-top: 8px;"></div>
+                <a href="#" class="nav-item-settings" onclick="closeMobileSidebar(); openAvatarModal();" style="padding: 10px 16px;">
+                    <i data-lucide="edit-3" style="color: var(--text-secondary);"></i>
+                    <span>Change Avatar</span>
+                </a>
+                <a href="#" class="nav-item-settings" onclick="closeMobileSidebar(); openChangePasswordModal();" style="padding: 10px 16px;">
+                    <i data-lucide="key-round" style="color: var(--text-secondary);"></i>
+                    <span>Change Password</span>
+                </a>
+                <a href="#" class="nav-item-settings" onclick="closeMobileSidebar(); handleLogout(event);" style="padding: 10px 16px; color: var(--color-error); font-weight: 600;">
+                    <i data-lucide="log-out" style="color: var(--color-error);"></i>
+                    <span>Logout</span>
                 </a>
             </nav>
 
@@ -8724,7 +8807,7 @@ Click one of the suggestions below, or type your own question!</div>
                                     <button onclick="event.stopPropagation(); downloadDirect('${escapeHTML(file.file_path)}')" class="btn btn-xs btn-ghost" title="Download Resource" style="padding: 2px 4px; border:none; background:transparent; display:inline-flex; align-items:center;">
                                         <i data-lucide="download" style="width: 12px; height: 12px; color: var(--color-primary-hover);"></i>
                                     </button>
-                                ` : '';
+                                 ` : '';
                                 filesHtml += `
                                     <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding: 4px 6px; background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius: var(--border-radius-sm); margin-bottom: 4px;">
                                         <span onclick="viewResource('${escapeHTML(file.file_path)}', '${escapeHTML(res.chapter_name)} - ${escapeHTML(displayTitle)}')" style="font-size:0.8rem; color:var(--text-secondary); cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex:1;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-secondary)'">
