@@ -5494,8 +5494,13 @@
                     });
                     const data = await res.json();
                     if (res.ok) {
-                        localMobileOTP = data.otp;
-                        devToast.innerText = `(Dev code: ${data.otp})`;
+                        if (data.otp) {
+                            localMobileOTP = data.otp;
+                            devToast.innerText = `(Dev code: ${data.otp})`;
+                        } else {
+                            localMobileOTP = '';
+                            devToast.innerText = '';
+                        }
                         soundEffects.playPop();
                         const codeInput = document.getElementById('mobile-verification-code');
                         if (codeInput) codeInput.focus();
@@ -5775,8 +5780,13 @@
                     });
                     const data = await res.json();
                     if (res.ok) {
-                        localFPOTP = data.otp;
-                        devToast.innerText = `(Dev code: ${data.otp})`;
+                        if (data.otp) {
+                            localFPOTP = data.otp;
+                            devToast.innerText = `(Dev code: ${data.otp})`;
+                        } else {
+                            localFPOTP = '';
+                            devToast.innerText = '';
+                        }
                         soundEffects.playPop();
 
                         // Switch to Step 2

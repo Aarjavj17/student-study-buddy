@@ -213,6 +213,128 @@ def pull_file_from_db(filename, local_path):
         print(f"[Database Error] Exception while pulling file {filename}: {e}")
     return False
 
+def send_sms_to_mobile(mobile, otp):
+    import urllib.request
+    import urllib.parse
+    import json
+    import os
+    
+    # 1. Fast2SMS Integration
+    fast2sms_key = os.environ.get('FAST2SMS_API_KEY')
+    if fast2sms_key:
+        print(f"[SMS] Attempting to send OTP via Fast2SMS to {mobile}...")
+        url = "https://www.fast2sms.com/dev/bulkV2"
+        data = {
+            'route': 'otp',
+            'variables_values': otp,
+            'numbers': mobile
+        }
+        try:
+            encoded_data = urllib.parse.urlencode(data).encode('utf-8')
+            req = urllib.request.Request(url, data=encoded_data)
+            req.add_header('authorization', fast2sms_key)
+            req.add_header('Content-Type', 'application/x-www-form-urlencoded')
+            
+            with urllib.request.urlopen(req, timeout=10) as response:
+                res_body = response.read().decode('utf-8')
+                res_json = json.loads(res_body)
+                if res_json.get('return'):
+                    print(f"[SMS Success] OTP successfully sent via Fast2SMS to {mobile}.")
+                    return True
+                else:
+                    print(f"[SMS Error] Fast2SMS returned error response: {res_json}")
+        except Exception as e:
+            print(f"[SMS Error] Exception sending SMS via Fast2SMS: {e}")
+            
+    # 2. Twilio Integration
+    twilio_sid = os.environ.get('TWILIO_ACCOUNT_SID')
+    twilio_token = os.environ.get('TWILIO_AUTH_TOKEN')
+    twilio_from = os.environ.get('TWILIO_FROM_NUMBER')
+    if twilio_sid and twilio_token and twilio_from:
+        print(f"[SMS] Attempting to send OTP via Twilio to {mobile}...")
+        url = f"https://api.twilio.com/2010-04-01/Accounts/{twilio_sid}/Messages.json"
+        
+        to_number = mobile
+        if not to_number.startswith('+'):
+            if len(to_number) == 10:
+                to_number = '+91' + to_number # Default India prefix
+            else:
+                to_number = '+' + to_number
+                
+        data = {
+            'From': twilio_from,
+            'To': to_number,
+            'Body': f"Your Student Study Buddy verification code is: {otp}. Do not share this with anyone."
+        }
+        try:
+            import base64
+            encoded_data = urllib.parse.urlencode(data).encode('utf-8')
+            req = urllib.request.Request(url, data=encoded_data)
+            
+            auth_str = f"{twilio_sid}:{twilio_token}"
+            auth_bytes = auth_str.encode('ascii')
+            base64_auth = base64.b64encode(auth_bytes).decode('ascii')
+            req.add_header('Authorization', f"Basic {base64_auth}")
+            req.add_header('Content-Type', 'application/x-www-form-urlencoded')
+            
+            with urllib.request.urlopen(req, timeout=10) as response:
+                res_body = response.read().decode('utf-8')
+                res_json = json.loads(res_body)
+                if 'sid' in res_json:
+                    print(f"[SMS Success] OTP successfully sent via Twilio to {mobile}.")
+                    return True
+                else:
+                    print(f"[SMS Error] Twilio returned unexpected response: {res_json}")
+        except Exception as e:
+            print(f"[SMS Error] Exception sending SMS via Twilio: {e}")
+
+    print(f"[SMS Debug Fallback] No SMS credentials configured (or dispatch failed). OTP: {otp}")
+    return False
+
+def send_email_to_address(email, otp):
+    import os
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    smtp_server = os.environ.get('SMTP_SERVER')
+    smtp_port = os.environ.get('SMTP_PORT', '587')
+    smtp_email = os.environ.get('SMTP_EMAIL')
+    smtp_password = os.environ.get('SMTP_PASSWORD')
+
+    if smtp_server and smtp_email and smtp_password:
+        print(f"[Email] Attempting to send OTP email to {email}...")
+        try:
+            msg = MIMEMultipart()
+            msg['From'] = smtp_email
+            msg['To'] = email
+            msg['Subject'] = f"Student Study Buddy - OTP Verification: {otp}"
+            
+            body = f"""Hello,
+            
+Your OTP verification code for Student Study Buddy is: {otp}.
+
+This code is valid for 10 minutes. Please do not share this OTP with anyone.
+
+Happy Studying!
+Student Study Buddy Team"""
+            
+            msg.attach(MIMEText(body, 'plain'))
+            
+            server = smtplib.SMTP(smtp_server, int(smtp_port))
+            server.starttls()
+            server.login(smtp_email, smtp_password)
+            server.sendmail(smtp_email, email, msg.as_string())
+            server.quit()
+            
+            print(f"[Email Success] OTP successfully sent via Email to {email}.")
+            return True
+        except Exception as e:
+            print(f"[Email Error] Exception sending email via SMTP: {e}")
+
+    print(f"[Email Debug Fallback] No SMTP credentials configured (or dispatch failed). OTP: {otp}")
+    return False
+
 # --- PAGES ---
 @app.route('/')
 def index():
@@ -237,10 +359,16 @@ def send_email_otp():
     session['email_otp_target'] = email
     
     print(f"[OTP DEBUG] Email OTP sent to {email}: {otp}")
-    return jsonify({
-        'message': 'OTP code sent to email.',
-        'otp': otp
-    })
+    email_sent = send_email_to_address(email, otp)
+    
+    response_data = {
+        'message': 'OTP code sent to email.'
+    }
+    if not email_sent:
+        response_data['otp'] = otp
+        response_data['message'] = 'OTP code sent to email (Local Fallback).'
+        
+    return jsonify(response_data)
 
 @app.route('/api/auth/verify-email-otp', methods=['POST'])
 def verify_email_otp():
@@ -275,10 +403,16 @@ def send_mobile_otp():
     session['mobile_otp_target'] = mobile
     
     print(f"[OTP DEBUG] Mobile OTP sent to {mobile}: {otp}")
-    return jsonify({
-        'message': 'OTP code sent to mobile number.',
-        'otp': otp
-    })
+    sms_sent = send_sms_to_mobile(mobile, otp)
+    
+    response_data = {
+        'message': 'OTP code sent to mobile number.'
+    }
+    if not sms_sent:
+        response_data['otp'] = otp
+        response_data['message'] = 'OTP code sent to mobile number (Local Fallback).'
+        
+    return jsonify(response_data)
 
 @app.route('/api/auth/verify-mobile-otp', methods=['POST'])
 def verify_mobile_otp():
@@ -505,12 +639,17 @@ def forgot_password_request():
     masked_mobile = "******" + mobile[-4:]
     
     print(f"[OTP DEBUG] Password Reset OTP for @{user['username']} ({mobile}): {otp}")
-    return jsonify({
+    sms_sent = send_sms_to_mobile(mobile, otp)
+    
+    response_data = {
         'success': True,
         'masked_mobile': masked_mobile,
-        'username': user['username'],
-        'otp': otp
-    })
+        'username': user['username']
+    }
+    if not sms_sent:
+        response_data['otp'] = otp
+        
+    return jsonify(response_data)
 
 @app.route('/api/auth/forgot-password/verify', methods=['POST'])
 def forgot_password_verify():
