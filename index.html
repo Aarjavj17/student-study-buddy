@@ -392,9 +392,53 @@
             display: none !important;
         }
 
-        /* --- SIDEBAR --- */
+        /* --- SIDEBAR (Drawer Layout) --- */
         .sidebar {
-            display: none !important;
+            display: flex !important;
+            flex-direction: column;
+            position: fixed !important;
+            top: 0;
+            left: -280px; /* Hide offscreen */
+            width: 260px;
+            height: 100vh;
+            z-index: 99999; /* Higher than everything else */
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(15, 23, 42, 0.98) !important;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+            border-right: 1px solid var(--glass-border);
+            overflow-y: auto;
+            scrollbar-width: none; /* Firefox */
+        }
+
+        .sidebar::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+
+        .sidebar.active {
+            left: 0 !important; /* Slide in */
+        }
+
+        #sidebar-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 99998;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+
+        #sidebar-backdrop.active {
+            display: block;
+        }
+
+        #mobile-sidebar-toggle {
+            display: inline-flex !important;
         }
 
         .sidebar-logo {
@@ -2424,52 +2468,7 @@
                 flex-direction: row; /* Keep side-by-side flex layout flow */
             }
 
-            .sidebar {
-                display: flex !important;
-                position: fixed !important;
-                top: 0;
-                left: -280px; /* Hide offscreen */
-                width: 260px;
-                height: 100vh;
-                z-index: 99999; /* Higher than everything else */
-                transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                background: rgba(15, 23, 42, 0.98) !important;
-                backdrop-filter: blur(20px);
-                -webkit-backdrop-filter: blur(20px);
-                box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
-                border-right: 1px solid var(--glass-border);
-                overflow-y: auto;
-                scrollbar-width: none; /* Firefox */
-            }
 
-            .sidebar::-webkit-scrollbar {
-                display: none; /* Chrome, Safari, Opera */
-            }
-
-            .sidebar.active {
-                left: 0 !important; /* Slide in */
-            }
-
-            #sidebar-backdrop {
-                display: none;
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                background: rgba(0, 0, 0, 0.6);
-                z-index: 99998;
-                backdrop-filter: blur(4px);
-                -webkit-backdrop-filter: blur(4px);
-            }
-
-            #sidebar-backdrop.active {
-                display: block;
-            }
-
-            #mobile-sidebar-toggle {
-                display: inline-flex !important; /* Show hamburger button on mobile */
-            }
 
             .sidebar-logo {
                 padding: 24px 20px;
@@ -3031,6 +3030,10 @@
                 
                 <!-- Profile Settings & Action Menu (mimicking option dropdown) -->
                 <div style="border-top: 1px solid var(--glass-border); margin: 8px 0; padding-top: 8px;"></div>
+                <a href="#" class="nav-item-settings" onclick="closeMobileSidebar(); openUserProfileModal();" style="padding: 10px 16px;">
+                    <i data-lucide="user" style="color: var(--text-secondary);"></i>
+                    <span>My Profile</span>
+                </a>
                 <a href="#" class="nav-item-settings" onclick="closeMobileSidebar(); openAvatarModal();" style="padding: 10px 16px;">
                     <i data-lucide="edit-3" style="color: var(--text-secondary);"></i>
                     <span>Change Avatar</span>
@@ -3085,7 +3088,7 @@
                 <div style="display: flex; align-items: center; gap: 16px;">
                     <!-- Mobile Hamburger Menu Toggle Button -->
                     <button id="mobile-sidebar-toggle" onclick="toggleMobileSidebar(event)" 
-                        style="display: none; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); color: white; cursor: pointer; padding: 8px; border-radius: var(--border-radius-md); align-items: center; justify-content: center; outline: none; transition: all 0.2s;"
+                        style="display: flex; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); color: white; cursor: pointer; padding: 8px; border-radius: var(--border-radius-md); align-items: center; justify-content: center; outline: none; transition: all 0.2s;"
                         onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'"
                         onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'">
                         <i data-lucide="menu" style="width: 20px; height: 20px;"></i>
@@ -3093,17 +3096,14 @@
                     <!-- USER PROFILE CARD WITH DROPDOWN -->
                     <div style="position: relative; display: inline-flex;">
                         <div class="topbar-user-profile" id="topbar-profile-trigger"
-                            onclick="toggleProfileDropdown(event)" title="Account & Settings"
-                            style="cursor: pointer; position: relative;">
+                            title="Student Profile"
+                            style="cursor: default; pointer-events: none; position: relative;">
                             <div class="user-avatar" id="topbar-user-avatar">🦁</div>
-                            <div class="user-avatar-edit-overlay">
-                                <i data-lucide="chevron-down" style="width: 14px; height: 14px;"></i>
-                            </div>
                         </div>
 
                         <!-- Floating Account & Navigation Dropdown Menu -->
                         <div id="profile-dropdown" class="glass hidden"
-                            style="position: absolute; left: 0; top: 52px; width: 220px; border-radius: var(--border-radius-md); border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 10px 30px var(--glass-shadow); z-index: 1500; padding: 8px; display: flex; flex-direction: column; gap: 4px;">
+                            style="position: absolute; left: 0; top: 52px; width: 220px; border-radius: var(--border-radius-md); border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 10px 30px var(--glass-shadow); z-index: 1500; padding: 8px; display: none !important; flex-direction: column; gap: 4px;">
                             <div
                                 style="padding: 8px 10px 10px 10px; border-bottom: 1px solid var(--glass-border); margin-bottom: 6px;">
                                 <div style="font-weight: 700; font-size: 0.88rem; color: white; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
@@ -4184,6 +4184,92 @@
                     onclick="closeAvatarModal()">Cancel</button>
                 <button type="button" id="btn-save-avatar" class="btn btn-primary" style="flex: 1;"
                     onclick="saveSelectedAvatar()">Save Profile</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- --- OVERLAY: USER DETAILED PROFILE --- -->
+    <div id="user-profile-modal" class="modal-overlay hidden" style="z-index: 1500;">
+        <div class="modal-card glass" style="width: 480px; max-width: 95%; text-align: left; align-items: stretch; gap: 20px; padding: 28px;">
+            <!-- Modal Header / Avatar Row -->
+            <div style="display: flex; align-items: center; gap: 20px; border-bottom: 1px solid var(--glass-border); padding-bottom: 18px; position: relative;">
+                <div class="user-avatar" id="profile-modal-avatar" style="width: 76px; height: 76px; font-size: 2.8rem; display: flex; align-items: center; justify-content: center; border: 2.5px solid var(--color-purple); border-radius: 50%; overflow: hidden; background: rgba(255,255,255,0.05); box-shadow: 0 0 16px rgba(168, 85, 247, 0.25);">
+                    🦁
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                    <h2 id="profile-modal-fullname" style="margin: 0; font-size: 1.45rem; font-weight: 800; color: white; letter-spacing: -0.5px;">Student Name</h2>
+                    <div id="profile-modal-role-badge">
+                        <span class="status-badge" style="padding: 2px 8px; border-radius: 12px; background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.3); color: #a5b4fc; font-weight: 600; text-transform: capitalize; font-size: 0.75rem;">Student</span>
+                    </div>
+                </div>
+                <button type="button" onclick="closeUserProfileModal()" style="position: absolute; right: 0; top: 0; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 50%; color: white; cursor: pointer; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                    <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                </button>
+            </div>
+
+            <!-- Profile Info Grid -->
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;">
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">Username</span>
+                    <div style="padding: 10px 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); border-radius: var(--border-radius-md); color: white; font-size: 0.88rem; font-weight: 500;" id="profile-modal-username">-</div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">Class Context</span>
+                    <div style="padding: 10px 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); border-radius: var(--border-radius-md); color: white; font-size: 0.88rem; font-weight: 500;" id="profile-modal-class">-</div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 6px; grid-column: span 2;">
+                    <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">Email Address</span>
+                    <div style="padding: 10px 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); border-radius: var(--border-radius-md); color: white; font-size: 0.88rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" id="profile-modal-email">-</div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 6px; grid-column: span 2;">
+                    <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">Mobile Number</span>
+                    <div style="padding: 10px 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); border-radius: var(--border-radius-md); color: white; font-size: 0.88rem; font-weight: 500;" id="profile-modal-mobile">-</div>
+                </div>
+            </div>
+
+            <!-- Stats Showcase Banner -->
+            <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(236, 72, 153, 0.08)); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--border-radius-md); padding: 14px; display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; gap: 10px;">
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+                        <i data-lucide="award" style="width: 13px; height: 13px; color: var(--color-purple);"></i> LVL
+                    </div>
+                    <div id="profile-modal-level" style="font-size: 1.35rem; font-weight: 900; color: white;">1</div>
+                </div>
+                <div style="border-right: 1px solid rgba(255,255,255,0.08);"></div>
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+                        <i data-lucide="zap" style="width: 13px; height: 13px; color: #fbbf24;"></i> TOTAL XP
+                    </div>
+                    <div id="profile-modal-xp" style="font-size: 1.35rem; font-weight: 900; color: white;">0</div>
+                </div>
+                <div style="border-right: 1px solid rgba(255,255,255,0.08);"></div>
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+                        <i data-lucide="flame" style="width: 13px; height: 13px; color: #f87171;"></i> STREAK
+                    </div>
+                    <div id="profile-modal-streak" style="font-size: 1.35rem; font-weight: 900; color: white;">0 days</div>
+                </div>
+            </div>
+
+            <!-- Badges Section -->
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <h4 style="margin: 0; font-size: 0.75rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="shield-check" style="width: 15px; height: 15px; color: var(--color-pink);"></i> Unlocked Badges
+                </h4>
+                <div id="profile-modal-badges-container" style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 48px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: var(--border-radius-md); padding: 12px; align-content: flex-start;">
+                    <!-- Badges render here -->
+                </div>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="modal-buttons" style="margin-top: 8px; display: flex; gap: 12px;">
+                <button type="button" class="btn btn-outline" style="flex: 1;" onclick="closeUserProfileModal()">Close</button>
+                <button type="button" class="btn btn-primary" style="flex: 2; gap: 6px;" onclick="closeUserProfileModal(); openAvatarModal();">
+                    <i data-lucide="edit-3" style="width: 15px; height: 15px;"></i> Edit Avatar
+                </button>
             </div>
         </div>
     </div>
@@ -10000,6 +10086,109 @@ Click one of the suggestions below, or type your own question!</div>
                     const input = document.getElementById('chat-message-input');
                     if (input) input.focus();
                 }
+            }
+        }
+
+        // --- USER DETAILED PROFILE MODAL CONTROLLERS ---
+        function openUserProfileModal() {
+            if (!currentUser) return;
+            const modal = document.getElementById('user-profile-modal');
+            if (!modal) return;
+
+            soundEffects.playPop();
+
+            // Populate text fields securely using innerText
+            const fullName = currentUser.first_name && currentUser.last_name
+                ? `${currentUser.first_name} ${currentUser.last_name}`
+                : (currentUser.first_name || currentUser.last_name || currentUser.username || 'Student');
+
+            document.getElementById('profile-modal-fullname').innerText = fullName;
+            document.getElementById('profile-modal-username').innerText = currentUser.username || '-';
+            document.getElementById('profile-modal-class').innerText = currentUser.class_name || 'Class 9';
+            document.getElementById('profile-modal-email').innerText = currentUser.email || 'Not Added';
+            document.getElementById('profile-modal-mobile').innerText = currentUser.mobile || 'Not Added';
+
+            // Role badge display
+            const roleEl = document.getElementById('profile-modal-role-badge');
+            if (roleEl) {
+                const roleText = currentUser.role === 'guest' ? 'Guest' : (currentUser.role || 'Student');
+                roleEl.innerHTML = `<span class="status-badge" style="padding: 2px 8px; border-radius: 12px; background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.3); color: #a5b4fc; font-weight: 600; text-transform: capitalize; font-size: 0.75rem;">${escapeHTML(roleText)}</span>`;
+            }
+
+            // Stats fields
+            document.getElementById('profile-modal-level').innerText = userStats.level || currentUser.level || 1;
+            document.getElementById('profile-modal-xp').innerText = userStats.xp || currentUser.xp || 0;
+            document.getElementById('profile-modal-streak').innerText = `${userStats.streak || currentUser.streak || 0} days`;
+
+            // Avatar render
+            const avatarVal = currentUser.avatar || '🦁';
+            const modalAvatarEl = document.getElementById('profile-modal-avatar');
+            if (modalAvatarEl) {
+                const isImage = avatarVal.startsWith('/') || avatarVal.startsWith('data:image/');
+                modalAvatarEl.innerHTML = isImage
+                    ? `<img src="${escapeHTML(avatarVal)}" alt="User Avatar" style="width: 100%; height: 100%; object-fit: cover;">`
+                    : avatarVal;
+            }
+
+            // Badges shelf
+            const badgesContainer = document.getElementById('profile-modal-badges-container');
+            if (badgesContainer) {
+                badgesContainer.innerHTML = '';
+                const unlockedBadges = userStats.badges || [];
+
+                const allAvailableBadges = [
+                    { name: 'Ignition Flame 🔥', desc: 'Welcome! Logged in and ready to study.', icon: 'flame' },
+                    { name: 'Focus Scholar ⏱️', desc: 'Focused! Accumulate 1.0+ hour of focus session.', icon: 'clock' },
+                    { name: 'Task Conqueror 🎯', desc: 'Planner Master! Complete 5 planner tasks.', icon: 'check-square' },
+                    { name: 'Perfect Score 🎯', desc: 'Ace! Get a perfect 100% on any topic quiz.', icon: 'star' },
+                    { name: 'Quiz Whiz 🧠', desc: 'Smart! Complete 3 conceptual quizzes in the arena.', icon: 'brain' },
+                    { name: 'Daily Champ 👑', desc: 'Consistency! Build a study streak of 3+ days.', icon: 'crown' }
+                ];
+
+                let hasBadges = false;
+                allAvailableBadges.forEach(badge => {
+                    const isUnlocked = unlockedBadges.some(b => b.badge_name === badge.name);
+                    if (isUnlocked) {
+                        hasBadges = true;
+                        const badgeEl = document.createElement('div');
+                        badgeEl.className = 'badge-item unlocked';
+                        badgeEl.setAttribute('data-badge', badge.name);
+                        badgeEl.setAttribute('title', `${badge.name}: ${badge.desc}`);
+                        badgeEl.style.margin = '0';
+                        badgeEl.style.padding = '6px 12px';
+                        badgeEl.style.background = 'rgba(255, 255, 255, 0.05)';
+                        badgeEl.style.border = '1px solid var(--glass-border)';
+                        badgeEl.style.borderRadius = 'var(--border-radius-md)';
+                        badgeEl.style.display = 'flex';
+                        badgeEl.style.alignItems = 'center';
+                        badgeEl.style.gap = '8px';
+
+                        badgeEl.innerHTML = `
+                            <div class="badge-icon" style="width: 20px; height: 20px; font-size: 0.85rem; border: none; box-shadow: none; background: transparent; display: flex; align-items: center; justify-content: center; opacity: 1;">
+                                <i data-lucide="${badge.icon}" style="width: 14px; height: 14px; color: var(--color-pink);"></i>
+                            </div>
+                            <span class="badge-name" style="font-size: 0.8rem; font-weight: 600; color: white;">${escapeHTML(badge.name.split(' ')[0])}</span>
+                        `;
+                        badgesContainer.appendChild(badgeEl);
+                    }
+                });
+
+                if (!hasBadges) {
+                    badgesContainer.innerHTML = `<span style="font-size: 0.82rem; color: var(--text-muted); font-style: italic; width: 100%; text-align: center;">No badges unlocked yet. Keep learning to earn achievements!</span>`;
+                }
+            }
+
+            modal.classList.remove('hidden');
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }
+
+        function closeUserProfileModal() {
+            soundEffects.playPop();
+            const modal = document.getElementById('user-profile-modal');
+            if (modal) {
+                modal.classList.add('hidden');
             }
         }
 
