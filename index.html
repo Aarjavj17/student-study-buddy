@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Buddy – Playful Study & Growth App</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%236366f1'/%3E%3Cstop offset='100%25' stop-color='%23ec4899'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='url(%23grad)'/%3E%3Ctext x='50' y='70' font-size='56' text-anchor='middle'%3E🦉%3C/text%3E%3C/svg%3E">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2468,47 +2469,160 @@
                 flex-direction: row; /* Keep side-by-side flex layout flow */
             }
 
-
+            .main-content {
+                padding: 12px !important;
+                gap: 12px !important;
+            }
 
             .sidebar-logo {
-                padding: 24px 20px;
+                padding: 20px 16px;
             }
 
             .sidebar-nav {
                 flex-direction: column !important;
                 overflow-x: visible;
-                padding: 20px 12px;
-                gap: 8px;
+                padding: 16px 10px;
+                gap: 6px;
             }
 
             .nav-item span, .nav-item-settings span {
                 display: inline !important; /* Always show text labels on vertical sidebar */
-                font-size: 0.9rem;
+                font-size: 0.88rem;
             }
 
+            /* Sleek Horizontal Topbar */
             .topbar {
-                flex-direction: column !important;
-                align-items: stretch !important;
-                gap: 16px !important;
-                padding: 16px 20px !important;
+                flex-direction: row !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                gap: 8px !important;
+                padding: 10px 12px !important;
+                border-radius: var(--border-radius-md) !important;
+                margin-bottom: 4px !important;
             }
 
+            .topbar > div:first-child {
+                gap: 8px !important;
+                min-width: 0;
+            }
+
+            .topbar-welcome h2 {
+                font-size: 1.05rem !important;
+                margin-bottom: 0 !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 120px !important;
+            }
+
+            #user-motto {
+                display: none !important;
+            }
+
+            .topbar-user-profile {
+                padding: 2px !important;
+                background: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+                gap: 0 !important;
+            }
+
+            .user-avatar {
+                width: 32px !important;
+                height: 32px !important;
+                font-size: 1.1rem !important;
+                border-width: 1px !important;
+            }
+
+            /* Unified Stat Pills */
             .topbar-stats {
-                flex-direction: column !important;
-                align-items: stretch !important;
-                width: 100% !important;
-                gap: 10px !important;
+                flex-direction: row !important;
+                align-items: center !important;
+                justify-content: flex-end !important;
+                width: auto !important;
+                gap: 6px !important;
             }
 
             .xp-tracker {
-                width: 100% !important;
+                width: auto !important;
+                padding: 4px 8px !important;
+                background: rgba(99, 102, 241, 0.12) !important;
+                border: 1px solid rgba(99, 102, 241, 0.25) !important;
+                border-radius: var(--border-radius-sm) !important;
+                box-shadow: none !important;
+            }
+
+            .xp-tracker .stat-info {
+                display: flex !important;
+                flex-direction: row !important;
+                gap: 4px !important;
+                font-size: 0.78rem !important;
+                font-weight: 700 !important;
+            }
+
+            .xp-tracker .stat-value {
+                display: none !important;
+            }
+
+            .xp-tracker .progress-bar-container {
+                display: none !important;
+            }
+
+            .streak-tracker {
+                padding: 4px 8px !important;
+                min-width: auto !important;
+                background: rgba(245, 158, 11, 0.12) !important;
+                border: 1px solid rgba(245, 158, 11, 0.25) !important;
+                border-radius: var(--border-radius-sm) !important;
+                gap: 4px !important;
+                box-shadow: none !important;
+            }
+
+            .streak-icon-wrapper {
+                width: 16px !important;
+                height: 16px !important;
+                background: transparent !important;
+                color: var(--color-warning) !important;
+            }
+
+            .streak-fire-icon {
+                width: 14px !important;
+                height: 14px !important;
+            }
+
+            .streak-tracker .streak-val {
+                font-size: 0.78rem !important;
+                font-weight: 800 !important;
+            }
+
+            .streak-tracker .streak-lbl {
+                display: none !important;
+            }
+
+            /* Responsive Dashboard Cards */
+            .dashboard-grid {
+                gap: 12px !important;
+            }
+
+            .dashboard-card {
+                padding: 14px !important;
+            }
+
+            .dashboard-card h3 {
+                font-size: 1rem !important;
+                margin-bottom: 6px !important;
+            }
+
+            .card-subtitle {
+                margin-bottom: 12px !important;
+                font-size: 0.8rem !important;
             }
 
             .welcome-hero {
                 flex-direction: column !important;
                 align-items: flex-start !important;
-                gap: 16px !important;
-                padding: 20px !important;
+                gap: 12px !important;
+                padding: 16px !important;
             }
 
             .welcome-hero .hero-text {
@@ -2520,15 +2634,26 @@
                 display: none !important;
             }
 
+            .welcome-hero h3 {
+                font-size: 1.1rem !important;
+            }
+
+            .welcome-hero p {
+                font-size: 0.82rem !important;
+                line-height: 1.4 !important;
+            }
+
             .hero-actions {
                 flex-wrap: wrap;
-                gap: 10px;
+                gap: 8px;
                 width: 100%;
             }
 
             .hero-actions .btn {
                 flex: 1 1 auto;
-                min-width: 120px;
+                min-width: 100px;
+                padding: 8px 14px !important;
+                font-size: 0.85rem !important;
             }
 
             .form-inline-group {
@@ -2553,6 +2678,80 @@
             .task-title-text {
                 word-break: break-word;
                 white-space: normal;
+            }
+
+            /* Subject Chapters List */
+            .chapters-grid {
+                grid-template-columns: 1fr !important;
+                gap: 12px !important;
+            }
+
+            .chapter-card {
+                padding: 14px !important;
+                gap: 12px !important;
+            }
+
+            .avatar-selection-grid {
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 8px !important;
+            }
+
+            .avatar-option-card {
+                padding: 8px !important;
+                font-size: 1.8rem !important;
+            }
+
+            /* Auth Page responsive spacing */
+            .auth-card {
+                padding: 24px 16px !important;
+                max-width: 95% !important;
+                margin: auto !important;
+            }
+
+            .auth-header h2 {
+                font-size: 1.5rem !important;
+            }
+
+            .auth-header p {
+                font-size: 0.85rem !important;
+                margin-bottom: 18px !important;
+            }
+
+            .auth-tabs {
+                margin-bottom: 18px !important;
+            }
+
+            .form-group {
+                margin-bottom: 14px !important;
+            }
+
+            .form-group label {
+                font-size: 0.8rem !important;
+            }
+
+            /* User Profile Modal layout */
+            .modal-card {
+                padding: 16px !important;
+                width: 92% !important;
+                max-height: 90vh !important;
+                overflow-y: auto !important;
+            }
+
+            /* Chatbot Responsive Widget */
+            .chatbot-container {
+                bottom: 80px !important;
+                right: 12px !important;
+                width: calc(100vw - 24px) !important;
+                height: 450px !important;
+                max-height: calc(100vh - 110px) !important;
+                border-radius: var(--border-radius-md) !important;
+            }
+
+            .chat-widget-toggle {
+                bottom: 12px !important;
+                right: 12px !important;
+                width: 48px !important;
+                height: 48px !important;
             }
 
             /* PDF Viewer Responsive Styles */
@@ -2583,6 +2782,38 @@
             .pdf-viewer-header button {
                 padding: 6px 10px !important;
                 font-size: 0.8rem !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .topbar-welcome h2 {
+                max-width: 95px !important;
+            }
+
+            .topbar-stats {
+                gap: 4px !important;
+            }
+
+            .xp-tracker, .streak-tracker {
+                padding: 3px 6px !important;
+            }
+
+            .xp-tracker .stat-info {
+                font-size: 0.72rem !important;
+            }
+
+            .streak-tracker .streak-val {
+                font-size: 0.72rem !important;
+            }
+
+            .welcome-hero h3 {
+                font-size: 1rem !important;
+            }
+
+            .hero-actions .btn {
+                min-width: 90px !important;
+                font-size: 0.8rem !important;
+                padding: 6px 10px !important;
             }
         }
 
@@ -2852,7 +3083,7 @@
                     <input type="text" id="reg-lastname" placeholder="Enter last name">
                 </div>
 
-                <div class="form-group reg-only-field" id="reg-mobile-group">
+                <div class="form-group reg-only-field" id="reg-mobile-group" style="display: none !important;">
                     <label for="reg-mobile"
                         style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                         <span><i data-lucide="phone"></i> Mobile Number</span>
@@ -5137,7 +5368,7 @@
 
                 errorEl.classList.add('hidden');
 
-                const regInputs = ['reg-firstname', 'reg-lastname', 'reg-mobile'];
+                const regInputs = ['reg-firstname', 'reg-lastname'];
 
                 const forgotLink = document.getElementById('forgot-password-link');
                 if (isRegisterMode) {
@@ -5857,7 +6088,7 @@
             if (toggleLink) toggleLink.innerText = 'Register here';
 
             // Reset fields & required flags
-            const regInputs = ['reg-firstname', 'reg-lastname', 'reg-mobile'];
+            const regInputs = ['reg-firstname', 'reg-lastname'];
             regInputs.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -9877,6 +10108,30 @@ Click one of the suggestions below, or type your own question!</div>
             return escaped;
         }
 
+        function typeWriterHTML(element, htmlContent, speed = 25, onComplete) {
+            const tokens = htmlContent.match(/(<[^>]+>|[^<>\s]+|\s+)/g) || [];
+            let i = 0;
+            element.innerHTML = "";
+            
+            function next() {
+                if (i < tokens.length) {
+                    const token = tokens[i++];
+                    if (token.startsWith('<')) {
+                        element.innerHTML += token;
+                        next();
+                    } else {
+                        element.innerHTML += token;
+                        const container = document.getElementById('chat-messages-container');
+                        if (container) container.scrollTop = container.scrollHeight;
+                        setTimeout(next, speed);
+                    }
+                } else {
+                    if (onComplete) onComplete();
+                }
+            }
+            next();
+        }
+
         function appendChatMessage(role, text) {
             const container = document.getElementById('chat-messages-container');
             if (!container) return;
@@ -9904,13 +10159,25 @@ Click one of the suggestions below, or type your own question!</div>
 
             row.innerHTML = `
                 ${avatarHtml}
-                <div class="chat-message-bubble">${formattedText}</div>
+                <div class="chat-message-bubble"></div>
             `;
 
             container.appendChild(row);
             container.scrollTop = container.scrollHeight;
 
-            if (!isUser) {
+            const bubble = row.querySelector('.chat-message-bubble');
+
+            if (isUser) {
+                bubble.innerHTML = formattedText;
+            } else {
+                const speed = text.length > 500 ? (text.length > 1000 ? 5 : 12) : 25;
+                typeWriterHTML(bubble, formattedText, speed, () => {
+                    const input = document.getElementById('chat-message-input');
+                    const submitBtn = input ? input.closest('form').querySelector('button') : null;
+                    if (input) input.disabled = false;
+                    if (submitBtn) submitBtn.disabled = false;
+                    if (input) input.focus();
+                });
                 lucide.createIcons();
             }
         }
@@ -10069,9 +10336,7 @@ Click one of the suggestions below, or type your own question!</div>
                     chatHistory.shift();
                 }
 
-                input.disabled = false;
-                if (submitBtn) submitBtn.disabled = false;
-                input.focus();
+                // input re-enabling will occur in appendChatMessage typewriter callback
 
             }, 800);
         }
@@ -10267,8 +10532,8 @@ Click one of the suggestions below, or type your own question!</div>
             const file = e.target.files[0];
             if (!file) return;
 
-            if (file.size > 2 * 1024 * 1024) {
-                alert("File size is too large. Maximum size is 2MB.");
+            if (file.size > 5 * 1024 * 1024) {
+                alert("File size is too large. Maximum size is 5MB.");
                 e.target.value = '';
                 return;
             }
