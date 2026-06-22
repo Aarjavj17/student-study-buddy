@@ -722,22 +722,26 @@ def get_admin_stats():
         class10_count = cursor.fetchone()['count']
         
         # 5. Online users count (active within 120 seconds)
-        cursor.execute("SELECT COUNT(*) as count FROM users WHERE last_active >= datetime('now', '-120 seconds')")
+        import datetime
+        now = datetime.datetime.utcnow()
+        cutoff = (now - datetime.timedelta(seconds=120)).strftime('%Y-%m-%d %H:%M:%S')
+        cursor.execute("SELECT COUNT(*) as count FROM users WHERE last_active >= ?", (cutoff,))
         online_users = cursor.fetchone()['count']
         
         # 6. List of all users
         cursor.execute("SELECT id, username, first_name, last_name, email, mobile, class_name, xp, level, streak, total_hours, last_active FROM users ORDER BY id ASC")
         users_rows = cursor.fetchall()
         
-        import datetime
-        now = datetime.datetime.utcnow()
         users_list = []
         for row in users_rows:
             is_online = False
-            last_active_str = row['last_active']
-            if last_active_str:
+            last_active_val = row['last_active']
+            if last_active_val:
                 try:
-                    last_active_dt = datetime.datetime.strptime(last_active_str, '%Y-%m-%d %H:%M:%S')
+                    if isinstance(last_active_val, datetime.datetime):
+                        last_active_dt = last_active_val.replace(tzinfo=None)
+                    else:
+                        last_active_dt = datetime.datetime.strptime(str(last_active_val), '%Y-%m-%d %H:%M:%S')
                     diff = (now - last_active_dt).total_seconds()
                     if diff < 120:
                         is_online = True
