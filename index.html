@@ -3273,7 +3273,7 @@
                     <i data-lucide="key-round" style="color: var(--text-secondary);"></i>
                     <span>Change Password</span>
                 </a>
-                <a href="#" class="nav-item-settings" onclick="closeMobileSidebar(); handleLogout(event);" style="padding: 10px 16px; color: var(--color-error); font-weight: 600;">
+                <a href="#" id="sidebar-logout-item" class="nav-item-settings" onclick="closeMobileSidebar(); handleLogout(event);" style="padding: 10px 16px; color: var(--color-error); font-weight: 600;">
                     <i data-lucide="log-out" style="color: var(--color-error);"></i>
                     <span>Logout</span>
                 </a>
@@ -4452,12 +4452,12 @@
 
                 <div style="display: flex; flex-direction: column; gap: 6px; grid-column: span 2;">
                     <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">Email Address</span>
-                    <div style="padding: 10px 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); border-radius: var(--border-radius-md); color: white; font-size: 0.88rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" id="profile-modal-email">-</div>
+                    <input type="email" id="profile-modal-email" placeholder="Add Email Address" style="width: 100%; padding: 10px 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); border-radius: var(--border-radius-md); color: white; font-size: 0.88rem; font-family: var(--font-sans); outline: none; transition: all 0.2s; box-sizing: border-box;" onfocus="this.style.borderColor='var(--color-purple)'" onblur="this.style.borderColor='var(--glass-border)'">
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 6px; grid-column: span 2;">
                     <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">Mobile Number</span>
-                    <div style="padding: 10px 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); border-radius: var(--border-radius-md); color: white; font-size: 0.88rem; font-weight: 500;" id="profile-modal-mobile">-</div>
+                    <input type="tel" id="profile-modal-mobile" placeholder="Add Mobile Number" style="width: 100%; padding: 10px 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); border-radius: var(--border-radius-md); color: white; font-size: 0.88rem; font-family: var(--font-sans); outline: none; transition: all 0.2s; box-sizing: border-box;" onfocus="this.style.borderColor='var(--color-purple)'" onblur="this.style.borderColor='var(--glass-border)'">
                 </div>
             </div>
 
@@ -4495,11 +4495,20 @@
                 </div>
             </div>
 
+            <!-- Profile Status Message Area -->
+            <div id="profile-modal-status" class="error-msg hidden" style="width: 100%; margin-top: 10px; margin-bottom: 0px; font-size: 0.85rem; padding: 10px 12px; border-radius: var(--border-radius-md); display: flex; align-items: center; gap: 8px;">
+                <i id="profile-modal-status-icon" data-lucide="alert-circle" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
+                <span id="profile-modal-status-text">Status message</span>
+            </div>
+
             <!-- Modal Action Buttons -->
-            <div class="modal-buttons" style="margin-top: 8px; display: flex; gap: 12px;">
-                <button type="button" class="btn btn-outline" style="flex: 1;" onclick="closeUserProfileModal()">Close</button>
-                <button type="button" class="btn btn-primary" style="flex: 2; gap: 6px;" onclick="closeUserProfileModal(); openAvatarModal();">
-                    <i data-lucide="edit-3" style="width: 15px; height: 15px;"></i> Edit Avatar
+            <div class="modal-buttons" style="margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-outline" style="flex: 1; min-width: 80px;" onclick="closeUserProfileModal()">Close</button>
+                <button type="button" class="btn btn-secondary" style="flex: 1.2; gap: 6px; min-width: 120px;" onclick="closeUserProfileModal(); openAvatarModal();">
+                    <i data-lucide="image" style="width: 15px; height: 15px;"></i> Edit Avatar
+                </button>
+                <button type="button" class="btn btn-primary" style="flex: 1.5; gap: 6px; min-width: 140px;" onclick="saveProfileDetails()">
+                    <i data-lucide="save" style="width: 15px; height: 15px;"></i> Save Changes
                 </button>
             </div>
         </div>
@@ -10357,6 +10366,13 @@ Click one of the suggestions below, or type your own question!</div>
         // --- USER DETAILED PROFILE MODAL CONTROLLERS ---
         function openUserProfileModal() {
             if (!currentUser) return;
+            
+            // Redirect guest to login screen if clicking 'My Profile'
+            if (currentUser.role === 'guest') {
+                openAuthModal('access My Profile');
+                return;
+            }
+
             const modal = document.getElementById('user-profile-modal');
             if (!modal) return;
 
@@ -10370,8 +10386,12 @@ Click one of the suggestions below, or type your own question!</div>
             document.getElementById('profile-modal-fullname').innerText = fullName;
             document.getElementById('profile-modal-username').innerText = currentUser.username || '-';
             document.getElementById('profile-modal-class').innerText = currentUser.class_name || 'Class 9';
-            document.getElementById('profile-modal-email').innerText = currentUser.email || 'Not Added';
-            document.getElementById('profile-modal-mobile').innerText = currentUser.mobile || 'Not Added';
+            document.getElementById('profile-modal-email').value = currentUser.email || '';
+            document.getElementById('profile-modal-mobile').value = currentUser.mobile || '';
+
+            // Hide status message
+            const statusEl = document.getElementById('profile-modal-status');
+            if (statusEl) statusEl.classList.add('hidden');
 
             // Role badge display
             const roleEl = document.getElementById('profile-modal-role-badge');
@@ -10454,6 +10474,103 @@ Click one of the suggestions below, or type your own question!</div>
             const modal = document.getElementById('user-profile-modal');
             if (modal) {
                 modal.classList.add('hidden');
+            }
+        }
+
+        function showProfileStatus(msg, isError) {
+            const el = document.getElementById('profile-modal-status');
+            const textEl = document.getElementById('profile-modal-status-text');
+            const iconEl = document.getElementById('profile-modal-status-icon');
+            
+            if (!el || !textEl || !iconEl) return;
+            
+            textEl.innerText = msg;
+            if (isError) {
+                el.style.color = 'var(--color-error)';
+                el.style.backgroundColor = 'var(--color-error-bg)';
+                el.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                iconEl.setAttribute('data-lucide', 'alert-circle');
+            } else {
+                el.style.color = 'var(--color-success)';
+                el.style.backgroundColor = 'var(--color-success-bg)';
+                el.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                iconEl.setAttribute('data-lucide', 'check-circle');
+            }
+            
+            el.classList.remove('hidden');
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }
+
+        async function saveProfileDetails() {
+            if (!currentUser) return;
+            const emailInput = document.getElementById('profile-modal-email');
+            const mobileInput = document.getElementById('profile-modal-mobile');
+            const statusEl = document.getElementById('profile-modal-status');
+            
+            if (!emailInput || !mobileInput) return;
+            
+            const email = emailInput.value.trim();
+            const mobile = mobileInput.value.trim();
+            
+            // Client side validation
+            if (email && (!email.includes('@') || !email.includes('.'))) {
+                showProfileStatus('Please enter a valid email address.', true);
+                return;
+            }
+            if (mobile) {
+                const cleanMobile = mobile.replace(/\D/g, '');
+                if (cleanMobile.length !== 10) {
+                    showProfileStatus('Mobile number must be exactly 10 digits.', true);
+                    return;
+                }
+            }
+            
+            if (currentUser.role === 'guest') {
+                if (useBackend) {
+                    showProfileStatus('Guest users cannot save profile details. Please login or register.', true);
+                    return;
+                } else {
+                    currentUser.email = email;
+                    currentUser.mobile = mobile;
+                    localStore.saveActiveUser(currentUser);
+                    showProfileStatus('Profile details updated locally!', false);
+                    setTimeout(() => {
+                        if (statusEl) statusEl.classList.add('hidden');
+                    }, 3000);
+                    return;
+                }
+            }
+            
+            try {
+                showProfileStatus('Saving changes...', false);
+                const response = await fetch('/api/auth/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, mobile })
+                });
+                
+                const result = await response.json();
+                if (response.ok) {
+                    // Update current user locally
+                    currentUser.email = result.email;
+                    currentUser.mobile = result.mobile;
+                    
+                    showProfileStatus('Profile details updated successfully!', false);
+                    soundEffects.playPop();
+                    
+                    setTimeout(() => {
+                        if (statusEl) statusEl.classList.add('hidden');
+                    }, 3000);
+                } else {
+                    showProfileStatus(result.error || 'Failed to save profile changes.', true);
+                }
+            } catch (err) {
+                console.error(err);
+                showProfileStatus('An unexpected network error occurred.', true);
             }
         }
 
@@ -10722,9 +10839,31 @@ Click one of the suggestions below, or type your own question!</div>
                     logoutItem.setAttribute('onclick', 'handleDropdownLogout(event)');
                     logoutItem.style.color = 'var(--color-error)';
                 }
-                if (window.lucide) {
-                    lucide.createIcons();
+            }
+
+            const sidebarLogoutItem = document.getElementById('sidebar-logout-item');
+            if (sidebarLogoutItem) {
+                if (currentUser && currentUser.role === 'guest') {
+                    sidebarLogoutItem.innerHTML = `
+                        <i data-lucide="log-in" style="color: var(--color-primary);"></i>
+                        <span>Login / Sign Up</span>
+                    `;
+                    sidebarLogoutItem.setAttribute('onclick', 'closeMobileSidebar(); handleLogout(event);');
+                    sidebarLogoutItem.style.color = 'var(--color-primary)';
+                    sidebarLogoutItem.style.fontWeight = '600';
+                } else {
+                    sidebarLogoutItem.innerHTML = `
+                        <i data-lucide="log-out" style="color: var(--color-error);"></i>
+                        <span>Logout</span>
+                    `;
+                    sidebarLogoutItem.setAttribute('onclick', 'closeMobileSidebar(); handleLogout(event);');
+                    sidebarLogoutItem.style.color = 'var(--color-error)';
+                    sidebarLogoutItem.style.fontWeight = '600';
                 }
+            }
+
+            if (window.lucide) {
+                lucide.createIcons();
             }
         }
 

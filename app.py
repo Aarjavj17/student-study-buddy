@@ -789,12 +789,12 @@ def delete_user(user_id):
         if current_user and current_user['id'] == user_id:
             return jsonify({'error': 'You cannot delete your own admin account!'}), 400
             
-        # Delete from users and child tables
-        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        # Delete from users and child tables in proper order (child tables first to satisfy PostgreSQL Foreign Key checks)
         cursor.execute("DELETE FROM tasks WHERE user_id = ?", (user_id,))
         cursor.execute("DELETE FROM notes WHERE user_id = ?", (user_id,))
         cursor.execute("DELETE FROM quiz_attempts WHERE user_id = ?", (user_id,))
         cursor.execute("DELETE FROM user_badges WHERE user_id = ?", (user_id,))
+        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
         
         db.commit()
         return jsonify({'message': 'User deleted successfully!'})
@@ -880,6 +880,42 @@ def update_class():
         return jsonify({
             'message': 'Class updated successfully!',
             'class_name': class_name
+        })
+    except Exception as e:
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
+
+@app.route('/api/auth/profile', methods=['POST'])
+def update_profile():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized.'}), 401
+        
+    data = request.json or {}
+    email = data.get('email', '').strip()
+    mobile = data.get('mobile', '').strip()
+    
+    # Validation
+    if email:
+        if '@' not in email or '.' not in email:
+            return jsonify({'error': 'Please enter a valid email address.'}), 400
+            
+    if mobile:
+        # Check if 10-digit numeric
+        clean_mobile = ''.join(c for c in mobile if c.isdigit())
+        if len(clean_mobile) != 10:
+            return jsonify({'error': 'Mobile number must be a valid 10-digit number.'}), 400
+        mobile = clean_mobile
+
+    db = get_db()
+    cursor = db.cursor()
+    
+    try:
+        cursor.execute('UPDATE users SET email = ?, mobile = ? WHERE id = ?', (email, mobile, user['id']))
+        db.commit()
+        return jsonify({
+            'message': 'Profile updated successfully!',
+            'email': email,
+            'mobile': mobile
         })
     except Exception as e:
         return jsonify({'error': f'Database error: {str(e)}'}), 500
