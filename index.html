@@ -20,6 +20,9 @@
     <!-- Canvas Confetti -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <!-- Embedded CSS Style -->
     <style>
         /* --- STUDENT BUDDY CORE STYLING --- */
@@ -68,6 +71,79 @@
             /* Fonts */
             --font-sans: 'Outfit', sans-serif;
             --font-playful: 'Playpen Sans', cursive;
+        }
+
+        /* --- LIGHT MODE VARIABLES & OVERRIDES --- */
+        body.light-mode {
+            --bg-primary: hsl(210, 30%, 96%);
+            --bg-secondary: hsl(210, 30%, 90%);
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(15, 23, 42, 0.08);
+            --glass-border-hover: rgba(99, 102, 241, 0.35);
+            --glass-shadow: rgba(0, 0, 0, 0.06);
+
+            --color-primary: hsl(238, 85%, 58%);
+            --color-primary-hover: hsl(238, 85%, 52%);
+            --color-primary-glow: rgba(99, 102, 241, 0.12);
+
+            --text-primary: hsl(222, 47%, 12%);
+            --text-secondary: hsl(222, 20%, 35%);
+            --text-muted: hsl(222, 10%, 55%);
+            
+            background-image:
+                radial-gradient(at 10% 20%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+                radial-gradient(at 90% 80%, rgba(236, 72, 153, 0.04) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(255, 255, 255, 0.8) 0px, transparent 100%);
+        }
+
+        /* Smart inline styling overrides for Light Mode */
+        body.light-mode [style*="color: white"],
+        body.light-mode [style*="color:white"],
+        body.light-mode [style*="color: #fff"],
+        body.light-mode [style*="color:#fff"] {
+            color: var(--text-primary) !important;
+        }
+
+        body.light-mode [style*="background: rgba(0,0,0"],
+        body.light-mode [style*="background:rgba(0,0,0"],
+        body.light-mode [style*="background: rgba(0, 0, 0"] {
+            background: rgba(0, 0, 0, 0.04) !important;
+            color: var(--text-primary) !important;
+        }
+
+        body.light-mode [style*="background:rgba(255,255,255,0.0"],
+        body.light-mode [style*="background: rgba(255,255,255,0.0"],
+        body.light-mode [style*="background: rgba(255, 255, 255, 0.0"] {
+            background: rgba(0, 0, 0, 0.02) !important;
+            color: var(--text-primary) !important;
+        }
+        
+        body.light-mode .activity-table th,
+        body.light-mode .admin-table th {
+            background: rgba(0, 0, 0, 0.05) !important;
+            color: var(--text-primary) !important;
+        }
+
+        body.light-mode select {
+            color: var(--text-primary) !important;
+            background: var(--bg-primary) !important;
+        }
+        
+        body.light-mode select option {
+            background: var(--bg-primary) !important;
+            color: var(--text-primary) !important;
+        }
+
+        body.light-mode input,
+        body.light-mode textarea {
+            background: rgba(0,0,0,0.03) !important;
+            color: var(--text-primary) !important;
+            border-color: var(--glass-border) !important;
+        }
+
+        body.light-mode input::placeholder,
+        body.light-mode textarea::placeholder {
+            color: var(--text-muted) !important;
         }
 
         /* --- RESET & BASIC STYLES --- */
@@ -2465,6 +2541,11 @@
         }
 
         @media (max-width: 768px) {
+            .planner-grid {
+                grid-template-columns: 1fr !important;
+                gap: 16px !important;
+            }
+
             .app-layout {
                 flex-direction: row; /* Keep side-by-side flex layout flow */
             }
@@ -3273,6 +3354,10 @@
                     <i data-lucide="key-round" style="color: var(--text-secondary);"></i>
                     <span>Change Password</span>
                 </a>
+                <a href="#" id="sidebar-theme-toggle" class="nav-item-settings" onclick="toggleTheme(event);" style="padding: 10px 16px;">
+                    <i id="theme-toggle-icon" data-lucide="sun" style="color: var(--text-secondary);"></i>
+                    <span id="theme-toggle-text">Light Mode</span>
+                </a>
                 <a href="#" id="sidebar-logout-item" class="nav-item-settings" onclick="closeMobileSidebar(); handleLogout(event);" style="padding: 10px 16px; color: var(--color-error); font-weight: 600;">
                     <i data-lucide="log-out" style="color: var(--color-error);"></i>
                     <span>Logout</span>
@@ -3596,37 +3681,103 @@
                             </div>
                         </div>
 
-                        <!-- ADD TASK FORM -->
-                        <form id="add-task-form" class="add-task-form glass">
-                            <div class="form-inline-group">
-                                <input type="text" id="task-title"
-                                    placeholder="What do you want to study? (e.g. Maths: Algebra, Chemistry notes)"
-                                    required>
+                        <div class="planner-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; margin-top: 15px;">
+                            
+                            <!-- Left: Tasks List -->
+                            <div class="planner-tasks-column">
+                                <!-- ADD TASK FORM -->
+                                <form id="add-task-form" class="add-task-form glass" style="margin-bottom: 20px; padding: 12px;">
+                                    <div class="form-inline-group" style="display: flex; gap: 8px;">
+                                        <input type="text" id="task-title"
+                                            placeholder="What do you want to study? (e.g. Maths, Chemistry notes)"
+                                            required style="flex: 1; padding: 8px 12px; font-size: 0.85rem;">
+        
+                                        <select id="task-subject" style="max-width: 110px; padding: 8px; font-size: 0.85rem;">
+                                            <option value="Maths">Maths</option>
+                                            <option value="Science">Science</option>
+                                            <option value="English">English</option>
+                                            <option value="Social Studies">Social Studies</option>
+                                            <option value="General">General</option>
+                                        </select>
+        
+                                        <button type="submit" class="btn btn-primary btn-sm" style="padding: 8px 12px;">
+                                            <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                                        </button>
+                                    </div>
+                                </form>
+        
+                                <!-- TASKS LIST -->
+                                <div class="tasks-container glass" style="padding: 16px; border-radius: var(--border-radius-lg);">
+                                    <div class="tasks-filter" style="display: flex; gap: 8px; margin-bottom: 12px; border-bottom: 1px solid var(--glass-border); padding-bottom: 8px;">
+                                        <button type="button" class="filter-tab active btn btn-xs btn-ghost" data-filter="all" style="padding: 4px 8px; font-size: 0.75rem;">All</button>
+                                        <button type="button" class="filter-tab btn btn-xs btn-ghost" data-filter="active" style="padding: 4px 8px; font-size: 0.75rem;">Active</button>
+                                        <button type="button" class="filter-tab btn btn-xs btn-ghost" data-filter="completed" style="padding: 4px 8px; font-size: 0.75rem;">Completed</button>
+                                    </div>
+        
+                                    <div id="tasks-list" class="tasks-list" style="display: flex; flex-direction: column; gap: 8px;">
+                                        <!-- Dynamic Tasks here -->
+                                    </div>
+                                </div>
+                            </div>
 
-                                <select id="task-subject">
-                                    <option value="Maths">Maths</option>
-                                    <option value="Science">Science</option>
-                                    <option value="English">English</option>
-                                    <option value="Social Studies">Social Studies</option>
-                                    <option value="General">General</option>
-                                </select>
+                            <!-- Right: AI Study Plan Generator -->
+                            <div class="planner-ai-column glass" style="padding: 20px; border-radius: var(--border-radius-lg); display: flex; flex-direction: column; gap: 16px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div style="background: var(--color-primary-glow); padding: 8px; border-radius: 50%; color: var(--color-primary); display: flex; align-items: center; justify-content: center;">
+                                        <i data-lucide="sparkles" style="width: 20px; height: 20px;"></i>
+                                    </div>
+                                    <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0;">AI Study Planner 🦉</h3>
+                                </div>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Enter your exam details to get a structured day-by-day study plan generated by AI.</p>
 
-                                <button type="submit" class="btn btn-primary">
-                                    <i data-lucide="plus"></i> <span>Add Task</span>
+                                <div class="form-group" style="margin: 0;">
+                                    <label for="ai-exam-name" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Exam Name</label>
+                                    <input type="text" id="ai-exam-name" placeholder="e.g. Science Term 1, Board Exam" style="width: 100%; padding: 8px 12px; font-size: 0.85rem;">
+                                </div>
+
+                                <div class="form-group" style="margin: 0;">
+                                    <label for="ai-exam-date" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Exam Date</label>
+                                    <input type="date" id="ai-exam-date" style="width: 100%; padding: 8px 12px; font-size: 0.85rem;">
+                                </div>
+
+                                <div class="form-group" style="margin: 0;">
+                                    <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Subjects to Include</label>
+                                    <div style="display: flex; gap: 16px;">
+                                        <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; cursor: pointer;">
+                                            <input type="checkbox" id="ai-sub-maths" checked style="cursor: pointer;"> Maths
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; cursor: pointer;">
+                                            <input type="checkbox" id="ai-sub-science" checked style="cursor: pointer;"> Science
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group" style="margin: 0;">
+                                    <label for="ai-study-pace" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Study Intensity</label>
+                                    <select id="ai-study-pace" style="width: 100%; padding: 8px 12px; font-size: 0.85rem;">
+                                        <option value="light">Light (Easy-going, revision focus)</option>
+                                        <option value="moderate" selected>Moderate (Standard balanced schedule)</option>
+                                        <option value="intensive">Intensive (Rigorous daily prep)</option>
+                                    </select>
+                                </div>
+
+                                <button type="button" class="btn btn-primary btn-block" onclick="generateAIStudyPlan()" id="btn-generate-ai-plan">
+                                    <i data-lucide="cpu" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;"></i> <span>Create Study Plan</span>
                                 </button>
-                            </div>
-                        </form>
 
-                        <!-- TASKS LIST -->
-                        <div class="tasks-container">
-                            <div class="tasks-filter">
-                                <button class="filter-tab active" data-filter="all">All Tasks</button>
-                                <button class="filter-tab" data-filter="active">Active</button>
-                                <button class="filter-tab" data-filter="completed">Completed</button>
-                            </div>
-
-                            <div id="tasks-list" class="tasks-list">
-                                <!-- Dynamic Tasks here -->
+                                <!-- AI generated preview timeline -->
+                                <div id="ai-plan-preview-container" class="glass" style="display: none; padding: 14px; border-radius: var(--border-radius-md); background: rgba(0,0,0,0.15); max-height: 250px; overflow-y: auto; flex-direction: column; gap: 12px; border: 1px dashed var(--glass-border);">
+                                    <h4 style="font-size: 0.9rem; font-weight: 700; margin: 0; color: var(--color-primary); display: flex; align-items: center; justify-content: space-between;">
+                                        <span>Plan Timeline Preview</span>
+                                        <span id="ai-plan-days-tag" style="font-size: 0.75rem; background: var(--color-primary-glow); padding: 2px 8px; border-radius: 12px; color: var(--text-primary);">0 days</span>
+                                    </h4>
+                                    <div id="ai-plan-timeline" style="display: flex; flex-direction: column; gap: 8px;">
+                                        <!-- Dynamic timeline events -->
+                                    </div>
+                                    <button type="button" class="btn btn-success btn-sm btn-block" id="btn-import-ai-plan" onclick="importAIStudyPlan()" style="margin-top: 6px;">
+                                        <i data-lucide="download" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;"></i> Import to My Planner
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -3900,59 +4051,29 @@
                         <div class="analytics-grid">
                             <!-- STATS OVERVIEW CARDS -->
                             <div class="analytics-card progress-summary-card glass">
-                                <h3>Total Focus Stats</h3>
-                                <div class="radial-progress-widget">
-                                    <svg class="radial-svg" viewBox="0 0 100 100">
-                                        <circle class="radial-circle-bg" cx="50" cy="50" r="40"></circle>
-                                        <circle class="radial-circle-fg" id="radial-progress-circle" cx="50" cy="50"
-                                            r="40" style="stroke-dasharray: 251; stroke-dashoffset: 251;"></circle>
-                                    </svg>
-                                    <div class="radial-display">
-                                        <span class="radial-num" id="analytics-total-hours">0.0</span>
-                                        <span class="radial-lbl">Total Hours</span>
-                                    </div>
+                                <h3>Focus Streak & Milestone</h3>
+                                <div style="display: flex; flex-direction: column; gap: 6px; margin: 12px 0;">
+                                    <p style="font-size: 0.9rem; color: var(--text-secondary);">Total Focus: <strong id="analytics-total-hours" style="font-size: 1.1rem; color: var(--color-primary);">0.0 hrs</strong></p>
+                                    <p style="font-size: 0.9rem; color: var(--text-secondary);">Daily Average: <strong id="analytics-avg-daily">0.0 hrs</strong></p>
                                 </div>
-                                <div class="radial-details">
-                                    <p>Daily Average: <strong id="analytics-avg-daily">0.0 hrs</strong></p>
-                                    <p>Level milestone progress:</p>
+                                <div style="height: 110px; position: relative; margin-bottom: 12px; display: flex; justify-content: center;">
+                                    <canvas id="focusHoursChart"></canvas>
+                                </div>
+                                <div class="radial-details" style="margin-top: 10px;">
+                                    <p style="font-size: 0.82rem; color: var(--text-secondary);">Level milestone progress:</p>
                                     <div class="progress-bar-container">
                                         <div class="progress-bar-fill" id="analytics-level-fill" style="width: 0%">
                                         </div>
                                     </div>
-                                    <span class="analytics-level-lbl" id="analytics-level-text">Level 1 (0 / 150
-                                        XP)</span>
+                                    <span class="analytics-level-lbl" id="analytics-level-text">Level 1 (0 / 150 XP)</span>
                                 </div>
                             </div>
 
                             <div class="analytics-card stats-breakdown-card glass">
                                 <h3>Subject Breakdown</h3>
-                                <div class="subject-bars-container">
-                                    <div class="subject-bar-row">
-                                        <span class="sub-name">Maths</span>
-                                        <div class="sub-progress-bar">
-                                            <div class="sub-progress-fill bg-blue" id="sub-bar-maths" style="width: 0%">
-                                            </div>
-                                        </div>
-                                        <span class="sub-val" id="sub-val-maths">0h</span>
-                                    </div>
-                                    <div class="subject-bar-row">
-                                        <span class="sub-name">Science</span>
-                                        <div class="sub-progress-bar">
-                                            <div class="sub-progress-fill bg-green" id="sub-bar-science"
-                                                style="width: 0%"></div>
-                                        </div>
-                                        <span class="sub-val" id="sub-val-science">0h</span>
-                                    </div>
-                                    <div class="subject-bar-row">
-                                        <span class="sub-name">Other Subjects</span>
-                                        <div class="sub-progress-bar">
-                                            <div class="sub-progress-fill bg-purple" id="sub-bar-general"
-                                                style="width: 0%"></div>
-                                        </div>
-                                        <span class="sub-val" id="sub-val-general">0h</span>
-                                    </div>
+                                <div style="height: 140px; position: relative; margin-bottom: 12px; display: flex; justify-content: center;">
+                                    <canvas id="subjectHoursChart"></canvas>
                                 </div>
-
                                 <div class="compact-numeric-stats">
                                     <div class="comp-stat">
                                         <span class="comp-title">Tasks Completed</span>
@@ -3989,13 +4110,11 @@
                                                 style="font-size: 1.5rem; font-weight:800; display:block; margin-top:4px;">0s</span>
                                         </div>
                                     </div>
-                                    <div
-                                        style="flex: 1; display:flex; flex-direction:column; justify-content:center; align-items:center; background: rgba(255,255,255,0.01); border:1px solid var(--glass-border); border-radius: var(--border-radius-md); padding: 16px; min-height: 100px;">
-                                        <span id="quiz-streak-emoji"
-                                            style="font-size: 2rem; margin-bottom: 6px;">🔥</span>
-                                        <span style="font-size:0.85rem; color: var(--text-secondary);">Active Quiz
-                                            Streak: <strong id="analytics-quiz-streak" class="text-pink">0
-                                                days</strong></span>
+                                    <div style="flex: 1; min-height: 120px; position: relative; display: flex; justify-content: center; align-items: center; margin-top: 10px;">
+                                        <canvas id="quizAccuracyChart"></canvas>
+                                    </div>
+                                    <div style="font-size:0.85rem; color: var(--text-secondary); text-align: center; margin-top: 8px;">
+                                        Active Quiz Streak: <strong id="analytics-quiz-streak" class="text-pink">0 days</strong>
                                     </div>
                                 </div>
 
@@ -5317,8 +5436,56 @@
             }
         };
 
+        // --- THEME MANAGEMENT (LIGHT/DARK) ---
+        function initTheme() {
+            const savedTheme = localStorage.getItem('sb_theme') || 'dark';
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+            } else {
+                document.body.classList.remove('light-mode');
+            }
+            updateThemeToggleButton();
+        }
+
+        function toggleTheme(e) {
+            if (e) e.preventDefault();
+            if (typeof soundEffects !== 'undefined' && soundEffects.playPop) {
+                soundEffects.playPop();
+            }
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('sb_theme', isLight ? 'light' : 'dark');
+            updateThemeToggleButton();
+            
+            // Re-render charts to apply light/dark colors if elements are loaded
+            if (document.getElementById('tab-progress') && !document.getElementById('tab-progress').classList.contains('hidden')) {
+                if (typeof renderAnalyticsData === 'function') {
+                    renderAnalyticsData();
+                }
+            }
+        }
+
+        function updateThemeToggleButton() {
+            const isLight = document.body.classList.contains('light-mode');
+            const icon = document.getElementById('theme-toggle-icon');
+            const text = document.getElementById('theme-toggle-text');
+            if (icon && text) {
+                if (isLight) {
+                    icon.setAttribute('data-lucide', 'moon');
+                    text.innerText = 'Dark Mode';
+                } else {
+                    icon.setAttribute('data-lucide', 'sun');
+                    text.innerText = 'Light Mode';
+                }
+                if (window.lucide) {
+                    lucide.createIcons();
+                }
+            }
+        }
+
         // --- INITIALIZATION & AUTO-DETECTION ---
         document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
             detectBackendAndLoad();
             setupEventListeners();
         });
@@ -6358,14 +6525,23 @@
             // Render user profile avatar in topbar and sidebar
             updateAvatarUI();
 
-            // Toggle Admin Panel link visibility
+            // Toggle Admin Panel link and navigation tabs based on user role
+            const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner');
+            
             const adminLink = document.getElementById('dropdown-admin-link');
             if (adminLink) {
-                adminLink.style.display = currentUser.role === 'admin' || currentUser.role === 'owner' ? 'flex' : 'none';
+                adminLink.style.display = isAdmin ? 'flex' : 'none';
             }
+            
             const sidebarAdminLink = document.getElementById('sidebar-admin-link');
-            if (sidebarAdminLink) {
-                sidebarAdminLink.style.display = currentUser.role === 'admin' || currentUser.role === 'owner' ? 'flex' : 'none';
+            const studentNavItems = document.querySelectorAll('.nav-item:not(#sidebar-admin-link)');
+            
+            if (isAdmin) {
+                if (sidebarAdminLink) sidebarAdminLink.style.display = 'flex';
+                studentNavItems.forEach(item => item.style.display = 'none');
+            } else {
+                if (sidebarAdminLink) sidebarAdminLink.style.display = 'none';
+                studentNavItems.forEach(item => item.style.display = 'flex');
             }
 
             // Prompt user if avatar is not set
@@ -6381,7 +6557,10 @@
 
             let initialClass = classParam || (currentUser ? currentUser.class_name : 'Class 9');
             let initialSubject = subjectParam || 'Science';
-            let initialTab = tabParam || ((currentUser && currentUser.role === 'guest') ? 'learn' : 'dashboard');
+            
+            // Set initial tab based on role
+            let defaultTab = isAdmin ? 'admin' : ((currentUser && currentUser.role === 'guest') ? 'learn' : 'dashboard');
+            let initialTab = tabParam || defaultTab;
 
             if (classParam || subjectParam) {
                 initialTab = 'learn';
@@ -6390,7 +6569,8 @@
             activeTab = initialTab;
             const navItems = document.querySelectorAll('.nav-item');
             navItems.forEach(item => {
-                if (item.getAttribute('data-tab') === initialTab) {
+                const itemTab = item.getAttribute('data-tab');
+                if (itemTab === initialTab) {
                     item.classList.add('active');
                 } else {
                     item.classList.remove('active');
@@ -6980,6 +7160,180 @@ Click one of the suggestions below, or type your own question!</div>
                 soundEffects.playPop();
                 loadTasks();
                 populatePlannerDropdown();
+            }
+        }
+
+        let generatedAIPlanData = null;
+
+        async function generateAIStudyPlan() {
+            if (requireAuth('generate study plan')) return;
+            const examName = document.getElementById('ai-exam-name').value.trim();
+            const examDateVal = document.getElementById('ai-exam-date').value;
+            const mathsChecked = document.getElementById('ai-sub-maths').checked;
+            const scienceChecked = document.getElementById('ai-sub-science').checked;
+            const pace = document.getElementById('ai-study-pace').value;
+            const btn = document.getElementById('btn-generate-ai-plan');
+
+            if (!examName) {
+                alert("Please enter the Exam Name.");
+                return;
+            }
+            if (!examDateVal) {
+                alert("Please select the Exam Date.");
+                return;
+            }
+            const examDate = new Date(examDateVal);
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            if (examDate < today) {
+                alert("The exam date must be in the future.");
+                return;
+            }
+
+            const diffTime = Math.abs(examDate - today);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays > 30) {
+                alert("We can generate plans up to 30 days in advance. Please select an exam date within 30 days.");
+                return;
+            }
+
+            const subjects = [];
+            if (mathsChecked) subjects.push("Maths");
+            if (scienceChecked) subjects.push("Science");
+
+            if (subjects.length === 0) {
+                alert("Please select at least one subject.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Generating plan...";
+
+            const payload = {
+                exam_name: examName,
+                days: diffDays,
+                subjects: subjects,
+                pace: pace
+            };
+
+            try {
+                if (useBackend) {
+                    const res = await fetch('/api/planner/generate-ai', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        generatedAIPlanData = data.plan;
+                    } else {
+                        throw new Error("API failed");
+                    }
+                } else {
+                    // Fallback Local Generation
+                    const plan = [];
+                    const intensities = {
+                        light: ["Review notes", "Solve 5 practice problems"],
+                        moderate: ["Read text sections", "Solve 10 problems", "Attempt revision quiz"],
+                        intensive: ["Study 2 hours", "Solve 20 problems", "Summarize chapters", "Create mind-map"]
+                    };
+                    const tasksForPace = intensities[pace] || intensities.moderate;
+                    
+                    for (let d = 1; d <= diffDays; d++) {
+                        const sub = subjects[(d - 1) % subjects.length];
+                        const title = `Day ${d}: ${sub} - ${tasksForPace[(d - 1) % tasksForPace.length]}`;
+                        plan.push({ day: d, subject: sub, task_title: title });
+                    }
+                    generatedAIPlanData = plan;
+                }
+
+                if (generatedAIPlanData) {
+                    // Populate timeline
+                    const container = document.getElementById('ai-plan-preview-container');
+                    const timeline = document.getElementById('ai-plan-timeline');
+                    const daysTag = document.getElementById('ai-plan-days-tag');
+                    
+                    timeline.innerHTML = '';
+                    daysTag.innerText = `${diffDays} day${diffDays !== 1 ? 's' : ''}`;
+
+                    generatedAIPlanData.forEach(item => {
+                        const div = document.createElement('div');
+                        div.style.padding = '8px';
+                        div.style.background = 'rgba(255, 255, 255, 0.03)';
+                        div.style.border = '1px solid var(--glass-border)';
+                        div.style.borderRadius = 'var(--border-radius-sm)';
+                        div.style.fontSize = '0.8rem';
+                        div.style.display = 'flex';
+                        div.style.justifyContent = 'space-between';
+                        div.style.alignItems = 'center';
+                        div.innerHTML = `
+                            <span>${escapeHTML(item.task_title)}</span>
+                            <span style="font-size: 0.75rem; color: ${item.subject === 'Maths' ? 'var(--color-blue)' : 'var(--color-success)'}; font-weight: 600; text-transform: uppercase;">${escapeHTML(item.subject)}</span>
+                        `;
+                        timeline.appendChild(div);
+                    });
+
+                    container.style.display = 'flex';
+                    soundEffects.playSuccess();
+                }
+            } catch (err) {
+                alert("Could not generate AI plan. Please check connection and try again.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i data-lucide="cpu" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;"></i> <span>Create Study Plan</span>`;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        async function importAIStudyPlan() {
+            if (!generatedAIPlanData || generatedAIPlanData.length === 0) return;
+            const btn = document.getElementById('btn-import-ai-plan');
+            btn.disabled = true;
+            btn.innerText = "Importing...";
+
+            try {
+                if (useBackend) {
+                    const res = await fetch('/api/planner/import', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ plan: generatedAIPlanData })
+                    });
+                    if (res.ok) {
+                        soundEffects.playSuccess();
+                        triggerConfetti(0.25);
+                        document.getElementById('ai-plan-preview-container').style.display = 'none';
+                        loadTasks();
+                        populatePlannerDropdown();
+                    } else {
+                        alert("Failed to import plan to database.");
+                    }
+                } else {
+                    // Local Storage bulk add
+                    let tasksList = localStore.getTasks(currentUser.username);
+                    generatedAIPlanData.forEach(item => {
+                        const newTask = {
+                            id: Date.now() + Math.floor(Math.random() * 10000),
+                            title: item.task_title,
+                            subject: item.subject,
+                            completed: false,
+                            created_at: new Date().toISOString()
+                        };
+                        tasksList.push(newTask);
+                    });
+                    localStore.saveTasks(currentUser.username, tasksList);
+                    soundEffects.playSuccess();
+                    triggerConfetti(0.25);
+                    document.getElementById('ai-plan-preview-container').style.display = 'none';
+                    loadTasks();
+                    populatePlannerDropdown();
+                }
+            } catch (err) {
+                alert("Error importing plan. Please try again.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i data-lucide="download" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;"></i> Import to My Planner`;
+                if (window.lucide) lucide.createIcons();
             }
         }
 
@@ -8245,16 +8599,6 @@ Click one of the suggestions below, or type your own question!</div>
             const avgHrs = userStats.total_hours > 0 ? (userStats.total_hours / Math.max(1, userStats.streak)) : 0.0;
             document.getElementById('analytics-avg-daily').innerText = `${avgHrs.toFixed(1)} hrs`;
 
-            const milestoneHours = 10.0;
-            const radialCircle = document.getElementById('radial-progress-circle');
-            const radius = radialCircle.r.baseVal.value;
-            const circumference = 2 * Math.PI * radius;
-
-            const pct = Math.min(1.0, userStats.total_hours / milestoneHours);
-            const offset = circumference - (pct * circumference);
-            radialCircle.style.strokeDashoffset = offset;
-            radialCircle.style.strokeDasharray = circumference;
-
             const baseXP = (userStats.level - 1) * 150;
             const levelProgressXP = userStats.xp - baseXP;
             const progressPct = Math.min(100, Math.max(0, (levelProgressXP / 150) * 100));
@@ -8269,16 +8613,71 @@ Click one of the suggestions below, or type your own question!</div>
             const scienceHrs = userStats.total_hours * 0.35;
             const otherHrs = userStats.total_hours * 0.15;
 
-            const maxHrs = Math.max(0.1, userStats.total_hours);
+            // Chart.js Theme Colors
+            const isLight = document.body.classList.contains('light-mode');
+            const textColor = isLight ? '#1e293b' : '#f8fafc';
+            const gridColor = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)';
+            const emptyBg = isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.04)';
 
-            document.getElementById('sub-bar-maths').style.width = `${(mathHrs / maxHrs) * 100}%`;
-            document.getElementById('sub-val-maths').innerText = `${mathHrs.toFixed(1)}h`;
+            // 1. Focus Goals Chart
+            const focusHoursCtx = document.getElementById('focusHoursChart').getContext('2d');
+            if (window.focusHoursChartObj) {
+                window.focusHoursChartObj.destroy();
+            }
+            window.focusHoursChartObj = new Chart(focusHoursCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Hours Studied', 'Milestone Remaining'],
+                    datasets: [{
+                        data: [userStats.total_hours.toFixed(1), Math.max(0, 10.0 - userStats.total_hours).toFixed(1)],
+                        backgroundColor: ['#6366f1', emptyBg],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '72%',
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
 
-            document.getElementById('sub-bar-science').style.width = `${(scienceHrs / maxHrs) * 100}%`;
-            document.getElementById('sub-val-science').innerText = `${scienceHrs.toFixed(1)}h`;
+            // 2. Subject Breakdown Chart
+            const subjectCtx = document.getElementById('subjectHoursChart').getContext('2d');
+            if (window.subjectHoursChartObj) {
+                window.subjectHoursChartObj.destroy();
+            }
+            window.subjectHoursChartObj = new Chart(subjectCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Maths', 'Science', 'Others'],
+                    datasets: [{
+                        data: [mathHrs.toFixed(1), scienceHrs.toFixed(1), otherHrs.toFixed(1)],
+                        backgroundColor: ['#3b82f6', '#10b981', '#a855f7'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                color: textColor,
+                                boxWidth: 8,
+                                font: { size: 9 }
+                            }
+                        }
+                    }
+                }
+            });
 
-            document.getElementById('sub-bar-general').style.width = `${(otherHrs / maxHrs) * 100}%`;
-            document.getElementById('sub-val-general').innerText = `${otherHrs.toFixed(1)}h`;
+            let quizLabels = [];
+            let quizData = [];
 
             // Fetch Quiz Performance Analytics & Strengths/Weaknesses
             if (useBackend) {
@@ -8293,6 +8692,8 @@ Click one of the suggestions below, or type your own question!</div>
                         data.breakdown.forEach(b => {
                             totalAccuracy += b.accuracy;
                             totalTime += b.avg_time;
+                            quizLabels.push(b.chapter_name.substring(0, 12) + (b.chapter_name.length > 12 ? '...' : ''));
+                            quizData.push(Math.round(b.accuracy));
                         });
                         const avgAcc = count > 0 ? (totalAccuracy / count) : 0;
                         const avgT = count > 0 ? (totalTime / count) : 0;
@@ -8329,10 +8730,119 @@ Click one of the suggestions below, or type your own question!</div>
                     console.error("Error loading quiz analytics:", e);
                 }
             } else {
-                document.getElementById('analytics-quiz-accuracy').innerText = 'N/A';
-                document.getElementById('analytics-quiz-avg-time').innerText = 'N/A';
-                document.getElementById('analytics-quiz-streak').innerText = `${userStats.streak} days`;
+                // Standalone Mode local aggregation
+                const user = localStore.getActiveUser();
+                if (user) {
+                    const attempts = localStore.getAttempts(user.username);
+                    const chapterAttempts = {};
+                    let totalAccuracy = 0;
+                    let totalTime = 0;
+                    let count = attempts.length;
+
+                    attempts.forEach(att => {
+                        const chId = att.topic_id;
+                        const ch = localChapters.find(c => c.id === chId) || { chapter_name: `Topic ${chId}` };
+                        if (!chapterAttempts[ch.chapter_name]) {
+                            chapterAttempts[ch.chapter_name] = { score: 0, total: 0, time: 0, count: 0 };
+                        }
+                        chapterAttempts[ch.chapter_name].score += att.score;
+                        chapterAttempts[ch.chapter_name].total += att.total;
+                        chapterAttempts[ch.chapter_name].time += att.time_taken || 0;
+                        chapterAttempts[ch.chapter_name].count += 1;
+                    });
+
+                    let localStrong = [];
+                    let localWeak = [];
+
+                    Object.keys(chapterAttempts).forEach(name => {
+                        const item = chapterAttempts[name];
+                        const acc = item.total > 0 ? (item.score / item.total) * 100 : 0;
+                        const avgTime = item.count > 0 ? (item.time / item.count) : 0;
+                        totalAccuracy += acc;
+                        totalTime += avgTime;
+
+                        quizLabels.push(name.substring(0, 12) + (name.length > 12 ? '...' : ''));
+                        quizData.push(Math.round(acc));
+
+                        const chObj = { chapter_name: name, accuracy: Math.round(acc) };
+                        if (acc >= 80) {
+                            localStrong.push(chObj);
+                        } else {
+                            localWeak.push(chObj);
+                        }
+                    });
+
+                    const avgAcc = count > 0 ? (totalAccuracy / Object.keys(chapterAttempts).length) : 0;
+                    const avgT = count > 0 ? (totalTime / Object.keys(chapterAttempts).length) : 0;
+
+                    document.getElementById('analytics-quiz-accuracy').innerText = `${avgAcc.toFixed(1)}%`;
+                    document.getElementById('analytics-quiz-avg-time').innerText = `${avgT.toFixed(1)}s`;
+                    document.getElementById('analytics-quiz-streak').innerText = `${userStats.streak} day${userStats.streak !== 1 ? 's' : ''}`;
+
+                    const strongList = document.getElementById('analytics-strong-chapters');
+                    strongList.innerHTML = '';
+                    if (localStrong.length === 0) {
+                        strongList.innerHTML = `<li style="font-style:italic; color: var(--text-muted);">None yet</li>`;
+                    } else {
+                        localStrong.forEach(ch => {
+                            const li = document.createElement('li');
+                            li.innerHTML = `<strong>${escapeHTML(ch.chapter_name)}</strong> (${ch.accuracy}%)`;
+                            strongList.appendChild(li);
+                        });
+                    }
+
+                    const weakList = document.getElementById('analytics-weak-chapters');
+                    weakList.innerHTML = '';
+                    if (localWeak.length === 0) {
+                        weakList.innerHTML = `<li style="font-style:italic; color: var(--text-muted);">None yet</li>`;
+                    } else {
+                        localWeak.forEach(ch => {
+                            const li = document.createElement('li');
+                            li.innerHTML = `<strong>${escapeHTML(ch.chapter_name)}</strong> (${ch.accuracy}%)`;
+                            weakList.appendChild(li);
+                        });
+                    }
+                }
             }
+
+            // 3. Quiz Performance Chart
+            const quizCtx = document.getElementById('quizAccuracyChart').getContext('2d');
+            if (window.quizAccuracyChartObj) {
+                window.quizAccuracyChartObj.destroy();
+            }
+            window.quizAccuracyChartObj = new Chart(quizCtx, {
+                type: 'bar',
+                data: {
+                    labels: quizLabels.length > 0 ? quizLabels : ['No quiz yet'],
+                    datasets: [{
+                        label: 'Accuracy (%)',
+                        data: quizData.length > 0 ? quizData : [0],
+                        backgroundColor: 'rgba(168, 85, 247, 0.85)',
+                        borderColor: '#a855f7',
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: textColor, font: { size: 9 } }
+                        },
+                        y: {
+                            min: 0,
+                            max: 100,
+                            grid: { color: gridColor },
+                            ticks: { color: textColor, font: { size: 9 } }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
 
             await loadActivityHistoryTable();
         }

@@ -365,7 +365,6 @@ def send_email_otp():
         'message': 'OTP code sent to email.'
     }
     if not email_sent:
-        response_data['otp'] = otp
         response_data['message'] = 'OTP code sent to email (Local Fallback).'
         
     return jsonify(response_data)
@@ -409,7 +408,6 @@ def send_mobile_otp():
         'message': 'OTP code sent to mobile number.'
     }
     if not sms_sent:
-        response_data['otp'] = otp
         response_data['message'] = 'OTP code sent to mobile number (Local Fallback).'
         
     return jsonify(response_data)
@@ -642,8 +640,6 @@ def forgot_password_request():
         'masked_mobile': masked_mobile,
         'username': user['username']
     }
-    if not sms_sent:
-        response_data['otp'] = otp
         
     return jsonify(response_data)
 
@@ -997,6 +993,80 @@ def get_stats():
         'class_name': user['class_name'] or 'Class 9'
     })
 
+@app.route('/api/planner/generate-ai', methods=['POST'])
+def generate_ai_plan():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized.'}), 401
+        
+    data = request.json or {}
+    exam_name = data.get('exam_name', 'Exam').strip()
+    days = int(data.get('days', 7))
+    subjects = data.get('subjects', ['Science', 'Maths'])
+    pace = data.get('pace', 'moderate')
+    
+    # Let's generate a list of structured day items
+    intensities = {
+        'light': [
+            "Review notes for {subject}",
+            "Solve 5 practice problems in {subject}",
+            "Revise key definitions of {subject}"
+        ],
+        'moderate': [
+            "Read textbook chapter of {subject}",
+            "Solve 10 exercise problems in {subject}",
+            "Take a short topic practice quiz in {subject}",
+            "Summarize important theorems/laws of {subject}"
+        ],
+        'intensive': [
+            "Study {subject} notes for 2 hours",
+            "Solve 20 high-difficulty questions in {subject}",
+            "Attempt past paper questions for {subject}",
+            "Draw a concept mind-map for {subject} topics"
+        ]
+    }
+    
+    tasks_pool = intensities.get(pace, intensities['moderate'])
+    plan = []
+    
+    for d in range(1, days + 1):
+        sub = subjects[(d - 1) % len(subjects)]
+        task_tmpl = tasks_pool[(d - 1) % len(tasks_pool)]
+        title = f"Day {d}: {task_tmpl.format(subject=sub)} for {exam_name}"
+        plan.append({
+            'day': d,
+            'subject': sub,
+            'task_title': title
+        })
+        
+    return jsonify({'plan': plan})
+
+@app.route('/api/planner/import', methods=['POST'])
+def import_ai_plan():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized.'}), 401
+        
+    data = request.json or {}
+    plan = data.get('plan', [])
+    if not plan:
+        return jsonify({'error': 'Plan is empty.'}), 400
+        
+    db = get_db()
+    cursor = db.cursor()
+    
+    for item in plan:
+        title = item.get('task_title', '').strip()
+        subject = item.get('subject', 'General').strip()
+        if title:
+            cursor.execute('''
+            INSERT INTO tasks (user_id, title, subject, completed)
+            VALUES (?, ?, ?, 0)
+            ''', (user['id'], title, subject))
+            
+    db.commit()
+    return jsonify({'message': 'Plan imported successfully!'})
+
 # --- API: STUDY PLANNER (TASKS) ---
 @app.route('/api/tasks', methods=['GET', 'POST'])
 def handle_tasks():
@@ -1088,6 +1158,178 @@ def update_delete_task(task_id):
             'leveled_up': leveled_up,
             'stats': stats
         })
+
+@app.route('/api/tasks/bulk', methods=['POST'])
+def bulk_add_tasks():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorised.'}), 401
+        
+    data = request.json or {}
+    tasks_list = data.get('tasks', [])
+    
+    if not isinstance(tasks_list, list):
+        return jsonify({'error': 'Tasks must be a list.'}), 400
+        
+    db = get_db()
+    cursor = db.cursor()
+    
+    try:
+        inserted = []
+        for t in tasks_list:
+            title = t.get('title', '').strip()
+            subject = t.get('subject', 'General').strip()
+            if title:
+                cursor.execute('''
+                INSERT INTO tasks (user_id, title, subject, completed)
+                VALUES (?, ?, ?, 0)
+                ''', (user['id'], title, subject))
+                inserted.append({
+                    'id': cursor.lastrowid,
+                    'title': title,
+                    'subject': subject,
+                    'completed': 0
+                })
+        db.commit()
+        return jsonify({
+            'message': f'Successfully imported {len(inserted)} tasks!',
+            'tasks': inserted
+        })
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
+
+@app.route('/api/ai/study-plan', methods=['POST'])
+def generate_study_plan():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorised.'}), 401
+        
+    data = request.json or {}
+    exam_name = data.get('exam_name', '').strip()
+    exam_date_str = data.get('exam_date', '').strip()
+    subjects = data.get('subjects', []) # e.g. ["Maths", "Science"]
+    pace = data.get('pace', 'moderate').strip() # light, moderate, intensive
+    
+    if not exam_name or not exam_date_str or not subjects:
+        return jsonify({'error': 'Exam name, date and subjects are required.'}), 400
+        
+    from datetime import datetime, date
+    try:
+        exam_date = datetime.strptime(exam_date_str, "%Y-%m-%d").date()
+    except ValueError:
+        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD.'}), 400
+        
+    today = date.today()
+    days_left = (exam_date - today).days
+    
+    if days_left <= 0:
+        return jsonify({'error': 'Exam date must be in the future!'}), 400
+        
+    user_class = user['class_name'] or 'Class 9'
+    
+    db = get_db()
+    cursor = db.cursor()
+    
+    placeholders = ', '.join('?' for _ in subjects)
+    query = f'''
+        SELECT subject_name, chapter_no, chapter_name 
+        FROM class_chapters 
+        WHERE class_name = ? AND subject_name IN ({placeholders})
+        ORDER BY subject_name, chapter_no ASC
+    '''
+    cursor.execute(query, (user_class, *subjects))
+    chapters = [dict(row) for row in cursor.fetchall()]
+    
+    if not chapters:
+        # Fallback if no chapters in DB
+        chapters = [
+            {'subject_name': 'Maths', 'chapter_no': 1, 'chapter_name': 'Real Numbers'},
+            {'subject_name': 'Maths', 'chapter_no': 2, 'chapter_name': 'Polynomials'},
+            {'subject_name': 'Science', 'chapter_no': 1, 'chapter_name': 'Chemical Reactions and Equations'},
+            {'subject_name': 'Science', 'chapter_no': 2, 'chapter_name': 'Acids, Bases and Salts'}
+        ]
+        
+    api_key = os.environ.get('GEMINI_API_KEY')
+    
+    # Try calling Gemini if API key is present
+    if api_key:
+        try:
+            import urllib.request
+            import urllib.error
+            import json
+            
+            chapters_list_str = "\n".join([f"- {c['subject_name']} Chapter {c['chapter_no']}: {c['chapter_name']}" for c in chapters])
+            
+            prompt = (
+                f"You are a helpful study planner. Act as an API that outputs ONLY raw JSON.\n"
+                f"A student in {user_class} is preparing for the exam '{exam_name}' on {exam_date_str} (in {days_left} days).\n"
+                f"They need to study the following chapters:\n{chapters_list_str}\n\n"
+                f"The student's preferred study pace is '{pace}'.\n"
+                f"Create a step-by-step day-by-day study calendar from day 1 to day {days_left}.\n"
+                f"Return a JSON object containing a 'tasks' list. Each item in 'tasks' must be a JSON object with these EXACT keys:\n"
+                f"  'title': a clear actionable description of what to study or practice (e.g. 'Read Science Chapter 1: Chemical Reactions notes')\n"
+                f"  'subject': the subject name ('Maths' or 'Science' or 'General')\n"
+                f"  'day_no': the integer day number (from 1 to {days_left}) representing which day the student should do this task.\n\n"
+                f"Leave the last 2-3 days for revision, summary notes, and solving mock papers.\n"
+                f"Ensure the list is formatted strictly as JSON. No markdown backticks, no comments, no extra text, just raw JSON."
+            )
+            
+            payload = {
+                "contents": [{"parts": [{"text": prompt}]}]
+            }
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode('utf-8'),
+                headers={'Content-Type': 'application/json'}
+            )
+            with urllib.request.urlopen(req, timeout=12) as response:
+                res_body = response.read().decode('utf-8')
+                res_json = json.loads(res_body)
+                text = res_json['candidates'][0]['content']['parts'][0]['text'].strip()
+                # Clean up any potential markdown wraps
+                if text.startswith('```json'):
+                    text = text[7:]
+                if text.endswith('```'):
+                    text = text[:-3]
+                text = text.strip()
+                plan_data = json.loads(text)
+                if 'tasks' in plan_data:
+                    return jsonify(plan_data)
+        except Exception as e:
+            print(f"Failed to generate study plan using Gemini: {e}. Falling back to algorithmic planner.")
+            
+    # Fallback/Algorithmic Planner if Gemini fails or is not configured
+    tasks = []
+    study_days = max(1, days_left - 3)
+    num_chapters = len(chapters)
+    
+    for i, ch in enumerate(chapters):
+        day_no = int((i / num_chapters) * study_days) + 1
+        day_no = min(day_no, study_days)
+        
+        tasks.append({
+            'title': f"Study {ch['subject_name']} Chapter {ch['chapter_no']}: {ch['chapter_name']}",
+            'subject': ch['subject_name'],
+            'day_no': day_no
+        })
+        
+        practice_day = min(day_no + 1, study_days)
+        tasks.append({
+            'title': f"Solve Quiz & Review: {ch['chapter_name']}",
+            'subject': ch['subject_name'],
+            'day_no': practice_day
+        })
+        
+    for rev_day in range(study_days + 1, days_left + 1):
+        tasks.append({
+            'title': f"Revision: Solve Sample Papers for {', '.join(subjects)}",
+            'subject': 'General',
+            'day_no': rev_day
+        })
+        
+    return jsonify({'tasks': tasks})
 
 # --- API: STUDY NOTES ---
 @app.route('/api/notes/<topic_id>', methods=['GET', 'POST'])
